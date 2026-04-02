@@ -27,6 +27,7 @@ Bu proje, Silva Ahsap icin teklif, siparis, cari, urun, stok, muhasebe ve person
 - `styles.css`: Dashboard, form, tablo ve responsive stiller
 - `api-client.js`: Mevcut panelin backend API istemcisi
 - `app.js`: Panelin backend baglantili davranislari
+- `tools/`: Kurulum, guncelleme ve baslatma yardimci dosyalari
 
 ## Backend Ile Calistirma
 
