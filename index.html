@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KapakPro Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="auth-locked">
+  <section class="auth-screen" id="authScreen">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="logo-box">S</div>
+        <div>
+          <strong>Silva Ahsap</strong>
+          <span>Kapak Imalat Teklif Siparis Programi</span>
+        </div>
+      </div>
+      <div class="auth-info">
+        <p class="auth-help">Panel otomatik olarak demo yonetici hesabi ile aciliyor.</p>
+        <p class="auth-help">Backend aciksa giris kendiliginden tamamlanir.</p>
+      </div>
+      <p class="auth-error" id="authError"></p>
+    </div>
+  </section>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="logo-row">
+          <div class="logo-box">K</div>
+          <span class="logo-text">KapakPro</span>
+        </div>
+        <p class="workspace-label">ADMIN - SILVA AHSAP</p>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-link active" data-view="dashboard">Panel</button>
+        <button class="nav-link" data-view="cari">Cari</button>
+        <button class="nav-link" data-view="offers">Teklifler</button>
+        <button class="nav-link" data-view="orders">Siparisler</button>
+        <button class="nav-link" data-view="products">Urunler</button>
+        <button class="nav-link" data-view="stocks">Stoklar</button>
+        <button class="nav-link" data-view="finance">Muhasebe</button>
+        <button class="nav-link" data-view="personnel">Personel</button>
+        <button class="nav-link" data-view="settings">Ayarlar</button>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="profile-card">
+          <div class="avatar">M</div>
+          <div>
+            <strong>Mustafa A. Yildirim</strong>
+            <span>silvaahsap@gmail.com</span>
+          </div>
+        </div>
+        <button class="logout-btn" id="resetDemoBtn">Demo Veriyi Sifirla</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="main-header">
+        <div>
+          <h1 id="pageTitle">Hos Geldiniz, Mustafa A. Yildirim</h1>
+          <p id="pageDescription">Isletmenizin guncel durum ozeti ve istatistikleri.</p>
+        </div>
+        <div class="header-actions">
+          <span class="session-user" id="sessionUser"></span>
+          <span class="session-role" id="sessionRole"></span>
+          <button class="ghost-action" id="logoutBtn" type="button">Cikis</button>
+          <button class="menu-toggle" id="menuToggle">Menu</button>
+          <button class="primary-btn" id="primaryActionBtn">+ Yeni Siparis</button>
+        </div>
+      </header>
+
+      <section class="view active" id="view-dashboard">
+        <section class="summary-grid">
+          <article class="summary-card">
+            <div>
+              <span>Aktif Siparisler</span>
+              <strong id="metricActiveOrders">0</strong>
+            </div>
+            <div class="summary-icon blue">O</div>
+          </article>
+          <article class="summary-card">
+            <div>
+              <span>Uretim Asamasinda</span>
+              <strong class="text-gold" id="metricProductionOrders">0</strong>
+            </div>
+            <div class="summary-icon gold">U</div>
+          </article>
+          <article class="summary-card">
+            <div>
+              <span>Tamamlanan (Toplam)</span>
+              <strong class="text-green" id="metricCompletedOrders">0</strong>
+            </div>
+            <div class="summary-icon green">T</div>
+          </article>
+          <article class="summary-card">
+            <div>
+              <span>Tahmini Ciro</span>
+              <strong id="metricRevenue">0 TL</strong>
+            </div>
+            <div class="summary-icon pink">+</div>
+          </article>
+        </section>
+
+        <section class="content-grid">
+          <article class="panel chart-panel">
+            <h2>Siparis Durum Dagilimi</h2>
+            <div class="chart-card-bars" id="statusChart"></div>
+          </article>
+
+          <article class="panel quick-panel">
+            <h2>Hizli Erisim</h2>
+            <div class="quick-links">
+              <button class="quick-link" data-action="offers">
+                <div class="quick-icon blue">T</div>
+                <div>
+                  <strong>Teklif Olustur</strong>
+                  <span>Yeni teklif kaydi ac</span>
+                </div>
+              </button>
+              <button class="quick-link" data-action="orders">
+                <div class="quick-icon purple">S</div>
+                <div>
+                  <strong>Siparis Takibi</strong>
+                  <span>Termin bazli takip et</span>
+                </div>
+              </button>
+              <button class="quick-link" data-action="finance">
+                <div class="quick-icon green">M</div>
+                <div>
+                  <strong>Maliyet Analizi</strong>
+                  <span>Karlilik ve giderleri izle</span>
+                </div>
+              </button>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-header-row">
+            <h2>Son Siparisler</h2>
+            <button class="inline-link" data-view-link="orders">Tumunu Gor</button>
+          </div>
+          <div class="orders-table" id="recentOrdersTable"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-cari">
+        <section class="panel form-panel">
+          <div class="panel-header-row compact">
+            <h2>Yeni Cari Kaydi</h2>
+          </div>
+          <form id="cariForm" class="form-grid three-col">
+            <label><span>Adi Soyadi</span><input name="fullName" type="text" required></label>
+            <label><span>Firma Ismi</span><input name="companyName" type="text" required></label>
+            <label><span>Telefon No</span><input name="phone" type="text" required></label>
+            <label><span>Vergi Dairesi</span><input name="taxOffice" type="text"></label>
+            <label><span>Vergi Numarasi</span><input name="taxNumber" type="text"></label>
+            <label><span>Iskonto Orani (%)</span><input name="discountRate" type="number" min="0" max="100" step="0.01" value="0"></label>
+            <label><span>Bakiye Limiti</span><input name="balanceLimit" type="number" min="0" step="0.01" value="0"></label>
+            <label><span>Risk Limiti</span><input name="riskLimit" type="number" min="0" step="0.01" value="0"></label>
+            <label><span>Kayit Tipi</span>
+              <select name="type">
+                <option value="Musteri">Musteri</option>
+                <option value="Tedarikci">Tedarikci</option>
+                <option value="Musteri/Tedarikci">Musteri/Tedarikci</option>
+              </select>
+            </label>
+            <button class="primary-btn form-submit" type="submit">Cariyi Kaydet</button>
+          </form>
+        </section>
+        <section class="panel list-panel">
+          <div class="panel-header-row">
+            <h2>Cari Listesi</h2>
+          </div>
+          <div class="card-list" id="cariList"></div>
+        </section>
+        <section class="panel form-panel">
+          <div class="panel-header-row compact">
+            <h2>Tahsilat / Odeme Girisi</h2>
+          </div>
+          <form id="movementForm" class="form-grid three-col">
+            <label><span>Cari</span><select name="cariId" id="movementCariSelect" required></select></label>
+            <label><span>Hareket Turu</span>
+              <select name="movementType">
+                <option value="Tahsilat">Tahsilat</option>
+                <option value="Odeme">Odeme</option>
+                <option value="Borc">Borc</option>
+              </select>
+            </label>
+            <label><span>Tutar</span><input name="amount" type="number" min="0" step="0.01" required></label>
+            <label><span>Tarih</span><input name="date" type="date" required></label>
+            <label><span>Aciklama</span><input name="note" type="text" placeholder="Aciklama"></label>
+            <button class="primary-btn form-submit" type="submit">Hareketi Kaydet</button>
+          </form>
+        </section>
+        <section class="panel list-panel">
+          <div class="panel-header-row">
+            <h2>Cari Bakiye Hareketleri</h2>
+          </div>
+          <div class="card-list" id="movementsList"></div>
+        </section>
+        <section class="panel list-panel">
+          <div class="panel-header-row">
+            <h2>Cari Ekstresi / Bakiye Raporu</h2>
+          </div>
+          <div class="card-list" id="cariStatementList"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-offers">
+        <section class="panel form-panel">
+          <div class="panel-header-row compact">
+            <h2>Yeni Teklif Olustur</h2>
+          </div>
+          <form id="offerForm" class="form-grid three-col">
+            <label><span>Cari</span><select name="cariId" id="offerCariSelect" required></select></label>
+            <label><span>Kapak Cinsi</span><input name="coverType" type="text" required></label>
+            <label><span>Renk</span><input name="color" type="text" required></label>
+            <label><span>En (mm)</span><input name="width" type="number" min="0" step="0.01" required></label>
+            <label><span>Boy (mm)</span><input name="height" type="number" min="0" step="0.01" required></label>
+            <label><span>Adet</span><input name="quantity" type="number" min="1" step="1" required></label>
+            <label><span>Kargo/Sevkiyat</span><input name="shipment" type="text" placeholder="Ambar, kargo, sevkiyat notu"></label>
+            <label><span>Siparis Tarihi</span><input name="orderDate" type="date" required></label>
+            <label><span>Termin Gun Sayisi</span><input name="termDays" type="number" min="0" step="1" required></label>
+            <label><span>Teslim Tarihi</span><input name="deliveryDate" type="date" required></label>
+            <label><span>Birim Fiyat</span><input name="unitPrice" type="number" min="0" step="0.01" required></label>
+            <label><span>Sozlesme</span><input name="contractText" type="text" placeholder="Ayrintili sozlesme metni veya ozet"></label>
+            <button class="primary-btn form-submit" type="submit">Teklifi Kaydet</button>
+          </form>
+        </section>
+        <section class="panel table-panel">
+          <div class="panel-header-row">
+            <h2>Teklif Listesi</h2>
+          </div>
+          <div class="offers-table" id="offersTable"></div>
+        </section>
+        <section class="panel print-panel">
+          <div class="panel-header-row">
+            <h2>Teklif Cikti Islemleri</h2>
+          </div>
+          <div class="print-actions">
+            <select id="offerPrintSelect"></select>
+            <button class="ghost-action" id="printOfferBtn" type="button">Yazdir</button>
+            <button class="primary-btn" id="pdfOfferBtn" type="button">PDF Ciktisi</button>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="view-orders">
+        <section class="panel table-panel">
+          <div class="panel-header-row">
+            <h2>Siparis Takip Listesi</h2>
+            <input class="table-search" id="orderSearch" type="search" placeholder="Takip no veya cari ara">
+          </div>
+          <div class="orders-table" id="ordersTable"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-products">
+        <section class="panel form-panel">
+          <div class="panel-header-row compact">
+            <h2>Yeni Urun/Kapak Ekle</h2>
+          </div>
+          <form id="productForm" class="form-grid three-col">
+            <label><span>Urun/Kapak Adi</span><input name="name" type="text" required></label>
+            <label><span>Kategori</span><input name="category" type="text" placeholder="Kapak, perakende urun"></label>
+            <label><span>Alis Fiyati</span><input name="purchasePrice" type="number" min="0" step="0.01" required></label>
+            <label><span>Satis Fiyati</span><input name="salePrice" type="number" min="0" step="0.01" required></label>
+            <label><span>M2 Birim Fiyati</span><input name="m2Price" type="number" min="0" step="0.01"></label>
+            <label><span>Ham Kapak M2</span><input name="rawM2Price" type="number" min="0" step="0.01"></label>
+            <label><span>Boyali Kapak M2</span><input name="paintedM2Price" type="number" min="0" step="0.01"></label>
+            <label><span>Maliyet Notu</span><input name="costNotes" type="text" placeholder="Maliyet detayi"></label>
+            <button class="primary-btn form-submit" type="submit">Urunu Kaydet</button>
+          </form>
+        </section>
+
+        <section class="panel list-panel">
+          <div class="panel-header-row">
+            <h2>Urun Listesi</h2>
+          </div>
+          <div class="card-list" id="productsList"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-stocks">
+        <section class="panel form-panel">
+          <div class="panel-header-row compact">
+            <h2>Hammadde/Stok Ekle</h2>
+          </div>
+          <form id="stockForm" class="form-grid three-col">
+            <label><span>Stok Adi</span><input name="name" type="text" required></label>
+            <label><span>Tur</span><input name="type" type="text" placeholder="MDF, boya, kulp"></label>
+            <label><span>Miktar</span><input name="quantity" type="number" min="0" step="0.01" required></label>
+            <label><span>Birim</span><input name="unit" type="text" placeholder="adet, kg, m2"></label>
+            <label><span>Birim Fiyat</span><input name="unitPrice" type="number" min="0" step="0.01" required></label>
+            <label><span>Tedarikci</span><input name="supplier" type="text"></label>
+            <button class="primary-btn form-submit" type="submit">Stogu Kaydet</button>
+          </form>
+        </section>
+        <section class="panel list-panel">
+          <div class="panel-header-row">
+            <h2>Stok Listesi</h2>
+          </div>
+          <div class="card-list" id="stocksList"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-personnel">
+        <section class="panel form-panel">
+          <div class="panel-header-row compact">
+            <h2>Yeni Personel Ekle</h2>
+          </div>
+          <form id="personnelForm" class="form-grid three-col">
+            <label><span>Ad Soyad</span><input name="name" type="text" placeholder="Ayse Demir" required></label>
+            <label><span>Pozisyon</span><input name="role" type="text" placeholder="Grafik Tasarimci" required></label>
+            <label><span>Durum</span>
+              <select name="status" required>
+                <option value="Aktif">Aktif</option>
+                <option value="Izinli">Izinli</option>
+                <option value="Pasif">Pasif</option>
+              </select>
+            </label>
+            <label><span>Telefon</span><input name="phone" type="text" placeholder="0555 111 11 11" required></label>
+            <label><span>Ozluk Dosya Durumu</span><input name="fileStatus" type="text" placeholder="Tamam, eksik evrak"></label>
+            <label><span>Maas</span><input name="salary" type="number" min="0" step="0.01"></label>
+            <label><span>Mesai Saati</span><input name="overtimeHours" type="number" min="0" step="0.5"></label>
+            <button class="primary-btn form-submit" type="submit">Personeli Kaydet</button>
+          </form>
+        </section>
+
+        <section class="panel list-panel">
+          <div class="panel-header-row">
+            <h2>Personel Listesi</h2>
+          </div>
+          <div class="card-list" id="personnelList"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-finance">
+        <section class="summary-grid finance-grid">
+          <article class="summary-card">
+            <div><span>Toplam Maliyet</span><strong id="metricTotalCost">0 TL</strong></div>
+            <div class="summary-icon gold">M</div>
+          </article>
+          <article class="summary-card">
+            <div><span>Toplam Satis</span><strong id="metricTotalSales">0 TL</strong></div>
+            <div class="summary-icon blue">S</div>
+          </article>
+          <article class="summary-card">
+            <div><span>Tahmini Kar</span><strong id="metricEstimatedProfit">0 TL</strong></div>
+            <div class="summary-icon green">K</div>
+          </article>
+          <article class="summary-card">
+            <div><span>Genel Gider</span><strong id="metricGeneralExpenses">0 TL</strong></div>
+            <div class="summary-icon pink">G</div>
+          </article>
+          <article class="summary-card">
+            <div><span>Toplam Tahsilat</span><strong id="metricTotalCollection">0 TL</strong></div>
+            <div class="summary-icon green">T</div>
+          </article>
+          <article class="summary-card">
+            <div><span>Toplam Odeme</span><strong id="metricTotalPayment">0 TL</strong></div>
+            <div class="summary-icon gold">O</div>
+          </article>
+        </section>
+        <section class="panel form-panel">
+          <div class="panel-header-row compact">
+            <h2>Gider ve Maliyet Kalemi Ekle</h2>
+          </div>
+          <form id="financeForm" class="form-grid three-col">
+            <label><span>Kalem Turu</span>
+              <select name="type">
+                <option value="Hammadde">Hammadde</option>
+                <option value="Iscilik">Iscilik</option>
+                <option value="Dukkan">Dukkan</option>
+                <option value="Showroom">Showroom</option>
+              </select>
+            </label>
+            <label><span>Aciklama</span><input name="title" type="text" required></label>
+            <label><span>Tutar</span><input name="amount" type="number" min="0" step="0.01" required></label>
+            <button class="primary-btn form-submit" type="submit">Kalemi Kaydet</button>
+          </form>
+        </section>
+        <section class="panel list-panel">
+          <div class="panel-header-row">
+            <h2>Maliyet Analizi</h2>
+          </div>
+          <div class="card-list" id="financeList"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-settings">
+        <section class="panel settings-panel">
+          <h2>Panel Bilgisi</h2>
+          <p>Bu surum gercek veriyle calisir ve verileri tarayicinin IndexedDB veritabaninda saklar.</p>
+          <ul class="settings-list">
+            <li>Cari, teklif, siparis, urun, stok, muhasebe ve personel kayitlari eklenebilir.</li>
+            <li>Teklifler onaylandiginda siparise donusturulebilir.</li>
+            <li>Dashboard kartlari ve durum dagilimi otomatik guncellenir.</li>
+            <li>Veriler tarayiciyi kapatsaniz bile ayni cihazda kalir.</li>
+          </ul>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="api-client.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
