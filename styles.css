@@ -461,6 +461,132 @@ button {
   color: var(--text-muted);
 }
 
+.reports-grid {
+  align-items: stretch;
+}
+
+.reports-panel {
+  min-height: 360px;
+}
+
+.reports-panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.reports-panel-head h2 {
+  margin-bottom: 6px;
+}
+
+.reports-panel-head p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.report-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.report-chip {
+  border: 1px solid var(--line);
+  background: #f7f9fc;
+  color: var(--text-main);
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.report-chip.active {
+  background: var(--blue-soft);
+  color: var(--blue);
+  border-color: rgba(47, 111, 237, 0.22);
+}
+
+.report-bars {
+  min-height: 250px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+  align-items: end;
+  padding-top: 12px;
+}
+
+.report-bar-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  text-align: center;
+}
+
+.report-bar-column span,
+.report-bar-column small {
+  color: var(--text-muted);
+}
+
+.report-bar-column span {
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.report-bar-column strong {
+  font-size: 15px;
+}
+
+.report-bar-column small {
+  font-size: 11px;
+}
+
+.report-bar-track {
+  width: 100%;
+  height: 170px;
+  display: flex;
+  align-items: end;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f7f9fc, #eef3f9);
+  padding: 8px;
+}
+
+.report-bar-fill {
+  width: 100%;
+  border-radius: 10px;
+  min-height: 4px;
+  background: linear-gradient(180deg, #2f6fed, #7eb2ff);
+}
+
+.report-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.report-mini-card {
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #fbfcfe, #f2f6fb);
+}
+
+.report-mini-card strong,
+.report-mini-card span {
+  display: block;
+}
+
+.report-mini-card strong {
+  margin-bottom: 8px;
+}
+
+.report-mini-card span {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
 .table-panel {
   padding: 0;
   overflow: hidden;
@@ -737,6 +863,8 @@ button {
   .form-grid,
   .form-grid.two-col,
   .form-grid.three-col,
+  .report-cards,
+  .report-bars,
   .orders-head,
   .orders-row,
   .offers-head,
@@ -752,5 +880,15 @@ button {
   .orders-head,
   .offers-head {
     display: none;
+  }
+
+  .reports-panel-head,
+  .report-chip-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .report-bar-track {
+    height: 110px;
   }
 }

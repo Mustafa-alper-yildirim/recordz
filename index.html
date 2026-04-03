@@ -45,6 +45,7 @@
         <button class="nav-link" data-view="products">Urunler</button>
         <button class="nav-link" data-view="stocks">Stoklar</button>
         <button class="nav-link" data-view="finance">Muhasebe</button>
+        <button class="nav-link" data-view="reports">Raporlar</button>
         <button class="nav-link" data-view="personnel">Personel</button>
         <button class="nav-link" data-view="settings">Ayarlar</button>
       </nav>
@@ -393,6 +394,73 @@
             <h2>Maliyet Analizi</h2>
           </div>
           <div class="card-list" id="financeList"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-reports">
+        <section class="summary-grid finance-grid">
+          <article class="summary-card">
+            <div><span>Aylik Siparis</span><strong id="reportMonthlyOrders">0</strong></div>
+            <div class="summary-icon blue">R</div>
+          </article>
+          <article class="summary-card">
+            <div><span>Aylik Ciro</span><strong id="reportMonthlyRevenue">0 TL</strong></div>
+            <div class="summary-icon green">C</div>
+          </article>
+          <article class="summary-card">
+            <div><span>Aktif Cari</span><strong id="reportActiveCari">0</strong></div>
+            <div class="summary-icon gold">A</div>
+          </article>
+          <article class="summary-card">
+            <div><span>Toplam Personel</span><strong id="reportPersonnelCount">0</strong></div>
+            <div class="summary-icon pink">P</div>
+          </article>
+        </section>
+
+        <section class="content-grid reports-grid">
+          <article class="panel reports-panel">
+            <div class="reports-panel-head">
+              <div>
+                <h2>Siparis Trendi</h2>
+                <p>Son alti ayin siparis yogunlugu ve cirosu icin temel gosterge.</p>
+              </div>
+              <div class="report-chip-row" id="reportFilterChips">
+                <button class="report-chip active" type="button">30 Gun</button>
+                <button class="report-chip" type="button">90 Gun</button>
+                <button class="report-chip" type="button">Yil</button>
+              </div>
+            </div>
+            <div class="report-bars" id="reportsTrendBars"></div>
+          </article>
+
+          <article class="panel reports-panel">
+            <div class="reports-panel-head">
+              <div>
+                <h2>Hazir Rapor Kartlari</h2>
+                <p>Tek tikla detaylandirilabilecek alanlar icin baslangic kutulari.</p>
+              </div>
+            </div>
+            <div class="report-cards" id="reportCardsList">
+              <article class="report-mini-card">
+                <strong>Satis Raporu</strong>
+                <span>Durum yukleniyor...</span>
+              </article>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel list-panel">
+          <div class="panel-header-row">
+            <h2>Raporlar Ozeti</h2>
+          </div>
+          <div class="card-list" id="reportsSummaryList"></div>
+        </section>
+
+        <section class="panel list-panel">
+          <div class="panel-header-row">
+            <h2>Takip Listesi</h2>
+          </div>
+          <div class="card-list" id="reportsActionList"></div>
         </section>
       </section>
 

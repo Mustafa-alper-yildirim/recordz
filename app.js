@@ -50,6 +50,7 @@ const viewMeta = {
   products: ["Urun ve Kapak Fiyatlari", "Alis, satis ve m2 fiyatlarini detayli yonetin.", "+ Yeni Urun"],
   stocks: ["Stok ve Hammadde", "Hammadde ve stok kalemlerini miktar ve birim fiyatlariyla izleyin.", "+ Yeni Stok"],
   finance: ["Muhasebe ve Maliyet", "Hammadde, iscilik ve genel giderleri analiz edin.", "+ Yeni Gider"],
+  reports: ["Raporlar", "Siparis, ciro, cari ve personel raporlarini bu ekranda izleyin.", "+ Rapor Olustur"],
   personnel: ["Personel Takibi", "Ozluk, maas ve mesai bilgilerini kayit altina alin.", "+ Yeni Personel"],
   settings: ["Ayarlar", "Programin kullanim notlari ve demo sifirlama islemleri.", "Panele Don"],
 };
@@ -73,6 +74,7 @@ primaryActionBtn?.addEventListener("click", () => {
     products: ["products", forms.product],
     stocks: ["stocks", forms.stock],
     finance: ["finance", forms.finance],
+    reports: ["reports", null],
     personnel: ["personnel", forms.personnel],
     settings: ["dashboard", null],
   };
@@ -509,6 +511,7 @@ async function refreshUI() {
   renderProducts(cache.products);
   renderStocks(cache.stocks);
   renderFinance(cache.finance, cache.products, cache.orders);
+  renderReports(cache);
   renderPersonnel(cache.personnel);
   renderCariStatements(cache.cari, cache.movements, cache.orders);
   bindActions();
@@ -698,6 +701,164 @@ function renderFinance(finance, products, orders) {
       <div class="entity-actions"><button class="ghost-action delete-btn" data-store="${STORES.finance}" data-id="${item.id}">Sil</button></div>
     </article>
   `).join("") : `<div class="entity-card empty-state">Maliyet kalemi bulunamadi.</div>`;
+}
+
+function renderReports(data) {
+  const orders = data.orders || [];
+  const monthlyOrders = orders.length;
+  const monthlyRevenue = orders.reduce((sum, item) => sum + Number(item.netTotal || 0), 0);
+  const activeCari = (data.cari || []).length;
+  const personnelCount = (data.personnel || []).length;
+  const inProduction = orders.filter((item) => normalizeStatus(item.status) === "Uretim").length;
+  const completed = orders.filter((item) => normalizeStatus(item.status) === "Tamamlandi").length;
+  const waitingOffers = (data.offers || []).filter((item) => item.status === "Beklemede").length;
+
+  const monthlyOrdersEl = document.getElementById("reportMonthlyOrders");
+  const monthlyRevenueEl = document.getElementById("reportMonthlyRevenue");
+  const activeCariEl = document.getElementById("reportActiveCari");
+  const personnelCountEl = document.getElementById("reportPersonnelCount");
+  const reportsSummaryList = document.getElementById("reportsSummaryList");
+  const reportsTrendBars = document.getElementById("reportsTrendBars");
+  const reportCardsList = document.getElementById("reportCardsList");
+  const reportsActionList = document.getElementById("reportsActionList");
+
+  if (monthlyOrdersEl) monthlyOrdersEl.textContent = String(monthlyOrders);
+  if (monthlyRevenueEl) monthlyRevenueEl.textContent = formatCurrency(monthlyRevenue);
+  if (activeCariEl) activeCariEl.textContent = String(activeCari);
+  if (personnelCountEl) personnelCountEl.textContent = String(personnelCount);
+
+  if (reportsTrendBars) {
+    const monthlyBuckets = buildMonthlyReportBuckets(orders);
+    const maxValue = Math.max(...monthlyBuckets.map((item) => item.count), 1);
+    reportsTrendBars.innerHTML = monthlyBuckets.map((item) => `
+      <div class="report-bar-column">
+        <span>${item.label}</span>
+        <div class="report-bar-track">
+          <div class="report-bar-fill" style="height:${Math.max((item.count / maxValue) * 100, item.count ? 12 : 4)}%"></div>
+        </div>
+        <strong>${item.count}</strong>
+        <small>${formatCurrency(item.revenue)}</small>
+      </div>
+    `).join("");
+  }
+
+  if (reportCardsList) {
+    reportCardsList.innerHTML = `
+      <article class="report-mini-card">
+        <strong>Satis Raporu</strong>
+        <span>Toplam ciro ${formatCurrency(monthlyRevenue)}</span>
+      </article>
+      <article class="report-mini-card">
+        <strong>Uretim Raporu</strong>
+        <span>Uretimde bekleyen siparis ${inProduction}</span>
+      </article>
+      <article class="report-mini-card">
+        <strong>Teklif Raporu</strong>
+        <span>Onay bekleyen teklif ${waitingOffers}</span>
+      </article>
+      <article class="report-mini-card">
+        <strong>Personel Raporu</strong>
+        <span>Kayitli personel ${personnelCount}</span>
+      </article>
+    `;
+  }
+
+  if (reportsSummaryList) {
+    reportsSummaryList.innerHTML = `
+      <article class="entity-card">
+        <div>
+          <strong>Siparis ve Ciro Ozet</strong>
+          <span>Toplam siparis adedi: ${monthlyOrders}</span>
+        </div>
+        <div>
+          <small>Toplam ciro: ${formatCurrency(monthlyRevenue)}</small>
+          <span>Aktif cari: ${activeCari}</span>
+        </div>
+        <div class="entity-actions">
+          <button class="ghost-action" type="button">Hazir</button>
+        </div>
+      </article>
+      <article class="entity-card">
+        <div>
+          <strong>Personel ve Operasyon</strong>
+          <span>Kayitli personel sayisi: ${personnelCount}</span>
+        </div>
+        <div>
+          <small>Bu alan ileride filtreli raporlar icin genisletilebilir.</small>
+        </div>
+        <div class="entity-actions">
+          <button class="ghost-action" type="button">Hazir</button>
+        </div>
+      </article>
+      <article class="entity-card">
+        <div>
+          <strong>Tamamlanma Performansi</strong>
+          <span>Tamamlanan siparis sayisi: ${completed}</span>
+        </div>
+        <div>
+          <small>Aktif uretim: ${inProduction}</small>
+          <span>Bekleyen teklif: ${waitingOffers}</span>
+        </div>
+        <div class="entity-actions">
+          <button class="ghost-action" type="button">Hazir</button>
+        </div>
+      </article>
+    `;
+  }
+
+  if (reportsActionList) {
+    reportsActionList.innerHTML = `
+      <article class="entity-card">
+        <div>
+          <strong>Cari Risk Raporu</strong>
+          <span>Bakiye ve risk limiti analizi icin bu alan genisletilebilir.</span>
+        </div>
+        <div><small>Sonraki adim: limit asim uyarilari</small></div>
+        <div class="entity-actions"><button class="ghost-action" type="button">Planli</button></div>
+      </article>
+      <article class="entity-card">
+        <div>
+          <strong>Termin Gecikme Raporu</strong>
+          <span>Teslim tarihi gecen siparisleri ayri listede izleyebilirsiniz.</span>
+        </div>
+        <div><small>Sonraki adim: geciken siparis filtresi</small></div>
+        <div class="entity-actions"><button class="ghost-action" type="button">Planli</button></div>
+      </article>
+      <article class="entity-card">
+        <div>
+          <strong>Maliyet Karsilastirma Raporu</strong>
+          <span>Hammadde, iscilik ve genel giderlerin aylik dagilimi burada toplanabilir.</span>
+        </div>
+        <div><small>Sonraki adim: kategori bazli grafik</small></div>
+        <div class="entity-actions"><button class="ghost-action" type="button">Planli</button></div>
+      </article>
+    `;
+  }
+}
+
+function buildMonthlyReportBuckets(orders) {
+  const formatter = new Intl.DateTimeFormat("tr-TR", { month: "short" });
+  const now = new Date();
+  const buckets = [];
+
+  for (let index = 5; index >= 0; index -= 1) {
+    const date = new Date(now.getFullYear(), now.getMonth() - index, 1);
+    const month = date.getMonth();
+    const year = date.getFullYear();
+    const items = orders.filter((item) => {
+      const sourceDate = item.orderDate || item.createdAt;
+      if (!sourceDate) return false;
+      const orderDate = new Date(sourceDate);
+      return orderDate.getMonth() === month && orderDate.getFullYear() === year;
+    });
+    buckets.push({
+      label: formatter.format(date),
+      count: items.length,
+      revenue: items.reduce((sum, item) => sum + Number(item.netTotal || 0), 0),
+    });
+  }
+
+  return buckets;
 }
 
 function renderPersonnel(records) {
