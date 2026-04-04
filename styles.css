@@ -707,14 +707,20 @@ button {
 
 .cari-layout {
   display: grid;
-  grid-template-columns: minmax(270px, 0.82fr) minmax(0, 1.35fr);
-  gap: 18px;
-  margin-bottom: 18px;
+  grid-template-columns: minmax(230px, 0.72fr) minmax(0, 1.42fr);
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
 .cari-list-panel,
 .cari-form-panel {
-  padding: 18px;
+  padding: 14px;
+}
+
+.cari-list-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 760px;
 }
 
 .cari-panel-head {
@@ -738,19 +744,159 @@ button {
 
 .cari-filter-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) repeat(3, 140px);
+  grid-template-columns: minmax(0, 1.5fr) repeat(4, minmax(84px, 1fr));
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.cari-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.cari-stat-card {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #f8fbff;
+}
+
+.cari-stat-card span,
+.cari-stat-card strong {
+  display: block;
+}
+
+.cari-stat-card span {
+  margin-bottom: 3px;
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.cari-stat-card strong {
+  font-size: 13px;
+}
+
+.cari-sticky-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
-  margin-bottom: 12px;
+  align-items: center;
+  padding: 9px 10px;
+  margin-bottom: 8px;
+  border: 1px solid rgba(47, 111, 237, 0.15);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #f5f9ff 0%, #eef5ff 100%);
+}
+
+.cari-sticky-bar strong,
+.cari-sticky-bar span {
+  display: block;
+}
+
+.cari-sticky-bar strong {
+  font-size: 12px;
+}
+
+.cari-sticky-bar span {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.cari-sticky-balance {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue);
+  white-space: nowrap;
+}
+
+.cari-mini-chart {
+    display: grid;
+    gap: 5px;
+    margin-top: 10px;
+  }
+
+.cari-mini-row {
+  display: grid;
+  grid-template-columns: minmax(0, 74px) minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.cari-mini-row span,
+.cari-mini-row strong {
+  font-size: 9px;
+}
+
+.cari-mini-row span {
+  color: var(--text-muted);
+}
+
+.cari-mini-bar {
+  position: relative;
+  height: 7px;
+  border-radius: 999px;
+  background: #edf2f8;
+  overflow: hidden;
+}
+
+.cari-mini-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.cari-mini-bar.is-debt i {
+  background: linear-gradient(90deg, #ff9b7d 0%, #df5b38 100%);
+}
+
+.cari-mini-bar.is-credit i {
+  background: linear-gradient(90deg, #7cc7ff 0%, #2f6fed 100%);
+}
+
+.cari-mini-empty {
+  padding: 8px 10px;
+  border: 1px dashed var(--line);
+  border-radius: 9px;
+  color: var(--text-muted);
+  font-size: 10px;
 }
 
 .compact-card-list {
-  gap: 10px;
-}
+    gap: 6px;
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 470px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 6px;
+    scrollbar-gutter: stable;
+  }
+
+.compact-card-list::-webkit-scrollbar {
+    width: 10px;
+  }
+
+.compact-card-list::-webkit-scrollbar-track {
+    background: #eef2f7;
+    border-radius: 999px;
+  }
+
+.compact-card-list::-webkit-scrollbar-thumb {
+    background: #c5d3e3;
+    border-radius: 999px;
+    border: 2px solid #eef2f7;
+  }
+
+.compact-card-list::-webkit-scrollbar-thumb:hover {
+    background: #9fb6d1;
+  }
 
 .compact-card-list .entity-card {
   grid-template-columns: 1.1fr 0.9fr 0.9fr auto;
-  padding: 12px 14px;
-  border-radius: 12px;
+  padding: 8px 10px;
+  border-radius: 9px;
   cursor: pointer;
   position: relative;
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
@@ -774,12 +920,12 @@ button {
 }
 
 .compact-card-list .entity-card strong {
-  font-size: 13px;
+  font-size: 11px;
 }
 
 .compact-card-list .entity-card span,
 .compact-card-list .entity-card small {
-  font-size: 11px;
+  font-size: 9px;
 }
 
 .compact-card-list .entity-card.is-selected {
@@ -1324,6 +1470,8 @@ button {
   .offer-builder-layout,
   .cari-layout,
   .cari-filter-bar,
+  .cari-stats-grid,
+  .cari-sticky-bar,
   .cari-form-grid,
   .report-cards,
   .report-bars,
@@ -1365,4 +1513,12 @@ button {
   .compact-card-list .entity-card {
     grid-template-columns: 1fr;
   }
-}
+
+  .compact-card-list {
+      max-height: none;
+    }
+
+  .cari-list-panel {
+      min-height: auto;
+    }
+  }

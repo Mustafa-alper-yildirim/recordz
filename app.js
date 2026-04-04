@@ -36,6 +36,7 @@ const offerProductsList = document.getElementById("offerProductsList");
 const offerProductSearch = document.getElementById("offerProductSearch");
 const offerOnlyCovers = document.getElementById("offerOnlyCovers");
 const cariSearch = document.getElementById("cariSearch");
+const cariLetterFilter = document.getElementById("cariLetterFilter");
 const cariTypeFilter = document.getElementById("cariTypeFilter");
 const cariBalanceFilter = document.getElementById("cariBalanceFilter");
 const cariSort = document.getElementById("cariSort");
@@ -43,6 +44,12 @@ const cariList = document.getElementById("cariList");
 const cariEditId = document.getElementById("cariEditId");
 const clearCariSelectionBtn = document.getElementById("clearCariSelectionBtn");
 const cariSubmitBtn = document.getElementById("cariSubmitBtn");
+const cariStickyName = document.getElementById("cariStickyName");
+const cariStickyMeta = document.getElementById("cariStickyMeta");
+const cariStickyBalance = document.getElementById("cariStickyBalance");
+const cariStatDebtAmount = document.getElementById("cariStatDebtAmount");
+const cariStatCreditAmount = document.getElementById("cariStatCreditAmount");
+const cariMiniChart = document.getElementById("cariMiniChart");
 const cariDetailBadge = document.getElementById("cariDetailBadge");
 const cariDetailCompany = document.getElementById("cariDetailCompany");
 const cariDetailName = document.getElementById("cariDetailName");
@@ -92,6 +99,8 @@ const viewMeta = {
 let currentView = "dashboard";
 let cache = {};
 let selectedCariId = null;
+
+populateCariLetterFilter();
 
 if (menuToggle && sidebar) {
   menuToggle.addEventListener("click", () => sidebar.classList.toggle("open"));
@@ -299,6 +308,7 @@ forms.personnel?.addEventListener("submit", async (event) => {
 
 orderSearch?.addEventListener("input", () => renderOrdersTable(cache.orders || []));
 cariSearch?.addEventListener("input", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
+cariLetterFilter?.addEventListener("change", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
 cariTypeFilter?.addEventListener("change", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
 cariBalanceFilter?.addEventListener("change", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
 cariSort?.addEventListener("change", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
@@ -919,6 +929,7 @@ function clearCariSelection() {
   forms.cari?.reset();
   if (cariEditId) cariEditId.value = "";
   if (cariSubmitBtn) cariSubmitBtn.textContent = "Cariyi Kaydet";
+  renderCariSticky(null, [], []);
   renderCariDetail(null, [], []);
 }
 
@@ -936,12 +947,39 @@ function fillCariForm(cari) {
   setCariFormValue("riskLimit", String(cari.riskLimit || 0));
   setCariFormValue("type", cari.type || "Musteri");
   if (cariSubmitBtn) cariSubmitBtn.textContent = "Cariyi Guncelle";
+  renderCariSticky(cari, cache.movements || [], cache.orders || []);
   renderCariDetail(cari, cache.movements || [], cache.orders || []);
 }
 
 function setCariFormValue(name, value) {
   const input = forms.cari?.querySelector(`[name="${name}"]`);
   if (input) input.value = value;
+}
+
+function populateCariLetterFilter() {
+  if (!cariLetterFilter || cariLetterFilter.options.length > 5) return;
+  const letters = ["", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "R", "S", "T", "U", "V", "Y", "Z"];
+  cariLetterFilter.innerHTML = letters
+    .map((letter) => `<option value="${letter}">${letter || "Tum Harfler"}</option>`)
+    .join("");
+}
+
+function renderCariSticky(cari, movements, orders) {
+  if (!cari) {
+    if (cariStickyName) cariStickyName.textContent = "Cari secilmedi";
+    if (cariStickyMeta) cariStickyMeta.textContent = "Listeden bir cari secin.";
+    if (cariStickyBalance) cariStickyBalance.textContent = formatCurrency(0);
+    return;
+  }
+
+  const balance = calcCariBalance(cari.id, movements, orders);
+  const meta = [cari.type || "-", cari.phone || "-", getCariLastMovementText(cari.id, movements)]
+    .filter(Boolean)
+    .join(" • ");
+
+  if (cariStickyName) cariStickyName.textContent = cari.companyName || cari.fullName || "Cari";
+  if (cariStickyMeta) cariStickyMeta.textContent = meta;
+  if (cariStickyBalance) cariStickyBalance.textContent = formatCurrency(balance);
 }
 
 function renderCariDetail(cari, movements, orders) {
@@ -983,38 +1021,74 @@ function renderCari(records, movements, orders) {
   const totalEl = document.getElementById("cariStatTotal");
   const debtEl = document.getElementById("cariStatDebt");
   const riskEl = document.getElementById("cariStatRisk");
+  const debtAmountEl = cariStatDebtAmount;
+  const creditAmountEl = cariStatCreditAmount;
   const searchTerm = cariSearch?.value?.trim().toLowerCase() || "";
+  const letterFilter = cariLetterFilter?.value || "";
   const typeTerm = cariTypeFilter?.value || "";
   const balanceFilter = cariBalanceFilter?.value || "";
   const sortMode = cariSort?.value || "selected";
-  const debtCount = (records || []).filter((item) => calcCariBalance(item.id, movements, orders) > 0).length;
+  const balances = new Map((records || []).map((item) => [item.id, calcCariBalance(item.id, movements, orders)]));
+  const debtCount = (records || []).filter((item) => (balances.get(item.id) || 0) > 0).length;
   const riskCount = (records || []).filter((item) => isCariLimitExceeded(item.id, movements, orders, item.balanceLimit)).length;
+  const debtAmount = (records || []).reduce((sum, item) => sum + Math.max(0, balances.get(item.id) || 0), 0);
+  const creditAmount = (records || []).reduce((sum, item) => sum + Math.abs(Math.min(0, balances.get(item.id) || 0)), 0);
   if (totalEl) totalEl.textContent = String((records || []).length);
   if (debtEl) debtEl.textContent = String(debtCount);
   if (riskEl) riskEl.textContent = String(riskCount);
+  if (debtAmountEl) debtAmountEl.textContent = formatCurrency(debtAmount);
+  if (creditAmountEl) creditAmountEl.textContent = formatCurrency(creditAmount);
   const filtered = (records || []).filter((item) => {
-    const haystack = [item.companyName, item.fullName, item.phone, item.taxNumber].join(" ").toLowerCase();
-    const matchesSearch = !searchTerm || haystack.includes(searchTerm);
-    const matchesType = !typeTerm || item.type === typeTerm;
-    const balance = calcCariBalance(item.id, movements, orders);
-    const exceeds = isCariLimitExceeded(item.id, movements, orders, item.balanceLimit);
-    const matchesBalance =
-      !balanceFilter ||
-      (balanceFilter === "debt" && balance > 0) ||
-      (balanceFilter === "credit" && balance <= 0) ||
-      (balanceFilter === "risk" && exceeds);
-    return matchesSearch && matchesType && matchesBalance;
-  });
+      const haystack = [item.companyName, item.fullName, item.phone, item.taxNumber].join(" ").toLowerCase();
+      const matchesSearch = !searchTerm || haystack.includes(searchTerm);
+      const firstLetterSource = String(item.companyName || item.fullName || "").trim().charAt(0).toUpperCase();
+      const matchesLetter = !letterFilter || firstLetterSource === letterFilter;
+      const matchesType = !typeTerm || item.type === typeTerm;
+      const balance = balances.get(item.id) || 0;
+      const exceeds = isCariLimitExceeded(item.id, movements, orders, item.balanceLimit);
+      const matchesBalance =
+        !balanceFilter ||
+        (balanceFilter === "debt" && balance > 0) ||
+        (balanceFilter === "credit" && balance <= 0) ||
+        (balanceFilter === "risk" && exceeds);
+      return matchesSearch && matchesLetter && matchesType && matchesBalance;
+    });
   const sorted = [...filtered].sort((left, right) => sortCariRecords(left, right, movements, orders, sortMode));
+  const selectedCari = (records || []).find((item) => item.id === selectedCariId) || null;
 
-  target.innerHTML = sorted.length ? sorted.map((item) => `
-    <article class="entity-card cari-card ${selectedCariId === item.id ? "is-selected" : ""} ${isCariLimitExceeded(item.id, movements, orders, item.balanceLimit) ? "is-risk" : ""}" data-cari-select="${item.id}">
-      <div><strong>${escapeHtml(item.companyName || item.fullName)}</strong><span>${escapeHtml(item.fullName)}</span></div>
-      <div><small>${escapeHtml(item.phone)}</small><span>${escapeHtml(item.type)} | Iskonto %${item.discountRate || 0}</span></div>
-      <div><small>${getCariLastMovementText(item.id, movements)}</small><span>Bakiye ${formatCurrency(calcCariBalance(item.id, movements, orders))}</span></div>
-      <div class="entity-actions"><button class="ghost-action delete-btn" data-store="${STORES.cari}" data-id="${item.id}">Sil</button></div>
-    </article>
-  `).join("") : `<div class="entity-card empty-state">Cari kaydi bulunamadi.</div>`;
+  renderCariSticky(selectedCari, movements, orders);
+  renderCariMiniChart(records || [], balances);
+
+    target.innerHTML = sorted.length ? sorted.map((item) => `
+      <article class="entity-card cari-card ${selectedCariId === item.id ? "is-selected" : ""} ${isCariLimitExceeded(item.id, movements, orders, item.balanceLimit) ? "is-risk" : ""}" data-cari-select="${item.id}">
+        <div><strong>${escapeHtml(item.companyName || item.fullName)}</strong><span>${escapeHtml(item.fullName || item.type || "-")}</span></div>
+        <div><small>${escapeHtml(item.phone || "-")}</small><span>${escapeHtml(item.type)} | Iskonto %${item.discountRate || 0}</span></div>
+        <div><small>${getCariLastMovementText(item.id, movements)}</small><span>Bakiye ${formatCurrency(balances.get(item.id) || 0)}</span></div>
+        <div class="entity-actions"><button class="ghost-action delete-btn" data-store="${STORES.cari}" data-id="${item.id}">Sil</button></div>
+      </article>
+    `).join("") : `<div class="entity-card empty-state">Cari kaydi bulunamadi.</div>`;
+  }
+
+function renderCariMiniChart(records, balances) {
+  if (!cariMiniChart) return;
+  const sorted = [...(records || [])]
+    .sort((left, right) => Math.abs(balances.get(right.id) || 0) - Math.abs(balances.get(left.id) || 0))
+    .slice(0, 6);
+  const maxValue = sorted.reduce((max, item) => Math.max(max, Math.abs(balances.get(item.id) || 0)), 0) || 1;
+
+  cariMiniChart.innerHTML = sorted.length ? sorted.map((item) => {
+    const value = balances.get(item.id) || 0;
+    const width = Math.max(8, Math.round((Math.abs(value) / maxValue) * 100));
+    return `
+      <div class="cari-mini-row" title="${escapeHtml(item.companyName || item.fullName || "Cari")} - ${formatCurrency(value)}">
+        <span>${escapeHtml(shortenText(item.companyName || item.fullName || "Cari", 18))}</span>
+        <div class="cari-mini-bar ${value > 0 ? "is-debt" : "is-credit"}">
+          <i style="width:${width}%"></i>
+        </div>
+        <strong>${formatCompactCurrency(value)}</strong>
+      </div>
+    `;
+  }).join("") : `<div class="cari-mini-empty">Grafik icin cari verisi bulunamadi.</div>`;
 }
 
 function sortCariRecords(left, right, movements, orders, mode) {
@@ -1695,14 +1769,24 @@ function normalizeStatus(status) {
 }
 
 function formatCurrency(value) {
-  return `${Number(value || 0).toLocaleString("tr-TR")} TL`;
-}
+    return `${Number(value || 0).toLocaleString("tr-TR")} TL`;
+  }
 
-function formatDate(value) {
-  if (!value) return "-";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? escapeHtml(String(value)) : date.toLocaleDateString("tr-TR");
-}
+function formatCompactCurrency(value) {
+    return `${Number(value || 0).toLocaleString("tr-TR", { maximumFractionDigits: 0 })} TL`;
+  }
+
+  function formatDate(value) {
+    if (!value) return "-";
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? escapeHtml(String(value)) : date.toLocaleDateString("tr-TR");
+  }
+
+function shortenText(value, limit = 20) {
+    const text = String(value || "");
+    if (text.length <= limit) return text;
+    return `${text.slice(0, Math.max(0, limit - 3))}...`;
+  }
 
 function escapeHtml(value) {
   return String(value ?? "")
