@@ -153,34 +153,97 @@
       </section>
 
       <section class="view" id="view-cari">
-        <section class="panel form-panel">
-          <div class="panel-header-row compact">
-            <h2>Yeni Cari Kaydi</h2>
-          </div>
-          <form id="cariForm" class="form-grid three-col">
-            <label><span>Adi Soyadi</span><input name="fullName" type="text" required></label>
-            <label><span>Firma Ismi</span><input name="companyName" type="text" required></label>
-            <label><span>Telefon No</span><input name="phone" type="text" required></label>
-            <label><span>Vergi Dairesi</span><input name="taxOffice" type="text"></label>
-            <label><span>Vergi Numarasi</span><input name="taxNumber" type="text"></label>
-            <label><span>Iskonto Orani (%)</span><input name="discountRate" type="number" min="0" max="100" step="0.01" value="0"></label>
-            <label><span>Bakiye Limiti</span><input name="balanceLimit" type="number" min="0" step="0.01" value="0"></label>
-            <label><span>Risk Limiti</span><input name="riskLimit" type="number" min="0" step="0.01" value="0"></label>
-            <label><span>Kayit Tipi</span>
-              <select name="type">
+        <section class="cari-layout">
+          <aside class="panel cari-list-panel">
+            <div class="cari-panel-head">
+              <div>
+                <h2>Cari Listesi</h2>
+                <p>Musteri ve tedarikcileri filtreleyip hizli secin.</p>
+              </div>
+            </div>
+            <div class="cari-filter-bar">
+              <input id="cariSearch" class="table-search" type="search" placeholder="Firma, kisi veya telefon ara">
+              <select id="cariTypeFilter">
+                <option value="">Tum Kayitlar</option>
                 <option value="Musteri">Musteri</option>
                 <option value="Tedarikci">Tedarikci</option>
                 <option value="Musteri/Tedarikci">Musteri/Tedarikci</option>
               </select>
-            </label>
-            <button class="primary-btn form-submit" type="submit">Cariyi Kaydet</button>
-          </form>
-        </section>
-        <section class="panel list-panel">
-          <div class="panel-header-row">
-            <h2>Cari Listesi</h2>
-          </div>
-          <div class="card-list" id="cariList"></div>
+              <select id="cariBalanceFilter">
+                <option value="">Tum Durumlar</option>
+                <option value="debt">Borclu</option>
+                <option value="credit">Alacakli</option>
+                <option value="risk">Limit Asimi</option>
+              </select>
+              <select id="cariSort">
+                <option value="selected">Secili Kayit Once</option>
+                <option value="name-asc">Firma A-Z</option>
+                <option value="name-desc">Firma Z-A</option>
+                <option value="balance-desc">Bakiye Yuksekten</option>
+                <option value="balance-asc">Bakiye Dusukten</option>
+                <option value="movement-desc">Son Hareket En Yeni</option>
+              </select>
+            </div>
+            <div class="cari-stats-grid">
+              <article class="cari-stat-card">
+                <span>Toplam Cari</span>
+                <strong id="cariStatTotal">0</strong>
+              </article>
+              <article class="cari-stat-card">
+                <span>Borclu Cari</span>
+                <strong id="cariStatDebt">0</strong>
+              </article>
+              <article class="cari-stat-card">
+                <span>Limit Asimi</span>
+                <strong id="cariStatRisk">0</strong>
+              </article>
+            </div>
+            <div class="card-list compact-card-list" id="cariList"></div>
+          </aside>
+
+          <section class="panel cari-form-panel">
+            <div class="cari-panel-head">
+              <div>
+                <h2>Yeni Cari Kaydi</h2>
+                <p>Cari bilgilerini sagdaki sade formdan girin.</p>
+              </div>
+              <button class="ghost-action" id="clearCariSelectionBtn" type="button">Yeni Kayit</button>
+            </div>
+            <form id="cariForm" class="cari-form-grid">
+              <input id="cariEditId" type="hidden">
+              <label><span>Adi Soyadi</span><input name="fullName" type="text" required></label>
+              <label><span>Firma Ismi</span><input name="companyName" type="text" required></label>
+              <label><span>Telefon No</span><input name="phone" type="text" required></label>
+              <label><span>Vergi Dairesi</span><input name="taxOffice" type="text"></label>
+              <label><span>Vergi Numarasi</span><input name="taxNumber" type="text"></label>
+              <label><span>Kayit Tipi</span>
+                <select name="type">
+                  <option value="Musteri">Musteri</option>
+                  <option value="Tedarikci">Tedarikci</option>
+                  <option value="Musteri/Tedarikci">Musteri/Tedarikci</option>
+                </select>
+              </label>
+              <label><span>Iskonto Orani (%)</span><input name="discountRate" type="number" min="0" max="100" step="0.01" value="0"></label>
+              <label><span>Bakiye Limiti</span><input name="balanceLimit" type="number" min="0" step="0.01" value="0"></label>
+              <label><span>Risk Limiti</span><input name="riskLimit" type="number" min="0" step="0.01" value="0"></label>
+              <button class="primary-btn form-submit" id="cariSubmitBtn" type="submit">Cariyi Kaydet</button>
+            </form>
+
+            <div class="cari-detail-panel" id="cariDetailPanel">
+              <div class="cari-detail-head">
+                <h3>Cari Detayi</h3>
+                <span id="cariDetailBadge" class="cari-status-badge">Secim Yok</span>
+              </div>
+              <div class="cari-detail-grid">
+                <div><small>Firma</small><strong id="cariDetailCompany">-</strong></div>
+                <div><small>Kisi</small><strong id="cariDetailName">-</strong></div>
+                <div><small>Telefon</small><strong id="cariDetailPhone">-</strong></div>
+                <div><small>Son Hareket</small><strong id="cariDetailLastMovement">-</strong></div>
+                <div><small>Bakiye</small><strong id="cariDetailBalance">0 TL</strong></div>
+                <div><small>Risk Limiti</small><strong id="cariDetailLimit">0 TL</strong></div>
+              </div>
+            </div>
+          </section>
         </section>
         <section class="panel form-panel">
           <div class="panel-header-row compact">
@@ -218,23 +281,101 @@
       <section class="view" id="view-offers">
         <section class="panel form-panel">
           <div class="panel-header-row compact">
-            <h2>Yeni Teklif Olustur</h2>
+            <h2>Kapak Teklif / Siparis Formu</h2>
           </div>
-          <form id="offerForm" class="form-grid three-col">
-            <label><span>Cari</span><select name="cariId" id="offerCariSelect" required></select></label>
-            <label><span>Kapak Cinsi</span><input name="coverType" type="text" required></label>
-            <label><span>Renk</span><input name="color" type="text" required></label>
-            <label><span>En (mm)</span><input name="width" type="number" min="0" step="0.01" required></label>
-            <label><span>Boy (mm)</span><input name="height" type="number" min="0" step="0.01" required></label>
-            <label><span>Adet</span><input name="quantity" type="number" min="1" step="1" required></label>
-            <label><span>Kargo/Sevkiyat</span><input name="shipment" type="text" placeholder="Ambar, kargo, sevkiyat notu"></label>
-            <label><span>Siparis Tarihi</span><input name="orderDate" type="date" required></label>
-            <label><span>Termin Gun Sayisi</span><input name="termDays" type="number" min="0" step="1" required></label>
-            <label><span>Teslim Tarihi</span><input name="deliveryDate" type="date" required></label>
-            <label><span>Birim Fiyat</span><input name="unitPrice" type="number" min="0" step="0.01" required></label>
-            <label><span>Sozlesme</span><input name="contractText" type="text" placeholder="Ayrintili sozlesme metni veya ozet"></label>
-            <button class="primary-btn form-submit" type="submit">Teklifi Kaydet</button>
-          </form>
+          <div class="offer-builder-layout">
+            <aside class="offer-products-panel">
+              <div class="offer-products-head">
+                <h3>Urunler</h3>
+                <p>Kapak ve urunleri listeden secip teklif kalemine aktarabilirsiniz.</p>
+              </div>
+              <label class="offer-products-filter">
+                <input id="offerOnlyCovers" type="checkbox">
+                <span>Sadece kapaklari goster</span>
+              </label>
+              <input id="offerProductSearch" class="table-search offer-product-search" type="search" placeholder="Urun veya kategori ara">
+              <div id="offerProductsList" class="offer-products-list"></div>
+            </aside>
+
+            <form id="offerForm" class="offer-form-layout">
+              <section class="offer-top-grid">
+                <label><span>Form Tipi</span>
+                  <select name="formType">
+                    <option value="Teklif Formu">Teklif Formu</option>
+                    <option value="Siparis Formu">Siparis Formu</option>
+                  </select>
+                </label>
+                <label><span>Teklif / Siparis No</span><input name="offerNoDisplay" id="offerNoDisplay" type="text" readonly></label>
+                <label><span>Cari / Firma</span><select name="cariId" id="offerCariSelect" required></select></label>
+                <label><span>Siparis Tarihi</span><input name="orderDate" type="date" required></label>
+                <label><span>Termin Suresi (Gun)</span><input name="termDays" type="number" min="0" step="1" required></label>
+                <label><span>Teslim Tarihi</span><input name="deliveryDate" type="date" required></label>
+                <label><span>Kargo / Sevkiyat</span><input name="shipment" type="text" placeholder="Ambar, sevkiyat notu"></label>
+                <label><span>Iskonto Orani (%)</span><input name="discountRate" id="offerDiscountRate" type="number" min="0" max="100" step="0.01" value="0"></label>
+                <label><span>KDV Orani (%)</span><input name="vatRate" type="number" min="0" max="100" step="0.01" value="20"></label>
+              </section>
+
+              <section class="offer-lines-panel">
+                <div class="offer-lines-head">
+                  <div>
+                    <h3>Kapak Siparis Kalemi</h3>
+                    <p>Soldan urun secin, olcu ve adet girin, sonra kalemi alt listeye ekleyin.</p>
+                  </div>
+                  <button class="primary-btn" id="addOfferLineBtn" type="button">Ekle</button>
+                </div>
+                <div class="offer-line-entry offer-lines-grid-head">
+                  <span>Boy</span>
+                  <span>En</span>
+                  <span>Adet</span>
+                  <span>Malzeme Listesi</span>
+                  <span>Kapak Cinsi</span>
+                  <span>Renk Kodu</span>
+                  <span>Birim Fiyat</span>
+                  <span>Aciklama</span>
+                </div>
+                <div class="offer-line-entry">
+                  <input id="offerLineHeight" type="number" min="0" step="0.01" placeholder="Boy">
+                  <input id="offerLineWidth" type="number" min="0" step="0.01" placeholder="En">
+                  <input id="offerLineQuantity" type="number" min="1" step="1" value="1" placeholder="Adet">
+                  <select id="offerLineMaterialGroup"></select>
+                  <select id="offerLineCoverType"></select>
+                  <input id="offerLineColor" type="text" placeholder="Renk kodu">
+                  <input id="offerLineUnitPrice" type="number" min="0" step="0.01" placeholder="Birim fiyat">
+                  <input id="offerLineNote" type="text" placeholder="Aciklama">
+                </div>
+
+                <div class="offer-lines-list-head">
+                  <h4>Eklenen Olculer</h4>
+                  <span id="offerLineCountLabel">0 kalem</span>
+                </div>
+                <div id="offerLinesContainer" class="offer-lines-stack"></div>
+              </section>
+
+              <section class="offer-summary-grid">
+                <article class="offer-summary-card">
+                  <span>Toplam Kapak Adeti</span>
+                  <strong id="offerSummaryQuantity">0</strong>
+                </article>
+                <article class="offer-summary-card">
+                  <span>Toplam M2</span>
+                  <strong id="offerSummaryM2">0</strong>
+                </article>
+                <article class="offer-summary-card">
+                  <span>Mal Hizmet Toplam</span>
+                  <strong id="offerSummaryGross">0 TL</strong>
+                </article>
+                <article class="offer-summary-card">
+                  <span>Vergiler Dahil Toplam</span>
+                  <strong id="offerSummaryGrand">0 TL</strong>
+                </article>
+              </section>
+
+              <section class="offer-bottom-grid">
+                <label class="offer-notes-field"><span>Siparis Aciklama / Sozlesme</span><textarea name="contractText" rows="5" placeholder="Siparis aciklamasi, teslim notlari ve teklif kosullari"></textarea></label>
+                <button class="primary-btn form-submit" type="submit">Teklifi Kaydet</button>
+              </section>
+            </form>
+          </div>
         </section>
         <section class="panel table-panel">
           <div class="panel-header-row">

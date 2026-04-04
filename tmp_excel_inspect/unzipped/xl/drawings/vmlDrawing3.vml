@@ -1,0 +1,33 @@
+<xml xmlns:v="urn:schemas-microsoft-com:vml"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel">
+ <o:shapelayout v:ext="edit">
+  <o:idmap v:ext="edit" data="13"/>
+ </o:shapelayout><v:shapetype id="_x0000_t201" coordsize="21600,21600" o:spt="201"
+  path="m,l,21600r21600,l21600,xe">
+  <v:stroke joinstyle="miter"/>
+  <v:path shadowok="f" o:extrusionok="f" strokeok="f" fillok="f" o:connecttype="rect"/>
+  <o:lock v:ext="edit" shapetype="t"/>
+ </v:shapetype><v:shape id="_x0000_s13313" type="#_x0000_t201" style='position:absolute;
+  margin-left:795pt;margin-top:59.25pt;width:75.75pt;height:30pt;z-index:1;
+  mso-wrap-style:tight' stroked="f" strokecolor="windowText [64]" o:insetmode="auto">
+  <o:lock v:ext="edit" rotation="t" text="t"/>
+  <x:ClientData ObjectType="List">
+   <x:SizeWithCells/>
+   <x:Anchor>
+    10, 18, 3, 3, 10, 119, 3, 43</x:Anchor>
+   <x:AutoLine>False</x:AutoLine>
+   <x:FmlaLink>Formül!$M$5</x:FmlaLink>
+   <x:Val>0</x:Val>
+   <x:Min>0</x:Min>
+   <x:Max>0</x:Max>
+   <x:Inc>1</x:Inc>
+   <x:Page>3</x:Page>
+   <x:Dx>22</x:Dx>
+   <x:FmlaRange>Formül!$N$2:$N$3</x:FmlaRange>
+   <x:Sel>1</x:Sel>
+   <x:NoThreeD2/>
+   <x:SelType>Single</x:SelType>
+   <x:LCT>Normal</x:LCT>
+  </x:ClientData>
+ </v:shape></xml>

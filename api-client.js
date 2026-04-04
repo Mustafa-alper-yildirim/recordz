@@ -65,6 +65,7 @@
     cari: {
       list: () => request("/cari"),
       create: (payload) => request("/cari", { method: "POST", body: JSON.stringify(payload) }),
+      update: (id, payload) => request(`/cari/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
       delete: (id) => request(`/cari/${id}`, { method: "DELETE" }),
       statement: (id) => request(`/cari/${id}/statement`),
     },

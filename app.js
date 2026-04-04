@@ -27,6 +27,29 @@ const sessionRole = document.getElementById("sessionRole");
 const printOfferBtn = document.getElementById("printOfferBtn");
 const pdfOfferBtn = document.getElementById("pdfOfferBtn");
 const offerPrintSelect = document.getElementById("offerPrintSelect");
+const offerLinesContainer = document.getElementById("offerLinesContainer");
+const addOfferLineBtn = document.getElementById("addOfferLineBtn");
+const offerNoDisplay = document.getElementById("offerNoDisplay");
+const offerDiscountRateInput = document.getElementById("offerDiscountRate");
+const offerLineCountLabel = document.getElementById("offerLineCountLabel");
+const offerProductsList = document.getElementById("offerProductsList");
+const offerProductSearch = document.getElementById("offerProductSearch");
+const offerOnlyCovers = document.getElementById("offerOnlyCovers");
+const cariSearch = document.getElementById("cariSearch");
+const cariTypeFilter = document.getElementById("cariTypeFilter");
+const cariBalanceFilter = document.getElementById("cariBalanceFilter");
+const cariSort = document.getElementById("cariSort");
+const cariList = document.getElementById("cariList");
+const cariEditId = document.getElementById("cariEditId");
+const clearCariSelectionBtn = document.getElementById("clearCariSelectionBtn");
+const cariSubmitBtn = document.getElementById("cariSubmitBtn");
+const cariDetailBadge = document.getElementById("cariDetailBadge");
+const cariDetailCompany = document.getElementById("cariDetailCompany");
+const cariDetailName = document.getElementById("cariDetailName");
+const cariDetailPhone = document.getElementById("cariDetailPhone");
+const cariDetailLastMovement = document.getElementById("cariDetailLastMovement");
+const cariDetailBalance = document.getElementById("cariDetailBalance");
+const cariDetailLimit = document.getElementById("cariDetailLimit");
 const roleControlledViews = {
   finance: document.querySelector('[data-view="finance"]'),
   personnel: document.querySelector('[data-view="personnel"]'),
@@ -40,6 +63,17 @@ const forms = {
   finance: document.getElementById("financeForm"),
   personnel: document.getElementById("personnelForm"),
   movement: document.getElementById("movementForm"),
+};
+
+const offerLineInputs = {
+  height: document.getElementById("offerLineHeight"),
+  width: document.getElementById("offerLineWidth"),
+  quantity: document.getElementById("offerLineQuantity"),
+  materialGroup: document.getElementById("offerLineMaterialGroup"),
+  coverType: document.getElementById("offerLineCoverType"),
+  color: document.getElementById("offerLineColor"),
+  unitPrice: document.getElementById("offerLineUnitPrice"),
+  note: document.getElementById("offerLineNote"),
 };
 
 const viewMeta = {
@@ -57,6 +91,7 @@ const viewMeta = {
 
 let currentView = "dashboard";
 let cache = {};
+let selectedCariId = null;
 
 if (menuToggle && sidebar) {
   menuToggle.addEventListener("click", () => sidebar.classList.toggle("open"));
@@ -110,7 +145,7 @@ logoutBtn?.addEventListener("click", async () => {
 forms.cari?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const data = formToObject(forms.cari);
-  await addRecord(STORES.cari, {
+  const payload = {
     fullName: data.fullName,
     companyName: data.companyName,
     phone: data.phone,
@@ -120,8 +155,23 @@ forms.cari?.addEventListener("submit", async (event) => {
     balanceLimit: Number(data.balanceLimit || 0),
     riskLimit: Number(data.riskLimit || 0),
     type: data.type,
-  });
-  forms.cari.reset();
+  };
+  if (cariEditId?.value) {
+    await api.cari.update(Number(cariEditId.value), {
+      full_name: payload.fullName,
+      company_name: payload.companyName,
+      phone: payload.phone,
+      tax_office: payload.taxOffice,
+      tax_number: payload.taxNumber,
+      discount_rate: payload.discountRate,
+      balance_limit: payload.balanceLimit,
+      risk_limit: payload.riskLimit,
+      type: payload.type,
+    });
+  } else {
+    await addRecord(STORES.cari, payload);
+  }
+  clearCariSelection();
   await refreshUI();
 });
 
@@ -143,34 +193,47 @@ forms.movement?.addEventListener("submit", async (event) => {
 forms.offer?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const data = formToObject(forms.offer);
+  const rows = collectOfferRows();
+  if (!rows.length) {
+    window.alert("En az bir kapak siparis satiri girmeniz gerekiyor.");
+    return;
+  }
   const cari = (cache.cari || []).find((item) => String(item.id) === String(data.cariId));
-  const quantity = Number(data.quantity || 0);
-  const unitPrice = Number(data.unitPrice || 0);
-  const grossTotal = quantity * unitPrice;
-  const discountRate = Number(cari?.discountRate || 0);
-  const netTotal = grossTotal * (1 - discountRate / 100);
+  const summary = calculateOfferSummary(rows, Number(data.discountRate || cari?.discountRate || 0), Number(data.vatRate || 0));
+  const firstRow = rows[0];
+  const offerNo = generateOfferNo();
+  const contractText = serializeOfferContract({
+    notes: data.contractText || "",
+    formType: data.formType,
+    vatRate: Number(data.vatRate || 0),
+    discountRate: Number(data.discountRate || 0),
+    rows,
+    summary,
+  });
 
   await addRecord(STORES.offers, {
-    offerNo: generateOfferNo(),
+    offerNo,
     cariId: Number(data.cariId),
-    coverType: data.coverType,
-    color: data.color,
-    width: Number(data.width || 0),
-    height: Number(data.height || 0),
-    quantity,
+    coverType: firstRow.coverType || `${rows.length} Kalem Kapak`,
+    color: firstRow.color || "Karışık",
+    width: Number(firstRow.width || 0),
+    height: Number(firstRow.height || 0),
+    quantity: summary.totalQuantity,
     shipment: data.shipment || "",
     orderDate: data.orderDate,
     termDays: Number(data.termDays || 0),
     deliveryDate: data.deliveryDate,
-    unitPrice,
-    grossTotal,
-    discountRate,
-    netTotal,
-    contractText: data.contractText || "",
+    unitPrice: Number(firstRow.unitPrice || 0),
+    grossTotal: summary.grossTotal,
+    discountRate: Number(data.discountRate || cari?.discountRate || 0),
+    netTotal: summary.grandTotal,
+    contractText,
     status: "Beklemede",
   });
   forms.offer.reset();
   setDefaultDates();
+  syncOfferDefaults();
+  initializeOfferLines(createDefaultOfferRows());
   await refreshUI();
 });
 
@@ -235,12 +298,39 @@ forms.personnel?.addEventListener("submit", async (event) => {
 });
 
 orderSearch?.addEventListener("input", () => renderOrdersTable(cache.orders || []));
+cariSearch?.addEventListener("input", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
+cariTypeFilter?.addEventListener("change", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
+cariBalanceFilter?.addEventListener("change", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
+cariSort?.addEventListener("change", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
+clearCariSelectionBtn?.addEventListener("click", clearCariSelection);
+cariList?.addEventListener("click", (event) => {
+  if (event.target.closest(".delete-btn")) return;
+  const card = event.target.closest("[data-cari-select]");
+  if (!card) return;
+  const cari = (cache.cari || []).find((item) => item.id === Number(card.dataset.cariSelect));
+  if (!cari) return;
+  fillCariForm(cari);
+  renderCari(cache.cari || [], cache.movements || [], cache.orders || []);
+  renderMovements(cache.movements || [], cache.cari || []);
+  renderCariStatements(cache.cari || [], cache.movements || [], cache.orders || []);
+});
 
 printOfferBtn?.addEventListener("click", () => handleOfferOutput(false));
 pdfOfferBtn?.addEventListener("click", () => handleOfferOutput(true));
+addOfferLineBtn?.addEventListener("click", () => appendOfferLine());
+offerLinesContainer?.addEventListener("click", handleOfferLineDelete);
+forms.offer?.querySelector("[name='discountRate']")?.addEventListener("input", () => recalcOfferSummary());
+forms.offer?.querySelector("[name='vatRate']")?.addEventListener("input", () => recalcOfferSummary());
+forms.offer?.querySelector("[name='cariId']")?.addEventListener("change", handleOfferCariChange);
+offerProductsList?.addEventListener("click", handleOfferProductPick);
+offerProductsList?.addEventListener("dblclick", handleOfferProductDoublePick);
+offerProductSearch?.addEventListener("input", () => renderOfferProductsPicker(cache.products || []));
+offerOnlyCovers?.addEventListener("change", () => renderOfferProductsPicker(cache.products || []));
 
 window.addEventListener("DOMContentLoaded", async () => {
   setDefaultDates();
+  syncOfferDefaults();
+  initializeOfferLines(createDefaultOfferRows());
   await ensureAutoLogin();
   await applyAuthState();
   if (getSession()) {
@@ -269,6 +359,278 @@ function setDefaultDates() {
   forms.movement?.querySelectorAll("input[type='date']").forEach((input) => {
     if (!input.value) input.value = today;
   });
+}
+
+function syncOfferDefaults() {
+  if (offerNoDisplay) {
+    offerNoDisplay.value = generateOfferNo();
+  }
+  const defaultCari = (cache.cari || [])[0];
+  if (defaultCari && offerDiscountRateInput && !offerDiscountRateInput.value) {
+    offerDiscountRateInput.value = String(defaultCari.discountRate || 0);
+  }
+  recalcOfferSummary();
+}
+
+function createDefaultOfferRows() {
+  return [];
+}
+
+function initializeOfferLines(rows) {
+  if (!offerLinesContainer) return;
+  offerLinesContainer.innerHTML = "";
+  rows.forEach((row) => appendOfferLine(row));
+  resetOfferLineInputs();
+  recalcOfferSummary();
+}
+
+function appendOfferLine(row = null) {
+  if (!offerLinesContainer) return;
+  const payload = row || getOfferLineInputValues();
+  if (!payload) {
+    window.alert("Kapak bilgilerini girip sonra Ekle butonuna basin.");
+    return;
+  }
+  const wrapper = document.createElement("div");
+  wrapper.className = "offer-line-row";
+  wrapper.dataset.row = JSON.stringify(payload);
+  wrapper.innerHTML = createOfferLineMarkup(payload);
+  offerLinesContainer.appendChild(wrapper);
+  resetOfferLineInputs();
+  recalcOfferSummary();
+}
+
+function createOfferLineMarkup(row = {}) {
+  const total = Number(row.total || 0);
+  return `
+    <div class="offer-line-main">
+      <strong>${escapeHtml(row.coverType || "Kapak")}</strong>
+      <span>${escapeHtml(row.materialGroup || "-")} | ${escapeHtml(row.color || "-")}</span>
+    </div>
+    <div class="offer-line-meta">
+      <span>${Number(row.height || 0)} x ${Number(row.width || 0)} mm</span>
+      <span>${Number(row.quantity || 0)} adet | ${Number(row.m2 || 0).toFixed(3)} m2</span>
+    </div>
+    <div class="offer-line-price">
+      <strong>${formatCurrency(total)}</strong>
+      <span>Birim ${formatCurrency(row.unitPrice || 0)}</span>
+    </div>
+    <button class="offer-line-delete" type="button" data-line-delete="1">Sil</button>
+  `;
+}
+
+function createOfferMaterialOptions(selectedValue) {
+  const options = [
+    "LAKE_KAPAK_18MM",
+    "LAKE_PANJUR_KAPAK_22MM",
+    "HAM_KAPAKLAR",
+    "HAM_PANJURLAR",
+    "AHSAP_PANJUR_KAPAK",
+    "CNC_ISCILIK",
+    "KAPAK_YENI",
+  ];
+
+  return options.map((option) => `
+    <option value="${option}" ${option === selectedValue ? "selected" : ""}>${option.replaceAll("_", " ")}</option>
+  `).join("");
+}
+
+function createOfferTypeOptions(selectedValue, category = "", productName = "") {
+  const normalized = `${category} ${productName}`.toLowerCase();
+  let options = [productName || "Kapak Secin"];
+
+  if (normalized.includes("lake") && normalized.includes("panjur")) {
+    options = [productName, "Lake Panjur Beyaz", "Lake Panjur RAL", "Lake Panjur Eskitme"];
+  } else if (normalized.includes("lake")) {
+    options = [productName, "Lake Kapak Beyaz Duz", "Lake Kapak RAL Duz", "Lake Kapak Tarama Model", "Lake Kapak Citali"];
+  } else if (normalized.includes("ham") && normalized.includes("panjur")) {
+    options = [productName, "Ham Panjur", "Kapali Panjur", "Derzli Panjur"];
+  } else if (normalized.includes("ham")) {
+    options = [productName, "Ham Kapak Duz", "Ham Kapak Tarama", "Ham Kapak Citali"];
+  } else if (normalized.includes("cam")) {
+    options = [productName, "Camli Kapak Cerceve", "Camli Kapak Citali", "Camli Duz Kapak"];
+  } else if (normalized.includes("kapak")) {
+    options = [productName, "Duz Kapak", "Tarama Kapak", "Citali Kapak", "J Kulp Kapak"];
+  }
+
+  const unique = [...new Set(options.filter(Boolean))];
+  return unique.map((option) => `
+    <option value="${escapeHtml(option)}" ${option === selectedValue ? "selected" : ""}>${escapeHtml(option)}</option>
+  `).join("");
+}
+
+function renderOfferProductsPicker(products) {
+  if (!offerProductsList) return;
+  const searchTerm = offerProductSearch?.value?.trim().toLowerCase() || "";
+  const onlyCovers = Boolean(offerOnlyCovers?.checked);
+  const filtered = (products || []).filter((item) => {
+    const haystack = [item.name, item.category, item.costNotes].join(" ").toLowerCase();
+    const matchesSearch = !searchTerm || haystack.includes(searchTerm);
+    const matchesCoverFilter = !onlyCovers || haystack.includes("kapak") || haystack.includes("panjur");
+    return matchesSearch && matchesCoverFilter;
+  });
+
+  offerProductsList.innerHTML = filtered.length ? filtered.map((item) => `
+    <button class="offer-product-item" type="button"
+      data-product-id="${item.id}"
+      data-product-name="${escapeHtml(item.name)}"
+      data-product-category="${escapeHtml(item.category || "")}"
+      data-product-price="${item.salePrice || item.m2Price || 0}"
+      data-product-cover-options="${escapeHtml(JSON.stringify(getPresetCoverTypes(item.category, item.name)))}">
+      <strong>${escapeHtml(item.name)}</strong>
+      <span>${escapeHtml(item.category || "Urun")}</span>
+      <small>Satis ${formatCurrency(item.salePrice || item.m2Price || 0)}</small>
+    </button>
+  `).join("") : `<div class="entity-card empty-state">Urun bulunamadi. Once Urunler sayfasindan kayit ekleyin.</div>`;
+}
+
+function handleOfferProductPick(event) {
+  const button = event.target.closest("[data-product-id]");
+  if (!button) return;
+  if (offerLineInputs.coverType) {
+    offerLineInputs.coverType.innerHTML = createOfferTypeOptions(button.dataset.productName || "", button.dataset.productCategory, button.dataset.productName);
+  }
+  if (offerLineInputs.materialGroup) {
+    offerLineInputs.materialGroup.innerHTML = createOfferMaterialOptions(categoryToMaterialGroup(button.dataset.productCategory));
+  }
+  if (offerLineInputs.unitPrice) offerLineInputs.unitPrice.value = button.dataset.productPrice || "";
+  if (offerLineInputs.note && !offerLineInputs.note.value) {
+    offerLineInputs.note.value = `${button.dataset.productCategory || "Urun"} secildi`;
+  }
+  offerProductsList.querySelectorAll(".offer-product-item").forEach((item) => item.classList.remove("active"));
+  button.classList.add("active");
+}
+
+function handleOfferProductDoublePick(event) {
+  const button = event.target.closest("[data-product-id]");
+  if (!button) return;
+  handleOfferProductPick(event);
+  appendOfferLine();
+}
+
+function getPresetCoverTypes(category, productName) {
+  const normalized = `${category || ""} ${productName || ""}`.toLowerCase();
+  if (normalized.includes("lake") && normalized.includes("panjur")) return ["Lake Panjur Beyaz", "Lake Panjur RAL", "Lake Panjur Eskitme"];
+  if (normalized.includes("lake")) return ["Lake Kapak Beyaz Duz", "Lake Kapak RAL Duz", "Lake Kapak Tarama Model", "Lake Kapak Citali"];
+  if (normalized.includes("ham") && normalized.includes("panjur")) return ["Ham Panjur", "Kapali Panjur", "Derzli Panjur"];
+  if (normalized.includes("ham")) return ["Ham Kapak Duz", "Ham Kapak Tarama", "Ham Kapak Citali"];
+  if (normalized.includes("cam")) return ["Camli Kapak Cerceve", "Camli Kapak Citali", "Camli Duz Kapak"];
+  if (normalized.includes("kapak")) return ["Duz Kapak", "Tarama Kapak", "Citali Kapak", "J Kulp Kapak"];
+  return [productName || "Kapak"];
+}
+
+function categoryToMaterialGroup(category) {
+  const normalized = String(category || "").toLowerCase();
+  if (normalized.includes("lake panjur")) return "LAKE_PANJUR_KAPAK_22MM";
+  if (normalized.includes("ham panjur")) return "HAM_PANJURLAR";
+  if (normalized.includes("ham")) return "HAM_KAPAKLAR";
+  if (normalized.includes("ahsap")) return "AHSAP_PANJUR_KAPAK";
+  if (normalized.includes("cnc")) return "CNC_ISCILIK";
+  if (normalized.includes("lake")) return "LAKE_KAPAK_18MM";
+  return "KAPAK_YENI";
+}
+
+function handleOfferLineDelete(event) {
+  const button = event.target.closest("[data-line-delete]");
+  if (!button) return;
+  const rows = offerLinesContainer?.querySelectorAll(".offer-line-row") || [];
+  button.closest(".offer-line-row")?.remove();
+  recalcOfferSummary();
+}
+
+function getOfferLineInputValues() {
+  const width = Number(offerLineInputs.width?.value || 0);
+  const height = Number(offerLineInputs.height?.value || 0);
+  const quantity = Number(offerLineInputs.quantity?.value || 0);
+  const materialGroup = offerLineInputs.materialGroup?.value || "";
+  const coverType = offerLineInputs.coverType?.value?.trim() || "";
+  const color = offerLineInputs.color?.value?.trim() || "";
+  const unitPrice = Number(offerLineInputs.unitPrice?.value || 0);
+  const note = offerLineInputs.note?.value?.trim() || "";
+
+  if (!width || !height || !quantity || !coverType) {
+    return null;
+  }
+
+  const m2 = (width * height * quantity) / 1000000;
+  return {
+    width,
+    height,
+    quantity,
+    m2,
+    materialGroup,
+    coverType,
+    color,
+    unitPrice,
+    total: m2 * unitPrice,
+    note,
+  };
+}
+
+function resetOfferLineInputs() {
+  if (offerLineInputs.height) offerLineInputs.height.value = "";
+  if (offerLineInputs.width) offerLineInputs.width.value = "";
+  if (offerLineInputs.quantity) offerLineInputs.quantity.value = "1";
+  if (offerLineInputs.materialGroup) {
+    offerLineInputs.materialGroup.innerHTML = createOfferMaterialOptions("LAKE_KAPAK_18MM");
+  }
+  if (offerLineInputs.coverType) {
+    offerLineInputs.coverType.innerHTML = createOfferTypeOptions("Kapak Secin", "", "");
+  }
+  if (offerLineInputs.color) offerLineInputs.color.value = "";
+  if (offerLineInputs.unitPrice) offerLineInputs.unitPrice.value = "";
+  if (offerLineInputs.note) offerLineInputs.note.value = "";
+  offerProductsList?.querySelectorAll(".offer-product-item").forEach((item) => item.classList.remove("active"));
+}
+
+function collectOfferRows() {
+  return [...(offerLinesContainer?.querySelectorAll(".offer-line-row") || [])]
+    .map((row) => {
+      try {
+        return JSON.parse(row.dataset.row || "{}");
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+}
+
+function calculateOfferSummary(rows, discountRate, vatRate) {
+  const totalQuantity = rows.reduce((sum, row) => sum + Number(row.quantity || 0), 0);
+  const totalM2 = rows.reduce((sum, row) => sum + Number(row.m2 || 0), 0);
+  const grossTotal = rows.reduce((sum, row) => sum + Number(row.total || 0), 0);
+  const discountAmount = grossTotal * (Number(discountRate || 0) / 100);
+  const subtotal = grossTotal - discountAmount;
+  const vatAmount = subtotal * (Number(vatRate || 0) / 100);
+  const grandTotal = subtotal + vatAmount;
+  return { totalQuantity, totalM2, grossTotal, discountAmount, subtotal, vatAmount, grandTotal };
+}
+
+function recalcOfferSummary() {
+  const rows = collectOfferRows();
+  const summary = calculateOfferSummary(
+    rows,
+    Number(forms.offer?.querySelector("[name='discountRate']")?.value || 0),
+    Number(forms.offer?.querySelector("[name='vatRate']")?.value || 0),
+  );
+  const quantityEl = document.getElementById("offerSummaryQuantity");
+  const m2El = document.getElementById("offerSummaryM2");
+  const grossEl = document.getElementById("offerSummaryGross");
+  const grandEl = document.getElementById("offerSummaryGrand");
+  if (offerLineCountLabel) offerLineCountLabel.textContent = `${rows.length} kalem`;
+  if (quantityEl) quantityEl.textContent = String(summary.totalQuantity);
+  if (m2El) m2El.textContent = summary.totalM2.toFixed(3);
+  if (grossEl) grossEl.textContent = formatCurrency(summary.grossTotal);
+  if (grandEl) grandEl.textContent = formatCurrency(summary.grandTotal);
+}
+
+function handleOfferCariChange() {
+  const selectedId = Number(forms.offer?.querySelector("[name='cariId']")?.value || 0);
+  const cari = (cache.cari || []).find((item) => item.id === selectedId);
+  if (cari && offerDiscountRateInput) {
+    offerDiscountRateInput.value = String(cari.discountRate || 0);
+  }
+  recalcOfferSummary();
 }
 
 async function applyAuthState() {
@@ -507,6 +869,7 @@ async function refreshUI() {
   renderMovements(cache.movements, cache.cari);
   renderOffers(cache.offers);
   renderOfferPrintSelect(cache.offers);
+  renderOfferProductsPicker(cache.products);
   renderOrdersTable(cache.orders);
   renderProducts(cache.products);
   renderStocks(cache.stocks);
@@ -551,20 +914,147 @@ function renderRecentOrders(records) {
   document.getElementById("recentOrdersTable").innerHTML = createOrdersMarkup(records);
 }
 
+function clearCariSelection() {
+  selectedCariId = null;
+  forms.cari?.reset();
+  if (cariEditId) cariEditId.value = "";
+  if (cariSubmitBtn) cariSubmitBtn.textContent = "Cariyi Kaydet";
+  renderCariDetail(null, [], []);
+}
+
+function fillCariForm(cari) {
+  if (!cari || !forms.cari) return;
+  selectedCariId = cari.id;
+  if (cariEditId) cariEditId.value = String(cari.id);
+  setCariFormValue("fullName", cari.fullName || "");
+  setCariFormValue("companyName", cari.companyName || "");
+  setCariFormValue("phone", cari.phone || "");
+  setCariFormValue("taxOffice", cari.taxOffice || "");
+  setCariFormValue("taxNumber", cari.taxNumber || "");
+  setCariFormValue("discountRate", String(cari.discountRate || 0));
+  setCariFormValue("balanceLimit", String(cari.balanceLimit || 0));
+  setCariFormValue("riskLimit", String(cari.riskLimit || 0));
+  setCariFormValue("type", cari.type || "Musteri");
+  if (cariSubmitBtn) cariSubmitBtn.textContent = "Cariyi Guncelle";
+  renderCariDetail(cari, cache.movements || [], cache.orders || []);
+}
+
+function setCariFormValue(name, value) {
+  const input = forms.cari?.querySelector(`[name="${name}"]`);
+  if (input) input.value = value;
+}
+
+function renderCariDetail(cari, movements, orders) {
+  if (!cari) {
+    if (cariDetailBadge) {
+      cariDetailBadge.textContent = "Secim Yok";
+      cariDetailBadge.className = "cari-status-badge";
+    }
+    if (cariDetailCompany) cariDetailCompany.textContent = "-";
+    if (cariDetailName) cariDetailName.textContent = "-";
+    if (cariDetailPhone) cariDetailPhone.textContent = "-";
+    if (cariDetailLastMovement) cariDetailLastMovement.textContent = "-";
+    if (cariDetailBalance) cariDetailBalance.textContent = "0 TL";
+    if (cariDetailLimit) cariDetailLimit.textContent = "0 TL";
+    return;
+  }
+
+  const balance = calcCariBalance(cari.id, movements, orders);
+  const lastMovement = (movements || [])
+    .filter((item) => item.cariId === cari.id)
+    .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))[0];
+  const exceeded = isCariLimitExceeded(cari.id, movements, orders, cari.balanceLimit);
+  const badgeText = balance > 0 ? "Borclu" : "Alacakli";
+
+  if (cariDetailBadge) {
+    cariDetailBadge.textContent = badgeText;
+    cariDetailBadge.className = `cari-status-badge ${balance > 0 ? "is-debt" : "is-credit"} ${exceeded ? "is-risk" : ""}`;
+  }
+  if (cariDetailCompany) cariDetailCompany.textContent = cari.companyName || "-";
+  if (cariDetailName) cariDetailName.textContent = cari.fullName || "-";
+  if (cariDetailPhone) cariDetailPhone.textContent = cari.phone || "-";
+  if (cariDetailLastMovement) cariDetailLastMovement.textContent = lastMovement ? formatDate(lastMovement.date) : "Hareket yok";
+  if (cariDetailBalance) cariDetailBalance.textContent = formatCurrency(balance);
+  if (cariDetailLimit) cariDetailLimit.textContent = formatCurrency(cari.balanceLimit || 0);
+}
+
 function renderCari(records, movements, orders) {
   const target = document.getElementById("cariList");
-  target.innerHTML = records.length ? records.map((item) => `
-    <article class="entity-card">
+  const totalEl = document.getElementById("cariStatTotal");
+  const debtEl = document.getElementById("cariStatDebt");
+  const riskEl = document.getElementById("cariStatRisk");
+  const searchTerm = cariSearch?.value?.trim().toLowerCase() || "";
+  const typeTerm = cariTypeFilter?.value || "";
+  const balanceFilter = cariBalanceFilter?.value || "";
+  const sortMode = cariSort?.value || "selected";
+  const debtCount = (records || []).filter((item) => calcCariBalance(item.id, movements, orders) > 0).length;
+  const riskCount = (records || []).filter((item) => isCariLimitExceeded(item.id, movements, orders, item.balanceLimit)).length;
+  if (totalEl) totalEl.textContent = String((records || []).length);
+  if (debtEl) debtEl.textContent = String(debtCount);
+  if (riskEl) riskEl.textContent = String(riskCount);
+  const filtered = (records || []).filter((item) => {
+    const haystack = [item.companyName, item.fullName, item.phone, item.taxNumber].join(" ").toLowerCase();
+    const matchesSearch = !searchTerm || haystack.includes(searchTerm);
+    const matchesType = !typeTerm || item.type === typeTerm;
+    const balance = calcCariBalance(item.id, movements, orders);
+    const exceeds = isCariLimitExceeded(item.id, movements, orders, item.balanceLimit);
+    const matchesBalance =
+      !balanceFilter ||
+      (balanceFilter === "debt" && balance > 0) ||
+      (balanceFilter === "credit" && balance <= 0) ||
+      (balanceFilter === "risk" && exceeds);
+    return matchesSearch && matchesType && matchesBalance;
+  });
+  const sorted = [...filtered].sort((left, right) => sortCariRecords(left, right, movements, orders, sortMode));
+
+  target.innerHTML = sorted.length ? sorted.map((item) => `
+    <article class="entity-card cari-card ${selectedCariId === item.id ? "is-selected" : ""} ${isCariLimitExceeded(item.id, movements, orders, item.balanceLimit) ? "is-risk" : ""}" data-cari-select="${item.id}">
       <div><strong>${escapeHtml(item.companyName || item.fullName)}</strong><span>${escapeHtml(item.fullName)}</span></div>
-      <div><small>${escapeHtml(item.phone)}</small><span>${escapeHtml(item.type)} | Iskonto %${item.discountRate || 0} | Bakiye ${formatCurrency(calcCariBalance(item.id, movements, orders))}</span></div>
+      <div><small>${escapeHtml(item.phone)}</small><span>${escapeHtml(item.type)} | Iskonto %${item.discountRate || 0}</span></div>
+      <div><small>${getCariLastMovementText(item.id, movements)}</small><span>Bakiye ${formatCurrency(calcCariBalance(item.id, movements, orders))}</span></div>
       <div class="entity-actions"><button class="ghost-action delete-btn" data-store="${STORES.cari}" data-id="${item.id}">Sil</button></div>
     </article>
   `).join("") : `<div class="entity-card empty-state">Cari kaydi bulunamadi.</div>`;
 }
 
+function sortCariRecords(left, right, movements, orders, mode) {
+  const leftName = String(left.companyName || left.fullName || "").localeCompare(String(right.companyName || right.fullName || ""), "tr");
+  const leftBalance = calcCariBalance(left.id, movements, orders);
+  const rightBalance = calcCariBalance(right.id, movements, orders);
+  const leftMovement = getCariLastMovementTimestamp(left.id, movements);
+  const rightMovement = getCariLastMovementTimestamp(right.id, movements);
+
+  if (mode === "selected") {
+    if (left.id === selectedCariId) return -1;
+    if (right.id === selectedCariId) return 1;
+    return rightMovement - leftMovement || leftName;
+  }
+  if (mode === "name-asc") return leftName;
+  if (mode === "name-desc") return -leftName;
+  if (mode === "balance-desc") return rightBalance - leftBalance;
+  if (mode === "balance-asc") return leftBalance - rightBalance;
+  if (mode === "movement-desc") return rightMovement - leftMovement;
+  return 0;
+}
+
+function getCariLastMovementText(cariId, movements) {
+  const lastMovement = (movements || [])
+    .filter((item) => item.cariId === cariId)
+    .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))[0];
+  return lastMovement ? `Son hareket ${formatDate(lastMovement.date)}` : "Hareket yok";
+}
+
+function getCariLastMovementTimestamp(cariId, movements) {
+  const lastMovement = (movements || [])
+    .filter((item) => item.cariId === cariId)
+    .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))[0];
+  return lastMovement ? new Date(lastMovement.date).getTime() : 0;
+}
+
 function renderCariSelect(records) {
   const select = document.getElementById("offerCariSelect");
   select.innerHTML = records.length ? records.map((item) => `<option value="${item.id}">${escapeHtml(item.companyName || item.fullName)}</option>`).join("") : `<option value="">Once cari ekleyin</option>`;
+  handleOfferCariChange();
 }
 
 function renderMovementCariSelect(records) {
@@ -576,7 +1066,8 @@ function renderMovementCariSelect(records) {
 function renderMovements(movements, cariler) {
   const target = document.getElementById("movementsList");
   const cariMap = new Map(cariler.map((item) => [item.id, item]));
-  target.innerHTML = movements.length ? movements.map((item) => {
+  const filteredMovements = selectedCariId ? movements.filter((item) => item.cariId === selectedCariId) : movements;
+  target.innerHTML = filteredMovements.length ? filteredMovements.map((item) => {
     const cari = cariMap.get(item.cariId);
     const sign = item.movementType === "Tahsilat" ? "+" : "-";
     return `
@@ -591,7 +1082,8 @@ function renderMovements(movements, cariler) {
 
 function renderCariStatements(cariler, movements, orders) {
   const target = document.getElementById("cariStatementList");
-  target.innerHTML = cariler.length ? cariler.map((cari) => {
+  const filteredCariler = selectedCariId ? cariler.filter((cari) => cari.id === selectedCariId) : cariler;
+  target.innerHTML = filteredCariler.length ? filteredCariler.map((cari) => {
     const orderTotal = calcCariOrderTotal(cari.id, orders);
     const collection = (movements || []).filter((item) => item.cariId === cari.id && item.movementType === "Tahsilat").reduce((sum, item) => sum + Number(item.amount || 0), 0);
     const payment = (movements || []).filter((item) => item.cariId === cari.id && item.movementType !== "Tahsilat").reduce((sum, item) => sum + Number(item.amount || 0), 0);
@@ -610,13 +1102,13 @@ function renderOffers(records) {
   const target = document.getElementById("offersTable");
   target.innerHTML = records.length ? `
     <div class="offers-head">
-      <span>TEKLIF NO</span><span>KAPAK</span><span>OLCU/ADET</span><span>TESLIM</span><span>TUTAR</span><span>ISLEM</span>
+      <span>TEKLIF NO</span><span>FORM / CARI</span><span>KALEM OZETI</span><span>TESLIM</span><span>TUTAR</span><span>ISLEM</span>
     </div>
     ${records.map((item) => `
       <div class="offers-row">
         <span>${escapeHtml(item.offerNo || `TK-${item.id}`)}<br><small>${escapeHtml(item.cariName)}</small></span>
-        <span>${escapeHtml(item.coverType)} / ${escapeHtml(item.color)}</span>
-        <span>${item.width}x${item.height} - ${item.quantity} adet</span>
+        <span>${escapeHtml(item.meta?.formType || "Teklif Formu")}<br><small>${escapeHtml(item.cariName)}</small></span>
+        <span>${escapeHtml(item.coverType)} / ${escapeHtml(item.color)}<br><small>${item.meta?.rows?.length || 1} kalem - ${item.meta?.summary?.totalQuantity || item.quantity} adet</small></span>
         <span>${formatDate(item.deliveryDate)}</span>
         <span>${formatCurrency(item.netTotal)}</span>
         <span>${item.status === "Beklemede" ? `<button class="inline-link approve-offer-btn" data-id="${item.id}">Onayla</button>` : `<b class="status-pill status-Tamamlandi">Onaylandi</b>`} <button class="inline-link delete-btn" data-store="${STORES.offers}" data-id="${item.id}">Sil</button></span>
@@ -628,7 +1120,7 @@ function renderOffers(records) {
 function renderOfferPrintSelect(records) {
   if (!offerPrintSelect) return;
   offerPrintSelect.innerHTML = records.length
-    ? records.map((item) => `<option value="${item.id}">${escapeHtml(item.cariName)} - ${escapeHtml(item.coverType)} - ${formatCurrency(item.netTotal)}</option>`).join("")
+    ? records.map((item) => `<option value="${item.id}">${escapeHtml(item.offerNo || `TK-${item.id}`)} - ${escapeHtml(item.cariName)} - ${formatCurrency(item.netTotal)}</option>`).join("")
     : `<option value="">Teklif bulunamadi</option>`;
 }
 
@@ -910,6 +1402,17 @@ function handleOfferOutput(preferPdf) {
 }
 
 function buildOfferPrintHtml(offer, cari) {
+  const meta = offer.meta || {};
+  const rows = meta.rows?.length ? meta.rows : [{
+    coverType: offer.coverType,
+    color: offer.color,
+    width: offer.width,
+    height: offer.height,
+    quantity: offer.quantity,
+    unitPrice: offer.unitPrice,
+    total: offer.netTotal,
+    note: "",
+  }];
   return `
     <!DOCTYPE html>
     <html lang="tr">
@@ -937,7 +1440,7 @@ function buildOfferPrintHtml(offer, cari) {
             <div style="width:44px; height:44px; border-radius:12px; background:#2f6fed; color:#fff; display:grid; place-items:center; font-weight:700;">S</div>
             <div>
               <div class="brand">Silva Ahsap</div>
-              <p class="muted">Kapak Imalat Teklif Formu</p>
+              <p class="muted">${escapeHtml(meta.formType || "Kapak Imalat Teklif Formu")}</p>
             </div>
           </div>
         </div>
@@ -963,10 +1466,22 @@ function buildOfferPrintHtml(offer, cari) {
       <div class="card">
         <h3>Urun ve Olcu Bilgileri</h3>
         <table>
-          <thead><tr><th>Kapak Cinsi</th><th>Renk</th><th>Olcu</th><th>Adet</th><th>Birim</th><th>Net Tutar</th></tr></thead>
-          <tbody><tr><td>${escapeHtml(offer.coverType)}</td><td>${escapeHtml(offer.color)}</td><td>${offer.width} x ${offer.height} mm</td><td>${offer.quantity}</td><td>${formatCurrency(offer.unitPrice)}</td><td>${formatCurrency(offer.netTotal)}</td></tr></tbody>
+          <thead><tr><th>Kapak Cinsi</th><th>Renk</th><th>Olcu</th><th>Adet</th><th>M2</th><th>Birim</th><th>Tutar</th></tr></thead>
+          <tbody>
+            ${rows.map((row) => `
+              <tr>
+                <td>${escapeHtml(row.coverType)}</td>
+                <td>${escapeHtml(row.color || "-")}</td>
+                <td>${Number(row.width || 0)} x ${Number(row.height || 0)} mm</td>
+                <td>${Number(row.quantity || 0)}</td>
+                <td>${Number(row.m2 || 0).toFixed(3)}</td>
+                <td>${formatCurrency(row.unitPrice)}</td>
+                <td>${formatCurrency(row.total)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
         </table>
-        <p class="total">Toplam Teklif: ${formatCurrency(offer.netTotal)}</p>
+        <p class="total">Toplam Teklif: ${formatCurrency(meta.summary?.grandTotal || offer.netTotal)}</p>
       </div>
       <div class="card grid two">
         <div>
@@ -974,15 +1489,31 @@ function buildOfferPrintHtml(offer, cari) {
           <p>Kargo/Sevkiyat: ${escapeHtml(offer.shipment || "-")}</p>
           <p>Teslim Tarihi: ${formatDate(offer.deliveryDate)}</p>
           <p>Termin: ${offer.termDays} gun</p>
+          <p>Toplam Kapak: ${meta.summary?.totalQuantity || offer.quantity}</p>
         </div>
         <div>
           <h3>Sozlesme</h3>
-          <p class="muted">${escapeHtml(offer.contractText || "Sozlesme metni daha sonra eklenebilir.")}</p>
+          <p class="muted">${escapeHtml(meta.notes || offer.contractText || "Sozlesme metni daha sonra eklenebilir.")}</p>
         </div>
       </div>
     </body>
     </html>
   `;
+}
+
+function serializeOfferContract(meta) {
+  return `__META__${JSON.stringify(meta)}`;
+}
+
+function parseOfferContract(contractText) {
+  if (!contractText?.startsWith("__META__")) {
+    return { notes: contractText || "", rows: [] };
+  }
+  try {
+    return JSON.parse(contractText.slice("__META__".length));
+  } catch {
+    return { notes: contractText, rows: [] };
+  }
 }
 
 function createOrderFromOffer(offer) {
@@ -1020,29 +1551,33 @@ function normalizeCari(rows) {
 }
 
 function normalizeOffers(rows) {
-  return (rows || []).map((row) => ({
-    id: row.id,
-    offerId: row.id,
-    offerNo: row.offer_no,
-    cariId: row.cari_id,
-    cariName: row.company_name || row.full_name || row.cariName,
-    coverType: row.cover_type,
-    color: row.color,
-    width: Number(row.width || 0),
-    height: Number(row.height || 0),
-    quantity: Number(row.quantity || 0),
-    shipment: row.shipment,
-    orderDate: row.order_date,
-    termDays: Number(row.term_days || 0),
-    deliveryDate: row.delivery_date,
-    unitPrice: Number(row.unit_price || 0),
-    grossTotal: Number(row.gross_total || 0),
-    discountRate: Number(row.discount_rate || 0),
-    netTotal: Number(row.net_total || 0),
-    contractText: row.contract_text,
-    status: row.status,
-    createdAt: row.created_at,
-  }));
+  return (rows || []).map((row) => {
+    const meta = parseOfferContract(row.contract_text);
+    return {
+      id: row.id,
+      offerId: row.id,
+      offerNo: row.offer_no,
+      cariId: row.cari_id,
+      cariName: row.company_name || row.full_name || row.cariName,
+      coverType: row.cover_type,
+      color: row.color,
+      width: Number(row.width || 0),
+      height: Number(row.height || 0),
+      quantity: Number(row.quantity || 0),
+      shipment: row.shipment,
+      orderDate: row.order_date,
+      termDays: Number(row.term_days || 0),
+      deliveryDate: row.delivery_date,
+      unitPrice: Number(row.unit_price || 0),
+      grossTotal: Number(row.gross_total || 0),
+      discountRate: Number(row.discount_rate || 0),
+      netTotal: Number(row.net_total || 0),
+      contractText: meta.notes || row.contract_text,
+      meta,
+      status: row.status,
+      createdAt: row.created_at,
+    };
+  });
 }
 
 function normalizeOrders(rows) {
@@ -1138,6 +1673,12 @@ function calcCariOrderTotal(cariId, orders) {
     const offer = (cache.offers || []).find((row) => row.id === item.offerId);
     return offer?.cariId === cariId ? sum + Number(item.netTotal || 0) : sum;
   }, 0);
+}
+
+function isCariLimitExceeded(cariId, movements, orders, balanceLimit) {
+  const limit = Number(balanceLimit || 0);
+  if (!limit) return false;
+  return calcCariBalance(cariId, movements, orders) > limit;
 }
 
 function generateOfferNo() {

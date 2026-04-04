@@ -34,6 +34,35 @@ router.post("/", (req, res) => {
   res.status(201).json({ id: info.lastInsertRowid, message: "Cari olusturuldu." });
 });
 
+router.patch("/:id", (req, res) => {
+  const id = Number(req.params.id);
+  const payload = req.body;
+  const existing = db.prepare(`SELECT id FROM cari_accounts WHERE id = ?`).get(id);
+  if (!existing) {
+    return res.status(404).json({ message: "Cari bulunamadi." });
+  }
+
+  db.prepare(`
+    UPDATE cari_accounts
+    SET
+      full_name = @full_name,
+      company_name = @company_name,
+      phone = @phone,
+      tax_office = @tax_office,
+      tax_number = @tax_number,
+      discount_rate = @discount_rate,
+      balance_limit = @balance_limit,
+      risk_limit = @risk_limit,
+      type = @type
+    WHERE id = @id
+  `).run({
+    id,
+    ...payload,
+  });
+
+  res.json({ message: "Cari guncellendi." });
+});
+
 router.delete("/:id", (req, res) => {
   db.prepare(`DELETE FROM cari_accounts WHERE id = ?`).run(Number(req.params.id));
   res.json({ message: "Cari silindi." });
