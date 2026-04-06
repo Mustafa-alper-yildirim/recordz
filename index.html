@@ -154,94 +154,106 @@
 
       <section class="view" id="view-cari">
         <section class="cari-layout">
-          <aside class="panel cari-list-panel">
-            <div class="cari-panel-head">
-              <div>
-                <h2>Cari Listesi</h2>
-                <p>Musteri ve tedarikcileri filtreleyip hizli secin.</p>
+          <aside class="cari-list-column">
+            <section class="panel cari-list-panel cari-summary-panel">
+              <div class="cari-panel-head">
+                <div>
+                  <h2>Cari Listesi</h2>
+                  <p>Musteri ve tedarikcileri filtreleyip hizli secin.</p>
+                </div>
               </div>
-            </div>
-            <div class="cari-filter-bar">
-              <input id="cariSearch" class="table-search" type="search" placeholder="Firma, kisi veya telefon ara">
-              <select id="cariLetterFilter">
-                <option value="">Tum Harfler</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-                <option value="E">E</option>
-                <option value="F">F</option>
-                <option value="G">G</option>
-                <option value="H">H</option>
-                <option value="I">I</option>
-                <option value="J">J</option>
-                <option value="K">K</option>
-                <option value="L">L</option>
-                <option value="M">M</option>
-                <option value="N">N</option>
-                <option value="O">O</option>
-                <option value="P">P</option>
-                <option value="R">R</option>
-                <option value="S">S</option>
-                <option value="T">T</option>
-                <option value="U">U</option>
-                <option value="V">V</option>
-                <option value="Y">Y</option>
-                <option value="Z">Z</option>
-              </select>
-              <select id="cariTypeFilter">
-                <option value="">Tum Kayitlar</option>
-                <option value="Musteri">Musteri</option>
-                <option value="Tedarikci">Tedarikci</option>
-                <option value="Musteri/Tedarikci">Musteri/Tedarikci</option>
-              </select>
-              <select id="cariBalanceFilter">
-                <option value="">Tum Durumlar</option>
-                <option value="debt">Borclu</option>
-                <option value="credit">Alacakli</option>
-                <option value="risk">Limit Asimi</option>
-              </select>
-              <select id="cariSort">
-                <option value="selected">Secili Kayit Once</option>
-                <option value="name-asc">Firma A-Z</option>
-                <option value="name-desc">Firma Z-A</option>
-                <option value="balance-desc">Bakiye Yuksekten</option>
-                <option value="balance-asc">Bakiye Dusukten</option>
-                <option value="movement-desc">Son Hareket En Yeni</option>
-              </select>
-            </div>
-            <div class="cari-sticky-bar" id="cariStickyBar">
-              <div>
-                <strong id="cariStickyName">Cari secilmedi</strong>
-                <span id="cariStickyMeta">Listeden bir cari secin.</span>
+              <div class="cari-filter-bar">
+                <input id="cariSearch" class="table-search" type="search" placeholder="Firma, kisi veya telefon ara">
+                <select id="cariLetterFilter">
+                  <option value="">Tum Harfler</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                  <option value="E">E</option>
+                  <option value="F">F</option>
+                  <option value="G">G</option>
+                  <option value="H">H</option>
+                  <option value="I">I</option>
+                  <option value="J">J</option>
+                  <option value="K">K</option>
+                  <option value="L">L</option>
+                  <option value="M">M</option>
+                  <option value="N">N</option>
+                  <option value="O">O</option>
+                  <option value="P">P</option>
+                  <option value="R">R</option>
+                  <option value="S">S</option>
+                  <option value="T">T</option>
+                  <option value="U">U</option>
+                  <option value="V">V</option>
+                  <option value="Y">Y</option>
+                  <option value="Z">Z</option>
+                </select>
+                <select id="cariTypeFilter">
+                  <option value="">Tum Kayitlar</option>
+                  <option value="Musteri">Musteri</option>
+                  <option value="Tedarikci">Tedarikci</option>
+                  <option value="Musteri/Tedarikci">Musteri/Tedarikci</option>
+                </select>
+                <select id="cariBalanceFilter">
+                  <option value="">Tum Durumlar</option>
+                  <option value="debt">Borclu</option>
+                  <option value="credit">Alacakli</option>
+                  <option value="risk">Limit Asimi</option>
+                </select>
+                <select id="cariSort">
+                  <option value="name-asc" selected>Firma A-Z</option>
+                  <option value="name-desc">Firma Z-A</option>
+                  <option value="balance-desc">Bakiye Yuksekten</option>
+                  <option value="balance-asc">Bakiye Dusukten</option>
+                  <option value="movement-desc">Son Hareket En Yeni</option>
+                </select>
               </div>
-              <b id="cariStickyBalance">0 TL</b>
-            </div>
+              <div class="cari-sticky-bar" id="cariStickyBar">
+                <div>
+                  <strong id="cariStickyName">Cari secilmedi</strong>
+                  <span id="cariStickyMeta">Listeden bir cari secin.</span>
+                </div>
+                <b id="cariStickyBalance">0 TL</b>
+              </div>
               <div class="cari-stats-grid">
                 <article class="cari-stat-card">
                   <span>Toplam Cari</span>
                   <strong id="cariStatTotal">0</strong>
-              </article>
-              <article class="cari-stat-card">
-                <span>Borclu Cari</span>
-                <strong id="cariStatDebt">0</strong>
-              </article>
-              <article class="cari-stat-card">
-                <span>Limit Asimi</span>
-                <strong id="cariStatRisk">0</strong>
-              </article>
-              <article class="cari-stat-card">
-                <span>Borclu Toplam</span>
-                <strong id="cariStatDebtAmount">0 TL</strong>
-              </article>
-              <article class="cari-stat-card">
+                </article>
+                <article class="cari-stat-card">
+                  <span>Borclu Cari</span>
+                  <strong id="cariStatDebt">0</strong>
+                </article>
+                <article class="cari-stat-card">
+                  <span>Limit Asimi</span>
+                  <strong id="cariStatRisk">0</strong>
+                </article>
+                <article class="cari-stat-card">
+                  <span>Borclu Toplam</span>
+                  <strong id="cariStatDebtAmount">0 TL</strong>
+                </article>
+                <article class="cari-stat-card">
                   <span>Alacakli Toplam</span>
                   <strong id="cariStatCreditAmount">0 TL</strong>
                 </article>
               </div>
+            </section>
+
+            <section class="panel cari-list-panel cari-records-panel">
+              <div class="panel-header-row compact">
+                <h2>Cari Kayitlari</h2>
+              </div>
               <div class="card-list compact-card-list" id="cariList"></div>
-              <div class="cari-mini-chart" id="cariMiniChart"></div>
-            </aside>
+              <div class="cari-mini-panel">
+                <div class="panel-header-row compact">
+                  <h2>Bakiye Dagilimi</h2>
+                </div>
+                <div class="cari-mini-chart" id="cariMiniChart"></div>
+              </div>
+            </section>
+          </aside>
 
           <section class="panel cari-form-panel">
             <div class="cari-panel-head">
@@ -296,22 +308,53 @@
         </section>
         <section class="panel form-panel">
           <div class="panel-header-row compact">
-            <h2>Tahsilat / Odeme Girisi</h2>
+            <h2>Borc / Alacak Dekont Girisi</h2>
           </div>
           <form id="movementForm" class="form-grid three-col">
+            <input id="movementEditId" type="hidden">
             <label><span>Cari</span><select name="cariId" id="movementCariSelect" required></select></label>
             <label><span>Hareket Turu</span>
               <select name="movementType">
-                <option value="Tahsilat">Tahsilat</option>
-                <option value="Odeme">Odeme</option>
-                <option value="Borc">Borc</option>
+                <option value="Borc Dekontu">Borc Dekontu</option>
+                <option value="Alacak Dekontu">Alacak Dekontu</option>
               </select>
             </label>
             <label><span>Tutar</span><input name="amount" type="number" min="0" step="0.01" required></label>
             <label><span>Tarih</span><input name="date" type="date" required></label>
             <label><span>Aciklama</span><input name="note" type="text" placeholder="Aciklama"></label>
-            <button class="primary-btn form-submit" type="submit">Hareketi Kaydet</button>
+            <div class="inline-form-actions">
+              <button class="ghost-action" id="movementResetBtn" type="button">Yeni Dekont</button>
+              <button class="primary-btn form-submit" id="movementSubmitBtn" type="submit">Hareketi Kaydet</button>
+              <button class="receipt-action-btn" id="movementReceiptBtn" type="button">Makbuz / WhatsApp</button>
+            </div>
           </form>
+          <div class="receipt-builder-panel" id="movementReceiptPanel" hidden>
+            <div class="panel-header-row compact">
+              <h2>Makbuz Formu</h2>
+            </div>
+            <form id="movementReceiptForm" class="form-grid two-col">
+              <label><span>Belge Basligi</span><input name="receiptTitle" type="text" value="Cari Dekont Makbuzu"></label>
+              <label><span>Belge No</span><input name="receiptNo" type="text"></label>
+              <label class="receipt-wide"><span>Firma Logo URL</span><input name="logoUrl" type="text" placeholder="https://... veya logo dosya yolu"></label>
+              <label><span>Firma</span><input name="companyName" type="text"></label>
+              <label><span>Yetkili Kisi</span><input name="contactName" type="text"></label>
+              <label><span>Telefon</span><input name="phone" type="text"></label>
+              <label><span>Dekont Turu</span><input name="movementType" type="text"></label>
+              <label><span>Tutar</span><input name="amount" type="text"></label>
+              <label><span>Tarih</span><input name="date" type="text"></label>
+              <label><span>Gonderim Telefonu</span><input name="whatsappPhone" type="text" placeholder="90555..."></label>
+              <label class="receipt-wide"><span>Aciklama</span><textarea name="description" rows="3" placeholder="Makbuz aciklamasi"></textarea></label>
+              <label class="receipt-wide"><span>Ek Not</span><textarea name="receiptNote" rows="4" placeholder="Teslim notu, aciklama, odeme bilgisi"></textarea></label>
+              <label><span>Imza Yetkilisi</span><input name="signatureName" type="text" value="Yetkili Imza"></label>
+              <label><span>Imza Unvani</span><input name="signatureTitle" type="text" value="Silva Ahsap Yetkilisi"></label>
+              <div class="inline-form-actions receipt-actions">
+                <button class="ghost-action" id="movementReceiptCloseBtn" type="button">Kapat</button>
+                <button class="primary-btn receipt-print-btn" id="movementReceiptPrintBtn" type="button">Yazdir / PDF</button>
+                <button class="receipt-copy-btn" id="movementReceiptCopyBtn" type="button">Mesaji Kopyala</button>
+                <button class="receipt-whatsapp-btn" id="movementReceiptWhatsappBtn" type="button">WhatsApp Web Ac</button>
+              </div>
+            </form>
+          </div>
         </section>
         <section class="panel list-panel">
           <div class="panel-header-row">
@@ -547,11 +590,11 @@
             <div class="summary-icon pink">G</div>
           </article>
           <article class="summary-card">
-            <div><span>Toplam Tahsilat</span><strong id="metricTotalCollection">0 TL</strong></div>
+            <div><span>Toplam Alacak</span><strong id="metricTotalCollection">0 TL</strong></div>
             <div class="summary-icon green">T</div>
           </article>
           <article class="summary-card">
-            <div><span>Toplam Odeme</span><strong id="metricTotalPayment">0 TL</strong></div>
+            <div><span>Toplam Borc</span><strong id="metricTotalPayment">0 TL</strong></div>
             <div class="summary-icon gold">O</div>
           </article>
         </section>

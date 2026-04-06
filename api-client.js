@@ -103,6 +103,7 @@
     movements: {
       list: () => request("/movements"),
       create: (payload) => request("/movements", { method: "POST", body: JSON.stringify(payload) }),
+      update: (id, payload) => request(`/movements/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
       delete: (id) => request(`/movements/${id}`, { method: "DELETE" }),
     },
   };

@@ -44,6 +44,16 @@ const cariList = document.getElementById("cariList");
 const cariEditId = document.getElementById("cariEditId");
 const clearCariSelectionBtn = document.getElementById("clearCariSelectionBtn");
 const cariSubmitBtn = document.getElementById("cariSubmitBtn");
+const movementEditId = document.getElementById("movementEditId");
+const movementResetBtn = document.getElementById("movementResetBtn");
+const movementSubmitBtn = document.getElementById("movementSubmitBtn");
+const movementReceiptBtn = document.getElementById("movementReceiptBtn");
+const movementReceiptPanel = document.getElementById("movementReceiptPanel");
+const movementReceiptForm = document.getElementById("movementReceiptForm");
+const movementReceiptCloseBtn = document.getElementById("movementReceiptCloseBtn");
+const movementReceiptPrintBtn = document.getElementById("movementReceiptPrintBtn");
+const movementReceiptCopyBtn = document.getElementById("movementReceiptCopyBtn");
+const movementReceiptWhatsappBtn = document.getElementById("movementReceiptWhatsappBtn");
 const cariStickyName = document.getElementById("cariStickyName");
 const cariStickyMeta = document.getElementById("cariStickyMeta");
 const cariStickyBalance = document.getElementById("cariStickyBalance");
@@ -99,6 +109,7 @@ const viewMeta = {
 let currentView = "dashboard";
 let cache = {};
 let selectedCariId = null;
+let selectedMovementId = null;
 
 populateCariLetterFilter();
 
@@ -187,16 +198,28 @@ forms.cari?.addEventListener("submit", async (event) => {
 forms.movement?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const data = formToObject(forms.movement);
-  await addRecord(STORES.movements, {
+  const payload = {
     cariId: Number(data.cariId),
     movementType: data.movementType,
     amount: Number(data.amount || 0),
     date: data.date,
     note: data.note || "",
-  });
-  forms.movement.reset();
+  };
+  if (movementEditId?.value) {
+    await updateMovementRecord(Number(movementEditId.value), payload);
+  } else {
+    await addRecord(STORES.movements, payload);
+  }
+  const receiptPayload = { ...payload };
+  const receiptCariId = payload.cariId;
+  resetMovementForm();
   setDefaultDates();
   await refreshUI();
+  const receiptCari = (cache.cari || []).find((item) => item.id === receiptCariId);
+  if (receiptCari) {
+    openMovementReceiptBuilderFromData(receiptPayload, receiptCari);
+    movementReceiptPrintBtn?.focus();
+  }
 });
 
 forms.offer?.addEventListener("submit", async (event) => {
@@ -313,6 +336,32 @@ cariTypeFilter?.addEventListener("change", () => renderCari(cache.cari || [], ca
 cariBalanceFilter?.addEventListener("change", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
 cariSort?.addEventListener("change", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
 clearCariSelectionBtn?.addEventListener("click", clearCariSelection);
+movementResetBtn?.addEventListener("click", resetMovementForm);
+movementReceiptBtn?.addEventListener("click", openMovementReceiptBuilder);
+movementReceiptCloseBtn?.addEventListener("click", () => {
+  if (movementReceiptPanel) movementReceiptPanel.hidden = true;
+});
+movementReceiptPrintBtn?.addEventListener("click", printMovementReceipt);
+movementReceiptCopyBtn?.addEventListener("click", copyMovementReceiptMessage);
+movementReceiptWhatsappBtn?.addEventListener("click", sendMovementReceiptWhatsapp);
+document.addEventListener("click", async (event) => {
+  const editButton = event.target.closest(".edit-movement-btn");
+  if (editButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    const movement = (cache.movements || []).find((item) => item.id === Number(editButton.dataset.id));
+    if (movement) fillMovementForm(movement);
+    return;
+  }
+  const button = event.target.closest(".delete-btn");
+  if (!button) return;
+  event.preventDefault();
+  event.stopPropagation();
+  if (!window.confirm("Bu kaydi silmek istiyor musunuz?")) return;
+  await deleteRecord(button.dataset.store, Number(button.dataset.id));
+  await refreshUI();
+});
+
 cariList?.addEventListener("click", (event) => {
   if (event.target.closest(".delete-btn")) return;
   const card = event.target.closest("[data-cari-select]");
@@ -853,6 +902,16 @@ async function deleteRecord(storeName, id) {
   }
 }
 
+async function updateMovementRecord(id, payload) {
+  return api.movements.update(id, {
+    cari_id: payload.cariId,
+    movement_type: payload.movementType,
+    amount: payload.amount,
+    movement_date: payload.date,
+    note: payload.note,
+  });
+}
+
 async function clearStore(storeName) {
   const records = await getAllRecords(storeName);
   await Promise.all(records.map((record) => deleteRecord(storeName, record.id)));
@@ -933,6 +992,205 @@ function clearCariSelection() {
   renderCariDetail(null, [], []);
 }
 
+function resetMovementForm() {
+  forms.movement?.reset();
+  if (movementEditId) movementEditId.value = "";
+  selectedMovementId = null;
+  if (movementSubmitBtn) movementSubmitBtn.textContent = "Hareketi Kaydet";
+  movementResetBtn?.classList.remove("is-active");
+  movementSubmitBtn?.classList.remove("is-active");
+  const dateInput = forms.movement?.querySelector('[name="date"]');
+  if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+  if (movementReceiptPanel) movementReceiptPanel.hidden = true;
+  renderMovements(cache.movements || [], cache.cari || []);
+}
+
+function fillMovementForm(movement) {
+  if (!movement || !forms.movement) return;
+  if (movementEditId) movementEditId.value = String(movement.id);
+  selectedMovementId = movement.id;
+  const cariInput = forms.movement.querySelector('[name="cariId"]');
+  const typeInput = forms.movement.querySelector('[name="movementType"]');
+  const amountInput = forms.movement.querySelector('[name="amount"]');
+  const dateInput = forms.movement.querySelector('[name="date"]');
+  const noteInput = forms.movement.querySelector('[name="note"]');
+  if (cariInput) cariInput.value = String(movement.cariId);
+  if (typeInput) typeInput.value = movement.movementType;
+  if (amountInput) amountInput.value = String(movement.amount || 0);
+  if (dateInput) dateInput.value = movement.date || "";
+  if (noteInput) noteInput.value = movement.note || "";
+  if (movementSubmitBtn) movementSubmitBtn.textContent = "Hareketi Guncelle";
+  movementResetBtn?.classList.add("is-active");
+  movementSubmitBtn?.classList.add("is-active");
+  renderMovements(cache.movements || [], cache.cari || []);
+  forms.movement.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function openMovementReceiptBuilder() {
+  const data = formToObject(forms.movement);
+  const cari = (cache.cari || []).find((item) => String(item.id) === String(data.cariId));
+  if (!cari) {
+    window.alert("Makbuz olusturmak icin once bir cari secin.");
+    return;
+  }
+  openMovementReceiptBuilderFromData({
+    cariId: Number(data.cariId),
+    movementType: data.movementType || "",
+    amount: Number(data.amount || 0),
+    date: data.date,
+    note: data.note || "",
+  }, cari);
+}
+
+function openMovementReceiptBuilderFromData(data, cari) {
+  if (!movementReceiptForm) return;
+  const receiptNo = `MKB-${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${movementEditId?.value || "YENI"}`;
+  setReceiptField("receiptTitle", "Cari Dekont Makbuzu");
+  setReceiptField("receiptNo", receiptNo);
+  setReceiptField("logoUrl", "");
+  setReceiptField("companyName", cari.companyName || "");
+  setReceiptField("contactName", cari.fullName || "");
+  setReceiptField("phone", cari.phone || "");
+  setReceiptField("whatsappPhone", normalizePhoneForWhatsapp(cari.phone || ""));
+  setReceiptField("movementType", data.movementType || "");
+  setReceiptField("amount", formatCurrency(Number(data.amount || 0)));
+  setReceiptField("date", formatDate(data.date));
+  setReceiptField("description", data.note || `${data.movementType || "Dekont"} islemine ait makbuz.`);
+  setReceiptField("receiptNote", "Bu makbuz Silva Ahsap Kapak Imalat Programi uzerinden olusturulmustur.");
+  setReceiptField("signatureName", "Yetkili Imza");
+  setReceiptField("signatureTitle", "Silva Ahsap Yetkilisi");
+  if (movementReceiptPanel) movementReceiptPanel.hidden = false;
+  movementReceiptPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function setReceiptField(name, value) {
+  const input = movementReceiptForm?.querySelector(`[name="${name}"]`);
+  if (!input) return;
+  input.value = value || "";
+}
+
+function getMovementReceiptData() {
+  if (!movementReceiptForm) return null;
+  return formToObject(movementReceiptForm);
+}
+
+function printMovementReceipt() {
+  const data = getMovementReceiptData();
+  if (!data) return;
+  const printWindow = window.open("", "_blank", "width=860,height=760");
+  if (!printWindow) return;
+  printWindow.document.write(buildMovementReceiptHtml(data));
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => printWindow.print(), 250);
+}
+
+function sendMovementReceiptWhatsapp() {
+  const data = getMovementReceiptData();
+  if (!data) return;
+  const phone = normalizePhoneForWhatsapp(data.whatsappPhone || data.phone || "");
+  const message = buildMovementReceiptMessage(data);
+  const baseUrl = phone ? `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}` : `https://web.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+  window.open(baseUrl, "_blank");
+}
+
+async function copyMovementReceiptMessage() {
+  const data = getMovementReceiptData();
+  if (!data) return;
+  const message = buildMovementReceiptMessage(data);
+  try {
+    await navigator.clipboard.writeText(message);
+    window.alert("Makbuz mesaji kopyalandi. Simdi WhatsApp Web uzerinden yapistirabilirsiniz.");
+  } catch {
+    window.alert("Mesaj kopyalanamadi. Tarayici izinlerini kontrol edin.");
+  }
+}
+
+function buildMovementReceiptMessage(data) {
+  return [
+    data.receiptTitle,
+    `Belge No: ${data.receiptNo}`,
+    `Firma: ${data.companyName}`,
+    `Yetkili: ${data.contactName}`,
+    `Telefon: ${data.phone}`,
+    `Tur: ${data.movementType}`,
+    `Tutar: ${data.amount}`,
+    `Tarih: ${data.date}`,
+    `Aciklama: ${data.description}`,
+    data.receiptNote ? `Not: ${data.receiptNote}` : "",
+  ].filter(Boolean).join("\n");
+}
+
+function normalizePhoneForWhatsapp(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("90")) return digits;
+  if (digits.startsWith("0")) return `9${digits}`;
+  return digits;
+}
+
+function buildMovementReceiptHtml(data) {
+  const logoMarkup = data.logoUrl ? `<img src="${escapeHtml(data.logoUrl)}" alt="Firma Logosu" class="logo">` : "";
+  return `
+    <!doctype html>
+    <html lang="tr">
+      <head>
+        <meta charset="utf-8">
+        <title>${escapeHtml(data.receiptTitle || "Cari Dekont Makbuzu")}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 28px; color: #1d2a3a; }
+            .sheet { border: 1px solid #dbe4ef; border-radius: 14px; padding: 26px; }
+            .head { display:flex; justify-content:space-between; gap:16px; margin-bottom:20px; }
+            .brand { display:flex; gap:14px; align-items:center; }
+            .logo { width:72px; height:72px; object-fit:contain; border:1px solid #e7edf5; border-radius:12px; padding:8px; background:#fff; }
+            .head h1 { margin:0; font-size:22px; }
+            .meta { color:#5d6b7b; font-size:12px; }
+            .grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:14px; margin-bottom:18px; }
+            .item { border:1px solid #e7edf5; border-radius:10px; padding:12px 14px; background:#fbfdff; }
+            .item span { display:block; color:#6a7684; font-size:11px; margin-bottom:5px; }
+            .item strong { display:block; font-size:15px; }
+            .wide { grid-column:1 / -1; }
+            .note { min-height:90px; white-space:pre-wrap; }
+            .signature { display:flex; justify-content:flex-end; margin-top:26px; }
+            .signature-box { min-width:240px; text-align:center; padding-top:26px; border-top:1px solid #b9c6d8; }
+            .signature-box strong { display:block; font-size:14px; margin-bottom:4px; }
+            .signature-box span { color:#6a7684; font-size:12px; }
+          </style>
+        </head>
+      <body>
+        <div class="sheet">
+          <div class="head">
+            <div class="brand">
+              ${logoMarkup}
+              <div>
+                <h1>${escapeHtml(data.receiptTitle || "Cari Dekont Makbuzu")}</h1>
+                <div class="meta">Silva Ahsap Kapak Imalat Programi</div>
+              </div>
+            </div>
+            <div class="meta">Belge No: ${escapeHtml(data.receiptNo || "-")}</div>
+          </div>
+          <div class="grid">
+            <div class="item"><span>Firma</span><strong>${escapeHtml(data.companyName || "-")}</strong></div>
+            <div class="item"><span>Yetkili Kisi</span><strong>${escapeHtml(data.contactName || "-")}</strong></div>
+            <div class="item"><span>Telefon</span><strong>${escapeHtml(data.phone || "-")}</strong></div>
+            <div class="item"><span>Dekont Turu</span><strong>${escapeHtml(data.movementType || "-")}</strong></div>
+            <div class="item"><span>Tutar</span><strong>${escapeHtml(data.amount || "-")}</strong></div>
+            <div class="item"><span>Tarih</span><strong>${escapeHtml(data.date || "-")}</strong></div>
+            <div class="item wide"><span>Aciklama</span><strong class="note">${escapeHtml(data.description || "-")}</strong></div>
+            <div class="item wide"><span>Ek Not</span><strong class="note">${escapeHtml(data.receiptNote || "-")}</strong></div>
+          </div>
+          <div class="signature">
+            <div class="signature-box">
+              <strong>${escapeHtml(data.signatureName || "Yetkili Imza")}</strong>
+              <span>${escapeHtml(data.signatureTitle || "Silva Ahsap Yetkilisi")}</span>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
 function fillCariForm(cari) {
   if (!cari || !forms.cari) return;
   selectedCariId = cari.id;
@@ -1002,11 +1260,11 @@ function renderCariDetail(cari, movements, orders) {
     .filter((item) => item.cariId === cari.id)
     .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))[0];
   const exceeded = isCariLimitExceeded(cari.id, movements, orders, cari.balanceLimit);
-  const badgeText = balance > 0 ? "Borclu" : "Alacakli";
+  const badgeText = balance > 0 ? "Borclu" : balance < 0 ? "Alacakli" : "Bakiye Yok";
 
   if (cariDetailBadge) {
     cariDetailBadge.textContent = badgeText;
-    cariDetailBadge.className = `cari-status-badge ${balance > 0 ? "is-debt" : "is-credit"} ${exceeded ? "is-risk" : ""}`;
+    cariDetailBadge.className = `cari-status-badge ${balance > 0 ? "is-debt" : balance < 0 ? "is-credit" : ""} ${exceeded ? "is-risk" : ""}`.trim();
   }
   if (cariDetailCompany) cariDetailCompany.textContent = cari.companyName || "-";
   if (cariDetailName) cariDetailName.textContent = cari.fullName || "-";
@@ -1027,7 +1285,7 @@ function renderCari(records, movements, orders) {
   const letterFilter = cariLetterFilter?.value || "";
   const typeTerm = cariTypeFilter?.value || "";
   const balanceFilter = cariBalanceFilter?.value || "";
-  const sortMode = cariSort?.value || "selected";
+  const sortMode = cariSort?.value || "name-asc";
   const balances = new Map((records || []).map((item) => [item.id, calcCariBalance(item.id, movements, orders)]));
   const debtCount = (records || []).filter((item) => (balances.get(item.id) || 0) > 0).length;
   const riskCount = (records || []).filter((item) => isCariLimitExceeded(item.id, movements, orders, item.balanceLimit)).length;
@@ -1134,23 +1392,37 @@ function renderCariSelect(records) {
 function renderMovementCariSelect(records) {
   const select = document.getElementById("movementCariSelect");
   if (!select) return;
-  select.innerHTML = records.length ? records.map((item) => `<option value="${item.id}">${escapeHtml(item.companyName || item.fullName)}</option>`).join("") : `<option value="">Once cari ekleyin</option>`;
+  const currentValue = select.value;
+  const sorted = [...(records || [])].sort((left, right) => {
+    const leftName = String(left.companyName || left.fullName || "");
+    const rightName = String(right.companyName || right.fullName || "");
+    return leftName.localeCompare(rightName, "tr");
+  });
+  select.innerHTML = sorted.length ? sorted.map((item) => `<option value="${item.id}">${escapeHtml(item.companyName || item.fullName)}</option>`).join("") : `<option value="">Once cari ekleyin</option>`;
+  if (currentValue && sorted.some((item) => String(item.id) === String(currentValue))) {
+    select.value = currentValue;
+  }
 }
 
 function renderMovements(movements, cariler) {
   const target = document.getElementById("movementsList");
   const cariMap = new Map(cariler.map((item) => [item.id, item]));
   const filteredMovements = selectedCariId ? movements.filter((item) => item.cariId === selectedCariId) : movements;
-  target.innerHTML = filteredMovements.length ? filteredMovements.map((item) => {
-    const cari = cariMap.get(item.cariId);
-    const sign = item.movementType === "Tahsilat" ? "+" : "-";
-    return `
-      <article class="entity-card">
-        <div><strong>${escapeHtml(cari?.companyName || cari?.fullName || "Cari")}</strong><span>${escapeHtml(item.movementType)} | ${formatDate(item.date)}</span></div>
-        <div><small>${sign}${formatCurrency(item.amount)}</small><span>${escapeHtml(item.note || "-")}</span></div>
-        <div class="entity-actions"><button class="ghost-action delete-btn" data-store="${STORES.movements}" data-id="${item.id}">Sil</button></div>
-      </article>
-    `;
+  const sortedMovements = [...filteredMovements].sort((left, right) => {
+    if (left.id === selectedMovementId) return -1;
+    if (right.id === selectedMovementId) return 1;
+    return new Date(right.date || 0) - new Date(left.date || 0) || (right.id || 0) - (left.id || 0);
+  });
+  target.innerHTML = sortedMovements.length ? sortedMovements.map((item) => {
+        const cari = cariMap.get(item.cariId);
+        const sign = isCreditMovement(item.movementType) ? "+" : "-";
+        return `
+          <article class="entity-card ${selectedMovementId === item.id ? "is-selected" : ""}">
+          <div><strong>${escapeHtml(cari?.companyName || cari?.fullName || "Cari")}</strong><span>${escapeHtml(item.movementType)} | ${formatDate(item.date)}</span></div>
+          <div><small>${sign}${formatCurrency(item.amount)}</small><span>${escapeHtml(item.note || "-")}</span></div>
+          <div class="entity-actions"><button class="ghost-action edit-movement-btn" data-id="${item.id}">Duzenle</button><button class="ghost-action delete-btn" data-store="${STORES.movements}" data-id="${item.id}">Sil</button></div>
+        </article>
+      `;
   }).join("") : `<div class="entity-card empty-state">Cari hareketi bulunamadi.</div>`;
 }
 
@@ -1159,13 +1431,13 @@ function renderCariStatements(cariler, movements, orders) {
   const filteredCariler = selectedCariId ? cariler.filter((cari) => cari.id === selectedCariId) : cariler;
   target.innerHTML = filteredCariler.length ? filteredCariler.map((cari) => {
     const orderTotal = calcCariOrderTotal(cari.id, orders);
-    const collection = (movements || []).filter((item) => item.cariId === cari.id && item.movementType === "Tahsilat").reduce((sum, item) => sum + Number(item.amount || 0), 0);
-    const payment = (movements || []).filter((item) => item.cariId === cari.id && item.movementType !== "Tahsilat").reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const creditTotal = (movements || []).filter((item) => item.cariId === cari.id && isCreditMovement(item.movementType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const debtTotal = (movements || []).filter((item) => item.cariId === cari.id && !isCreditMovement(item.movementType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
     const balance = calcCariBalance(cari.id, movements, orders);
     return `
       <article class="entity-card">
         <div><strong>${escapeHtml(cari.companyName || cari.fullName)}</strong><span>${escapeHtml(cari.type)}</span></div>
-        <div><small>Siparis ${formatCurrency(orderTotal)}</small><span>Tahsilat ${formatCurrency(collection)} | Odeme ${formatCurrency(payment)}</span></div>
+        <div><small>Siparis ${formatCurrency(orderTotal)}</small><span>Alacak ${formatCurrency(creditTotal)} | Borc ${formatCurrency(debtTotal)}</span></div>
         <div><strong>${formatCurrency(balance)}</strong></div>
       </article>
     `;
@@ -1250,8 +1522,8 @@ function renderFinance(finance, products, orders) {
   const totalSales = orders.reduce((sum, item) => sum + Number(item.netTotal || 0), 0) || products.reduce((sum, item) => sum + Number(item.salePrice || 0), 0);
   const estimatedProfit = totalSales - totalCost;
   const generalExpenses = finance.filter((item) => item.type === "Dukkan" || item.type === "Showroom").reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const totalCollection = (cache.movements || []).filter((item) => item.movementType === "Tahsilat").reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const totalPayment = (cache.movements || []).filter((item) => item.movementType !== "Tahsilat").reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalCollection = (cache.movements || []).filter((item) => isCreditMovement(item.movementType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const totalPayment = (cache.movements || []).filter((item) => !isCreditMovement(item.movementType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
   document.getElementById("metricTotalCost").textContent = formatCurrency(totalCost);
   document.getElementById("metricTotalSales").textContent = formatCurrency(totalSales);
   document.getElementById("metricEstimatedProfit").textContent = formatCurrency(estimatedProfit);
@@ -1439,13 +1711,6 @@ function renderPersonnel(records) {
 }
 
 function bindActions() {
-  document.querySelectorAll(".delete-btn").forEach((button) => {
-    button.onclick = async () => {
-      if (!window.confirm("Bu kaydi silmek istiyor musunuz?")) return;
-      await deleteRecord(button.dataset.store, Number(button.dataset.id));
-      await refreshUI();
-    };
-  });
   document.querySelectorAll(".approve-offer-btn").forEach((button) => {
     button.onclick = async () => {
       await api.offers.approve(Number(button.dataset.id));
@@ -1722,24 +1987,34 @@ function normalizePersonnel(rows) {
 }
 
 function normalizeMovements(rows) {
-  return (rows || []).map((row) => ({
-    id: row.id,
-    cariId: row.cari_id,
-    movementType: row.movement_type,
-    amount: Number(row.amount || 0),
-    date: row.movement_date,
-    note: row.note,
-    createdAt: row.created_at,
-  }));
-}
+    return (rows || []).map((row) => ({
+      id: row.id,
+      cariId: row.cari_id,
+      movementType: normalizeMovementLabel(row.movement_type),
+      amount: Number(row.amount || 0),
+      date: row.movement_date,
+      note: row.note,
+      createdAt: row.created_at,
+    }));
+  }
+
+function normalizeMovementLabel(type) {
+    if (type === "Tahsilat") return "Alacak Dekontu";
+    if (type === "Borc" || type === "Odeme") return "Borc Dekontu";
+    return type;
+  }
 
 function calcCariBalance(cariId, movements, orders) {
   const orderTotal = calcCariOrderTotal(cariId, orders);
   const movementDelta = (movements || []).filter((item) => item.cariId === cariId).reduce((sum, item) => {
-    if (item.movementType === "Tahsilat") return sum - Number(item.amount || 0);
+    if (isCreditMovement(item.movementType)) return sum - Number(item.amount || 0);
     return sum + Number(item.amount || 0);
   }, 0);
   return orderTotal + movementDelta;
+}
+
+function isCreditMovement(type) {
+  return type === "Alacak Dekontu" || type === "Tahsilat";
 }
 
 function calcCariOrderTotal(cariId, orders) {
