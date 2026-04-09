@@ -1,5 +1,6 @@
 (function () {
   const API_BASE_URL = "http://localhost:4000/api";
+  const API_ROOT_URL = API_BASE_URL.replace(/\/api$/, "");
 
   function getToken() {
     return localStorage.getItem("silva_api_token") || "";
@@ -34,7 +35,14 @@
     return data;
   }
 
+  function resolveAssetUrl(path) {
+    if (!path) return "";
+    if (/^(https?:|data:)/i.test(path)) return path;
+    return `${API_ROOT_URL}${path.startsWith("/") ? path : `/${path}`}`;
+  }
+
   window.silvaApi = {
+    resolveAssetUrl,
     auth: {
       async login(payload) {
         const data = await request("/auth/login", {
@@ -83,6 +91,9 @@
     products: {
       list: () => request("/products"),
       create: (payload) => request("/products", { method: "POST", body: JSON.stringify(payload) }),
+      update: (id, payload) => request(`/products/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+      uploadImage: (payload) => request("/products/upload-image", { method: "POST", body: JSON.stringify(payload) }),
+      bulkUpdateCategory: (payload) => request("/products/bulk-update-category", { method: "POST", body: JSON.stringify(payload) }),
       delete: (id) => request(`/products/${id}`, { method: "DELETE" }),
     },
     stocks: {

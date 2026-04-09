@@ -38,16 +38,137 @@
       </div>
 
       <nav class="sidebar-nav">
-        <button class="nav-link active" data-view="dashboard">Panel</button>
-        <button class="nav-link" data-view="cari">Cari</button>
-        <button class="nav-link" data-view="offers">Teklifler</button>
-        <button class="nav-link" data-view="orders">Siparisler</button>
-        <button class="nav-link" data-view="products">Urunler</button>
-        <button class="nav-link" data-view="stocks">Stoklar</button>
-        <button class="nav-link" data-view="finance">Muhasebe</button>
-        <button class="nav-link" data-view="reports">Raporlar</button>
-        <button class="nav-link" data-view="personnel">Personel</button>
-        <button class="nav-link" data-view="settings">Ayarlar</button>
+        <button class="nav-link active nav-link-root" data-view="dashboard">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 10.5 12 3l9 7.5"></path>
+              <path d="M5 9.5V21h14V9.5"></path>
+            </svg>
+          </span>
+          <span class="nav-label">Panel</span>
+        </button>
+
+        <div class="nav-group-static">
+          <div class="nav-section-title">Ticari</div>
+          <div class="nav-submenu-static">
+            <button class="nav-link" data-view="cari">
+              <span class="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21a8 8 0 1 0-16 0"></path>
+                  <circle cx="12" cy="8" r="4"></circle>
+                </svg>
+              </span>
+              <span class="nav-label">Cari</span>
+            </button>
+            <button class="nav-link" data-view="offers">
+              <span class="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M8 3h8l5 5v13H3V3h5z"></path>
+                  <path d="M15 3v5h5"></path>
+                  <path d="M8 13h8"></path>
+                  <path d="M8 17h5"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Teklifler</span>
+            </button>
+            <button class="nav-link" data-view="orders">
+              <span class="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 6h16"></path>
+                  <path d="M4 12h16"></path>
+                  <path d="M4 18h16"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Siparisler</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="nav-group-static">
+          <div class="nav-section-title">Uretim</div>
+          <div class="nav-submenu-static">
+            <button class="nav-link" data-view="products">
+              <span class="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                  <path d="M9 9h6v6H9z"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Urunler</span>
+            </button>
+            <button class="nav-link" data-view="categories">
+              <span class="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 7h14"></path>
+                  <path d="M5 12h10"></path>
+                  <path d="M5 17h8"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Kategoriler</span>
+            </button>
+            <button class="nav-link" data-view="stocks">
+              <span class="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 7 12 3l9 4-9 4-9-4Z"></path>
+                  <path d="M3 7v10l9 4 9-4V7"></path>
+                  <path d="M12 11v10"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Stoklar</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="nav-group-static">
+          <div class="nav-section-title">Analiz</div>
+          <div class="nav-submenu-static">
+            <button class="nav-link" data-view="finance">
+              <span class="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19h16"></path>
+                  <path d="M7 16V9"></path>
+                  <path d="M12 16V5"></path>
+                  <path d="M17 16v-4"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Muhasebe</span>
+            </button>
+            <button class="nav-link" data-view="reports">
+              <span class="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 19V9"></path>
+                  <path d="M12 19V5"></path>
+                  <path d="M19 19v-7"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Raporlar</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="nav-group-static">
+          <div class="nav-section-title">Yonetim</div>
+          <div class="nav-submenu-static">
+            <button class="nav-link" data-view="personnel">
+              <span class="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 20a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4"></path>
+                  <circle cx="12" cy="8" r="4"></circle>
+                </svg>
+              </span>
+              <span class="nav-label">Personel</span>
+            </button>
+            <button class="nav-link" data-view="settings">
+              <span class="nav-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1A1.7 1.7 0 0 0 10 3.2V3a2 2 0 0 1 4 0v.2a1.7 1.7 0 0 0 1 1.5h.1a1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.2a1.7 1.7 0 0 0-1.4 1z"></path>
+                </svg>
+              </span>
+              <span class="nav-label">Ayarlar</span>
+            </button>
+          </div>
+        </div>
       </nav>
 
       <div class="sidebar-bottom">
@@ -72,7 +193,7 @@
           <span class="session-user" id="sessionUser"></span>
           <span class="session-role" id="sessionRole"></span>
           <button class="ghost-action" id="logoutBtn" type="button">Cikis</button>
-          <button class="menu-toggle" id="menuToggle">Menu</button>
+          <button class="menu-toggle" id="menuToggle" type="button" aria-label="Menu">☰</button>
           <button class="primary-btn" id="primaryActionBtn">+ Yeni Siparis</button>
         </div>
       </header>
@@ -278,8 +399,8 @@
                 </select>
               </label>
               <label><span>Iskonto Orani (%)</span><input name="discountRate" type="number" min="0" max="100" step="0.01" value="0"></label>
-              <label><span>Bakiye Limiti</span><input name="balanceLimit" type="number" min="0" step="0.01" value="0"></label>
-              <label><span>Risk Limiti</span><input name="riskLimit" type="number" min="0" step="0.01" value="0"></label>
+              <label><span>Bakiye Limiti</span><input name="balanceLimit" type="text" inputmode="decimal" data-money="1" value="0"></label>
+              <label><span>Risk Limiti</span><input name="riskLimit" type="text" inputmode="decimal" data-money="1" value="0"></label>
               <button class="primary-btn form-submit" id="cariSubmitBtn" type="submit">Cariyi Kaydet</button>
             </form>
 
@@ -301,6 +422,10 @@
             <div class="cari-detail-panel">
               <div class="panel-header-row compact">
                 <h2>Cari Bakiye Hareketleri</h2>
+                <select id="movementsFilter" class="compact-select">
+                  <option value="10">Son 10 Hareket</option>
+                  <option value="all">Tumunu Goster</option>
+                </select>
               </div>
               <div class="card-list" id="movementsList"></div>
             </div>
@@ -319,7 +444,7 @@
                 <option value="Alacak Dekontu">Alacak Dekontu</option>
               </select>
             </label>
-            <label><span>Tutar</span><input name="amount" type="number" min="0" step="0.01" required></label>
+            <label><span>Tutar</span><input name="amount" type="text" inputmode="decimal" data-money="1" required></label>
             <label><span>Tarih</span><input name="date" type="date" required></label>
             <label><span>Aciklama</span><input name="note" type="text" placeholder="Aciklama"></label>
             <div class="inline-form-actions">
@@ -426,7 +551,7 @@
                   <select id="offerLineMaterialGroup"></select>
                   <select id="offerLineCoverType"></select>
                   <input id="offerLineColor" type="text" placeholder="Renk kodu">
-                  <input id="offerLineUnitPrice" type="number" min="0" step="0.01" placeholder="Birim fiyat">
+                  <input id="offerLineUnitPrice" type="text" inputmode="decimal" data-money="1" placeholder="Birim fiyat">
                   <input id="offerLineNote" type="text" placeholder="Aciklama">
                 </div>
 
@@ -491,30 +616,160 @@
         </section>
       </section>
 
-      <section class="view" id="view-products">
-        <section class="panel form-panel">
-          <div class="panel-header-row compact">
-            <h2>Yeni Urun/Kapak Ekle</h2>
-          </div>
-          <form id="productForm" class="form-grid three-col">
-            <label><span>Urun/Kapak Adi</span><input name="name" type="text" required></label>
-            <label><span>Kategori</span><input name="category" type="text" placeholder="Kapak, perakende urun"></label>
-            <label><span>Alis Fiyati</span><input name="purchasePrice" type="number" min="0" step="0.01" required></label>
-            <label><span>Satis Fiyati</span><input name="salePrice" type="number" min="0" step="0.01" required></label>
-            <label><span>M2 Birim Fiyati</span><input name="m2Price" type="number" min="0" step="0.01"></label>
-            <label><span>Ham Kapak M2</span><input name="rawM2Price" type="number" min="0" step="0.01"></label>
-            <label><span>Boyali Kapak M2</span><input name="paintedM2Price" type="number" min="0" step="0.01"></label>
-            <label><span>Maliyet Notu</span><input name="costNotes" type="text" placeholder="Maliyet detayi"></label>
-            <button class="primary-btn form-submit" type="submit">Urunu Kaydet</button>
-          </form>
-        </section>
+      <section class="view" id="view-categories">
+        <section class="categories-layout">
+          <section class="panel products-side-panel categories-standalone-panel">
+            <div class="panel-header-row compact">
+              <div>
+                <h2>Kategori Yonetimi</h2>
+                <p>Kategorileri ayri ekrandan ekleyin, duzenleyin ve takip edin.</p>
+              </div>
+            </div>
+            <form id="categoryManagerForm" class="products-category-form">
+              <label>
+                <span>Kategori Adi</span>
+                <input id="categoryManagerInput" name="categoryName" type="text" placeholder="Lake Kapak, Ham Kapak" required>
+              </label>
+              <button class="primary-btn" type="submit">Kategori Ekle</button>
+            </form>
+            <div class="panel-header-row compact products-subhead">
+              <h2>Kategori Listesi</h2>
+            </div>
+            <div class="card-list products-category-list" id="categoryManagerList"></div>
+          </section>
 
-        <section class="panel list-panel">
-          <div class="panel-header-row">
-            <h2>Urun Listesi</h2>
-          </div>
-          <div class="card-list" id="productsList"></div>
+          <section class="panel categories-detail-panel">
+            <div class="panel-header-row compact">
+              <div>
+                <h2>Urun Cinsi</h2>
+                <p>Secilen kategoriye bagli urun cinsleri.</p>
+              </div>
+            </div>
+            <div class="category-detail-summary">
+              <strong id="categoryTypeSelectedName">Kategori secilmedi</strong>
+              <span id="categoryTypeSelectedMeta">Urun cinsi eklemek icin once soldan bir kategori secin.</span>
+            </div>
+            <form id="categoryTypeForm" class="products-category-form category-type-form">
+              <input id="categoryTypeEditId" type="hidden">
+              <label>
+                <span>Urun Cinsi</span>
+                <input id="categoryTypeInput" name="productTypeName" type="text" placeholder="Lake Kapak 18 mm, Camli Kapak" required>
+              </label>
+              <div class="inline-form-actions">
+                <button class="ghost-action compact-action" id="categoryTypeResetBtn" type="button">Yeni Cins</button>
+                <button class="primary-btn" id="categoryTypeSubmitBtn" type="submit">Cinsi Kaydet</button>
+              </div>
+            </form>
+            <div class="panel-header-row compact products-subhead">
+              <h2>Secilen Kategorideki Urun Cinsleri</h2>
+            </div>
+            <div class="card-list category-type-list" id="categoryTypeList"></div>
+          </section>
         </section>
+      </section>
+
+      <section class="view" id="view-products">
+        <section class="products-layout">
+          <section class="panel products-side-panel">
+            <div class="panel-header-row compact">
+              <div>
+                <h2>Kategori Ekle</h2>
+                <p>Yeni kategori tanimlayin ve alttaki listeden secin.</p>
+              </div>
+            </div>
+            <form id="productCategoryForm" class="products-category-form">
+              <label>
+                <span>Kategori Adi</span>
+                <input id="productCategoryInput" name="categoryName" type="text" placeholder="Lake Kapak, Ham Kapak" required>
+              </label>
+              <button class="primary-btn" type="submit">Kategori Ekle</button>
+            </form>
+            <div class="panel-header-row compact products-subhead">
+              <h2>Kategori Listesi</h2>
+            </div>
+            <div class="card-list products-category-list" id="productCategoryList"></div>
+          </section>
+
+          <section class="panel form-panel products-form-panel">
+            <div class="panel-header-row compact">
+              <div>
+                <h2>Yeni Urun Ekle</h2>
+                <p>Urunu secili kategori altina fiyatlariyla birlikte kaydedin.</p>
+              </div>
+            </div>
+            <form id="productForm" class="products-form-grid">
+              <input id="productEditId" type="hidden">
+              <label><span>Urun / Kapak Adi</span><input name="name" type="text" required></label>
+              <label><span>Kategori</span>
+                <select name="category" id="productCategorySelect" required></select>
+              </label>
+              <label><span>Maliyet Tipi</span>
+                <select name="costType">
+                  <option value="M2">M2</option>
+                  <option value="Adet">Adet</option>
+                </select>
+              </label>
+              <label><span>Maliyet</span><input name="costAmount" type="text" inputmode="decimal" data-money="1" required></label>
+              <label><span>Gorsel Dosyasi</span><input id="productImageFile" type="file" accept="image/*"></label>
+              <label class="products-form-wide"><span>Gorsel URL / Dosya Yolu</span><input name="imageUrl" type="text" placeholder="https://... veya yerel gorsel yolu"></label>
+              <div class="products-image-preview" id="productImagePreview">Gorsel secildiginde burada gorunecek.</div>
+              <label class="products-form-wide"><span>Maliyet Notu</span><input name="costNotes" type="text" placeholder="Maliyet detayi"></label>
+              <div class="inline-form-actions products-form-actions">
+                <button class="ghost-action" id="productResetBtn" type="button">Yeni Urun</button>
+                <button class="primary-btn form-submit" id="productSubmitBtn" type="submit">Urunu Kaydet</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel list-panel products-list-panel">
+            <div class="panel-header-row compact">
+              <div>
+                <h2>Urun Listesi</h2>
+                <p>Eklenen tum kapak ve urunler bu alanda listelenir.</p>
+              </div>
+              <input id="productsSearch" class="table-search products-search" type="search" placeholder="Urun veya kategori ara">
+            </div>
+            <div class="products-list-layout">
+              <aside class="products-filter-panel">
+                <div class="panel-header-row compact products-filter-head">
+                  <h2>Kategori Secimi</h2>
+                </div>
+                <div class="products-filter-list" id="productFilterList"></div>
+                <div class="products-bulk-panel">
+                  <div class="panel-header-row compact products-filter-head">
+                    <h2>Toplu Fiyat</h2>
+                  </div>
+                  <form id="productBulkUpdateForm" class="products-bulk-form">
+                    <label>
+                      <span>Kategori</span>
+                      <select id="productBulkCategory" name="category"></select>
+                    </label>
+                    <label>
+                      <span>Islem</span>
+                      <select name="mode">
+                        <option value="percent">Yuzde Degisim</option>
+                        <option value="fixed">Tutar Ekle / Cikar</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Deger</span>
+                      <input name="value" type="text" inputmode="decimal" data-money="1" placeholder="100 veya 10">
+                    </label>
+                    <button class="primary-btn" type="submit">Toplu Guncelle</button>
+                  </form>
+                </div>
+              </aside>
+              <div class="card-list products-card-list" id="productsList"></div>
+            </div>
+          </section>
+        </section>
+        <div class="product-image-modal" id="productImageModal" hidden>
+          <div class="product-image-modal-backdrop" data-close-product-image></div>
+          <div class="product-image-modal-dialog">
+            <button class="ghost-action product-image-close" id="productImageModalClose" type="button">Kapat</button>
+            <img id="productImageModalImg" src="" alt="Urun gorseli buyuk onizleme">
+          </div>
+        </div>
       </section>
 
       <section class="view" id="view-stocks">
@@ -527,7 +782,7 @@
             <label><span>Tur</span><input name="type" type="text" placeholder="MDF, boya, kulp"></label>
             <label><span>Miktar</span><input name="quantity" type="number" min="0" step="0.01" required></label>
             <label><span>Birim</span><input name="unit" type="text" placeholder="adet, kg, m2"></label>
-            <label><span>Birim Fiyat</span><input name="unitPrice" type="number" min="0" step="0.01" required></label>
+            <label><span>Birim Fiyat</span><input name="unitPrice" type="text" inputmode="decimal" data-money="1" required></label>
             <label><span>Tedarikci</span><input name="supplier" type="text"></label>
             <button class="primary-btn form-submit" type="submit">Stogu Kaydet</button>
           </form>
@@ -557,7 +812,7 @@
             </label>
             <label><span>Telefon</span><input name="phone" type="text" placeholder="0555 111 11 11" required></label>
             <label><span>Ozluk Dosya Durumu</span><input name="fileStatus" type="text" placeholder="Tamam, eksik evrak"></label>
-            <label><span>Maas</span><input name="salary" type="number" min="0" step="0.01"></label>
+            <label><span>Maas</span><input name="salary" type="text" inputmode="decimal" data-money="1"></label>
             <label><span>Mesai Saati</span><input name="overtimeHours" type="number" min="0" step="0.5"></label>
             <button class="primary-btn form-submit" type="submit">Personeli Kaydet</button>
           </form>
@@ -612,7 +867,7 @@
               </select>
             </label>
             <label><span>Aciklama</span><input name="title" type="text" required></label>
-            <label><span>Tutar</span><input name="amount" type="number" min="0" step="0.01" required></label>
+            <label><span>Tutar</span><input name="amount" type="text" inputmode="decimal" data-money="1" required></label>
             <button class="primary-btn form-submit" type="submit">Kalemi Kaydet</button>
           </form>
         </section>

@@ -35,6 +35,33 @@ const offerLineCountLabel = document.getElementById("offerLineCountLabel");
 const offerProductsList = document.getElementById("offerProductsList");
 const offerProductSearch = document.getElementById("offerProductSearch");
 const offerOnlyCovers = document.getElementById("offerOnlyCovers");
+const productCategoryForm = document.getElementById("productCategoryForm");
+const productCategoryInput = document.getElementById("productCategoryInput");
+const productCategoryList = document.getElementById("productCategoryList");
+const categoryManagerForm = document.getElementById("categoryManagerForm");
+const categoryManagerInput = document.getElementById("categoryManagerInput");
+const categoryManagerList = document.getElementById("categoryManagerList");
+const categoryTypeForm = document.getElementById("categoryTypeForm");
+const categoryTypeInput = document.getElementById("categoryTypeInput");
+const categoryTypeList = document.getElementById("categoryTypeList");
+const categoryTypeEditId = document.getElementById("categoryTypeEditId");
+const categoryTypeResetBtn = document.getElementById("categoryTypeResetBtn");
+const categoryTypeSubmitBtn = document.getElementById("categoryTypeSubmitBtn");
+const categoryTypeSelectedName = document.getElementById("categoryTypeSelectedName");
+const categoryTypeSelectedMeta = document.getElementById("categoryTypeSelectedMeta");
+const productCategorySelect = document.getElementById("productCategorySelect");
+const productEditId = document.getElementById("productEditId");
+const productImageFile = document.getElementById("productImageFile");
+const productImagePreview = document.getElementById("productImagePreview");
+const productResetBtn = document.getElementById("productResetBtn");
+const productSubmitBtn = document.getElementById("productSubmitBtn");
+const productsSearch = document.getElementById("productsSearch");
+const productFilterList = document.getElementById("productFilterList");
+const productBulkUpdateForm = document.getElementById("productBulkUpdateForm");
+const productBulkCategory = document.getElementById("productBulkCategory");
+const productImageModal = document.getElementById("productImageModal");
+const productImageModalImg = document.getElementById("productImageModalImg");
+const productImageModalClose = document.getElementById("productImageModalClose");
 const cariSearch = document.getElementById("cariSearch");
 const cariLetterFilter = document.getElementById("cariLetterFilter");
 const cariTypeFilter = document.getElementById("cariTypeFilter");
@@ -47,6 +74,7 @@ const cariSubmitBtn = document.getElementById("cariSubmitBtn");
 const movementEditId = document.getElementById("movementEditId");
 const movementResetBtn = document.getElementById("movementResetBtn");
 const movementSubmitBtn = document.getElementById("movementSubmitBtn");
+const movementsFilter = document.getElementById("movementsFilter");
 const movementReceiptBtn = document.getElementById("movementReceiptBtn");
 const movementReceiptPanel = document.getElementById("movementReceiptPanel");
 const movementReceiptForm = document.getElementById("movementReceiptForm");
@@ -98,6 +126,7 @@ const viewMeta = {
   cari: ["Cari Yonetimi", "Musteri ve tedarikci kayitlarini, limitleri ve iskontolari yonetin.", "+ Yeni Cari"],
   offers: ["Teklif Yonetimi", "Kapak cinsi, olcu, termin ve sozlesme detayi ile teklif olusturun.", "+ Yeni Teklif"],
   orders: ["Siparis Takibi", "Onaylanan teklifler siparise donusun ve termin bazli izlenebilsin.", "+ Yeni Teklif"],
+  categories: ["Kategori Yonetimi", "Kapak ve urun kategorilerini ayri ekranda ekleyin ve duzenleyin.", "+ Yeni Kategori"],
   products: ["Urun ve Kapak Fiyatlari", "Alis, satis ve m2 fiyatlarini detayli yonetin.", "+ Yeni Urun"],
   stocks: ["Stok ve Hammadde", "Hammadde ve stok kalemlerini miktar ve birim fiyatlariyla izleyin.", "+ Yeni Stok"],
   finance: ["Muhasebe ve Maliyet", "Hammadde, iscilik ve genel giderleri analiz edin.", "+ Yeni Gider"],
@@ -110,14 +139,36 @@ let currentView = "dashboard";
 let cache = {};
 let selectedCariId = null;
 let selectedMovementId = null;
+let selectedProductCategoryFilter = "__covers__";
+let selectedCategoryManager = "";
+let productSortState = {
+  key: "name",
+  dir: "asc",
+};
+const PRODUCT_CATEGORY_STORAGE_KEY = "silva-product-categories";
 
 populateCariLetterFilter();
+initializeMoneyInputs();
 
 if (menuToggle && sidebar) {
-  menuToggle.addEventListener("click", () => sidebar.classList.toggle("open"));
+  menuToggle.addEventListener("click", () => {
+    if (window.innerWidth <= 860) {
+      sidebar.classList.toggle("open");
+      return;
+    }
+    document.body.classList.toggle("sidebar-collapsed");
+  });
 }
 
-navLinks.forEach((link) => link.addEventListener("click", () => setActiveView(link.dataset.view)));
+navLinks.forEach((link) => link.addEventListener("click", () => {
+  setActiveView(link.dataset.view);
+  const targetId = link.dataset.sectionTarget;
+  if (targetId) {
+    window.requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+}));
 quickLinks.forEach((link) => link.addEventListener("click", () => setActiveView(link.dataset.action || link.dataset.viewLink)));
 
 primaryActionBtn?.addEventListener("click", () => {
@@ -126,6 +177,7 @@ primaryActionBtn?.addEventListener("click", () => {
     cari: ["cari", forms.cari],
     offers: ["offers", forms.offer],
     orders: ["offers", forms.offer],
+    categories: ["categories", categoryManagerForm],
     products: ["products", forms.product],
     stocks: ["stocks", forms.stock],
     finance: ["finance", forms.finance],
@@ -172,8 +224,8 @@ forms.cari?.addEventListener("submit", async (event) => {
     taxOffice: data.taxOffice,
     taxNumber: data.taxNumber,
     discountRate: Number(data.discountRate || 0),
-    balanceLimit: Number(data.balanceLimit || 0),
-    riskLimit: Number(data.riskLimit || 0),
+    balanceLimit: parseMoneyInput(data.balanceLimit),
+    riskLimit: parseMoneyInput(data.riskLimit),
     type: data.type,
   };
   if (cariEditId?.value) {
@@ -201,7 +253,7 @@ forms.movement?.addEventListener("submit", async (event) => {
   const payload = {
     cariId: Number(data.cariId),
     movementType: data.movementType,
-    amount: Number(data.amount || 0),
+    amount: parseMoneyInput(data.amount),
     date: data.date,
     note: data.note || "",
   };
@@ -272,18 +324,136 @@ forms.offer?.addEventListener("submit", async (event) => {
 forms.product?.addEventListener("submit", async (event) => {
   event.preventDefault();
   const data = formToObject(forms.product);
-  await addRecord(STORES.products, {
+  if (!data.category) {
+    window.alert("Lutfen once bir kategori secin.");
+    productCategorySelect?.focus();
+    return;
+  }
+  const payload = {
     name: data.name,
     category: data.category,
-    purchasePrice: Number(data.purchasePrice || 0),
-    salePrice: Number(data.salePrice || 0),
-    m2Price: Number(data.m2Price || 0),
-    rawM2Price: Number(data.rawM2Price || 0),
-    paintedM2Price: Number(data.paintedM2Price || 0),
+    costType: data.costType || "M2",
+    costAmount: parseMoneyInput(data.costAmount),
+    imageUrl: data.imageUrl || "",
     costNotes: data.costNotes,
-  });
-  forms.product.reset();
+  };
+  if (productEditId?.value) {
+    await api.products.update(Number(productEditId.value), buildProductApiPayload(payload));
+  } else {
+    await addRecord(STORES.products, payload);
+  }
+  resetProductFormEditor();
   await refreshUI();
+});
+
+function addProductCategory(value = "") {
+  const normalizedValue = (value || "").trim();
+  if (!normalizedValue) return false;
+  const categories = getStoredProductCategories();
+  if (!categories.some((item) => item.toLowerCase() === normalizedValue.toLowerCase())) {
+    categories.push(normalizedValue);
+    saveStoredProductCategories(categories);
+  }
+  renderProductCategories(cache.products || []);
+  return true;
+}
+
+function buildProductApiPayload(payload = {}) {
+  const costType = payload.costType || payload.cost_type || "M2";
+  const costAmount = Number(payload.costAmount ?? payload.cost_amount ?? payload.salePrice ?? payload.sale_price ?? 0) || 0;
+  return {
+    name: payload.name || "",
+    category: payload.category || "Kategorisiz",
+    purchase_price: Number(payload.purchasePrice ?? payload.purchase_price ?? costAmount) || 0,
+    sale_price: Number(payload.salePrice ?? payload.sale_price ?? costAmount) || 0,
+    m2_price: Number(payload.m2Price ?? payload.m2_price ?? (costType === "M2" ? costAmount : 0)) || 0,
+    raw_m2_price: Number(payload.rawM2Price ?? payload.raw_m2_price ?? 0) || 0,
+    painted_m2_price: Number(payload.paintedM2Price ?? payload.painted_m2_price ?? 0) || 0,
+    cost_type: costType,
+    cost_amount: costAmount,
+    image_url: payload.imageUrl ?? payload.image_url ?? "",
+    cost_notes: payload.costNotes ?? payload.cost_notes ?? "",
+  };
+}
+
+productCategoryForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (addProductCategory(productCategoryInput?.value)) {
+    if (productCategoryInput) productCategoryInput.value = "";
+  }
+});
+
+categoryManagerForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (addProductCategory(categoryManagerInput?.value)) {
+    if (categoryManagerInput) {
+      categoryManagerInput.value = "";
+      categoryManagerInput.focus();
+    }
+  }
+});
+
+categoryTypeForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!selectedCategoryManager) {
+    window.alert("Lutfen once soldan bir kategori secin.");
+    return;
+  }
+  const name = categoryTypeInput?.value?.trim();
+  if (!name) return;
+
+  if (categoryTypeEditId?.value) {
+    const existing = (cache.products || []).find((item) => item.id === Number(categoryTypeEditId.value));
+    if (!existing) return;
+    await api.products.update(existing.id, buildProductApiPayload({
+      ...existing,
+      name,
+      category: selectedCategoryManager,
+    }));
+  } else {
+    await api.products.create(buildProductApiPayload({
+      name,
+      category: selectedCategoryManager,
+      cost_type: "M2",
+      cost_amount: 0,
+      image_url: "",
+      cost_notes: "",
+    }));
+  }
+
+  resetCategoryTypeForm();
+  await refreshUI();
+});
+
+categoryTypeResetBtn?.addEventListener("click", resetCategoryTypeForm);
+
+productResetBtn?.addEventListener("click", resetProductFormEditor);
+
+productImageFile?.addEventListener("change", async () => {
+  const file = productImageFile.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const imageInput = forms.product?.querySelector("[name='imageUrl']");
+    const dataUrl = String(reader.result || "");
+    renderProductImagePreview(dataUrl);
+    if (productSubmitBtn) productSubmitBtn.disabled = true;
+    try {
+      const response = await api.products.uploadImage({
+        data_url: dataUrl,
+        file_name: file.name,
+      });
+      if (imageInput) imageInput.value = response.image_url || "";
+      renderProductImagePreview(response.image_url || "");
+    } catch (error) {
+      window.alert(error.message || "Gorsel yuklenemedi.");
+      if (imageInput) imageInput.value = "";
+      renderProductImagePreview("");
+    } finally {
+      if (productSubmitBtn) productSubmitBtn.disabled = false;
+    }
+  };
+  reader.readAsDataURL(file);
 });
 
 forms.stock?.addEventListener("submit", async (event) => {
@@ -294,7 +464,7 @@ forms.stock?.addEventListener("submit", async (event) => {
     type: data.type,
     quantity: Number(data.quantity || 0),
     unit: data.unit,
-    unitPrice: Number(data.unitPrice || 0),
+    unitPrice: parseMoneyInput(data.unitPrice),
     supplier: data.supplier,
   });
   forms.stock.reset();
@@ -307,7 +477,7 @@ forms.finance?.addEventListener("submit", async (event) => {
   await addRecord(STORES.finance, {
     type: data.type,
     title: data.title,
-    amount: Number(data.amount || 0),
+    amount: parseMoneyInput(data.amount),
   });
   forms.finance.reset();
   await refreshUI();
@@ -322,7 +492,7 @@ forms.personnel?.addEventListener("submit", async (event) => {
     status: data.status,
     phone: data.phone,
     fileStatus: data.fileStatus,
-    salary: Number(data.salary || 0),
+    salary: parseMoneyInput(data.salary),
     overtimeHours: Number(data.overtimeHours || 0),
   });
   forms.personnel.reset();
@@ -337,6 +507,7 @@ cariBalanceFilter?.addEventListener("change", () => renderCari(cache.cari || [],
 cariSort?.addEventListener("change", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
 clearCariSelectionBtn?.addEventListener("click", clearCariSelection);
 movementResetBtn?.addEventListener("click", resetMovementForm);
+movementsFilter?.addEventListener("change", () => renderMovements(cache.movements || [], cache.cari || []));
 movementReceiptBtn?.addEventListener("click", openMovementReceiptBuilder);
 movementReceiptCloseBtn?.addEventListener("click", () => {
   if (movementReceiptPanel) movementReceiptPanel.hidden = true;
@@ -345,6 +516,14 @@ movementReceiptPrintBtn?.addEventListener("click", printMovementReceipt);
 movementReceiptCopyBtn?.addEventListener("click", copyMovementReceiptMessage);
 movementReceiptWhatsappBtn?.addEventListener("click", sendMovementReceiptWhatsapp);
 document.addEventListener("click", async (event) => {
+  const cariEditButton = event.target.closest(".edit-cari-btn");
+  if (cariEditButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    const cari = (cache.cari || []).find((item) => item.id === Number(cariEditButton.dataset.id));
+    if (cari) fillCariForm(cari);
+    return;
+  }
   const editButton = event.target.closest(".edit-movement-btn");
   if (editButton) {
     event.preventDefault();
@@ -362,13 +541,50 @@ document.addEventListener("click", async (event) => {
   await refreshUI();
 });
 
-cariList?.addEventListener("click", (event) => {
+document.getElementById("productsList")?.addEventListener("click", (event) => {
   if (event.target.closest(".delete-btn")) return;
+  const imageButton = event.target.closest("[data-product-image-open]");
+  if (imageButton) {
+    openProductImageModal(imageButton.dataset.productImageOpen || "");
+    return;
+  }
+  const card = event.target.closest("[data-product-edit]");
+  if (!card) return;
+  const product = (cache.products || []).find((item) => item.id === Number(card.dataset.productEdit));
+  if (product) {
+    fillProductForm(product);
+  }
+});
+document.getElementById("productsList")?.addEventListener("click", (event) => {
+  const sortButton = event.target.closest("[data-product-sort]");
+  if (!sortButton) return;
+  const key = sortButton.dataset.productSort;
+  if (!key) return;
+  if (productSortState.key === key) {
+    productSortState.dir = productSortState.dir === "asc" ? "desc" : "asc";
+  } else {
+    productSortState = { key, dir: "asc" };
+  }
+  renderProducts(cache.products || []);
+});
+
+productImageModal?.addEventListener("click", (event) => {
+  if (event.target.closest("[data-close-product-image]")) {
+    closeProductImageModal();
+  }
+});
+productImageModalClose?.addEventListener("click", closeProductImageModal);
+
+cariList?.addEventListener("click", (event) => {
+  if (event.target.closest(".delete-btn") || event.target.closest(".edit-cari-btn")) return;
   const card = event.target.closest("[data-cari-select]");
   if (!card) return;
   const cari = (cache.cari || []).find((item) => item.id === Number(card.dataset.cariSelect));
   if (!cari) return;
-  fillCariForm(cari);
+  resetCariFormEditor();
+  selectedCariId = cari.id;
+  renderCariSticky(cari, cache.movements || [], cache.orders || []);
+  renderCariDetail(cari, cache.movements || [], cache.orders || []);
   renderCari(cache.cari || [], cache.movements || [], cache.orders || []);
   renderMovements(cache.movements || [], cache.cari || []);
   renderCariStatements(cache.cari || [], cache.movements || [], cache.orders || []);
@@ -385,6 +601,96 @@ offerProductsList?.addEventListener("click", handleOfferProductPick);
 offerProductsList?.addEventListener("dblclick", handleOfferProductDoublePick);
 offerProductSearch?.addEventListener("input", () => renderOfferProductsPicker(cache.products || []));
 offerOnlyCovers?.addEventListener("change", () => renderOfferProductsPicker(cache.products || []));
+productsSearch?.addEventListener("input", () => renderProducts(cache.products || []));
+async function handleCategoryListClick(event, source = "products") {
+  const editButton = event.target.closest("[data-category-edit]");
+  if (editButton) {
+    const oldName = editButton.dataset.categoryEdit || "";
+    const newName = window.prompt("Yeni kategori adini girin:", oldName)?.trim();
+    if (!newName || newName === oldName) return;
+    await renameProductCategory(oldName, newName);
+    return;
+  }
+  const deleteButton = event.target.closest("[data-category-delete]");
+  if (deleteButton) {
+    const categoryName = deleteButton.dataset.categoryDelete || "";
+    if (!window.confirm(`"${categoryName}" kategorisini silmek istiyor musunuz? Bu kategorideki urunler "Kategorisiz" olarak guncellenecek.`)) return;
+    await deleteProductCategory(categoryName);
+    return;
+  }
+  const button = event.target.closest("[data-category-pick]");
+  if (!button) return;
+  const pickedCategory = button.dataset.categoryPick || "";
+  if (source === "categories") {
+    selectedCategoryManager = pickedCategory;
+    resetCategoryTypeForm();
+    renderProductCategories(cache.products || []);
+    renderCategoryTypeManager(cache.products || []);
+    categoryTypeInput?.focus();
+    return;
+  }
+  if (!productCategorySelect) return;
+  productCategorySelect.value = pickedCategory;
+  renderProductCategories(cache.products || []);
+  if (source === "products") {
+    productCategorySelect.focus();
+  }
+}
+productCategoryList?.addEventListener("click", (event) => {
+  handleCategoryListClick(event, "products");
+});
+categoryManagerList?.addEventListener("click", (event) => {
+  handleCategoryListClick(event, "categories");
+});
+categoryTypeList?.addEventListener("click", async (event) => {
+  const editButton = event.target.closest("[data-category-type-edit]");
+  if (editButton) {
+    const product = (cache.products || []).find((item) => item.id === Number(editButton.dataset.categoryTypeEdit));
+    if (product) {
+      fillCategoryTypeForm(product);
+    }
+    return;
+  }
+  const deleteButton = event.target.closest("[data-category-type-delete]");
+  if (deleteButton) {
+    const productId = Number(deleteButton.dataset.categoryTypeDelete);
+    const product = (cache.products || []).find((item) => item.id === productId);
+    if (!product) return;
+    if (!window.confirm(`"${product.name}" urun cinsini silmek istiyor musunuz?`)) return;
+    await api.products.delete(productId);
+    resetCategoryTypeForm();
+    await refreshUI();
+  }
+});
+productCategorySelect?.addEventListener("change", () => renderProductCategories(cache.products || []));
+productFilterList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-product-filter]");
+  if (!button) return;
+  selectedProductCategoryFilter = button.dataset.productFilter || "";
+  renderProducts(cache.products || []);
+});
+productBulkUpdateForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const data = formToObject(productBulkUpdateForm);
+  const amount = parseMoneyInput(data.value);
+  if (!data.category) {
+    window.alert("Lutfen bir kategori secin.");
+    productBulkCategory?.focus();
+    return;
+  }
+  if (!Number.isFinite(amount) || amount === 0) {
+    window.alert("Guncelleme degeri girin.");
+    return;
+  }
+  await api.products.bulkUpdateCategory({
+    category: data.category,
+    mode: data.mode,
+    value: amount,
+  });
+  productBulkUpdateForm.reset();
+  if (productBulkCategory) productBulkCategory.value = data.category;
+  await refreshUI();
+});
 
 window.addEventListener("DOMContentLoaded", async () => {
   setDefaultDates();
@@ -417,6 +723,53 @@ function setDefaultDates() {
   });
   forms.movement?.querySelectorAll("input[type='date']").forEach((input) => {
     if (!input.value) input.value = today;
+  });
+}
+
+function initializeMoneyInputs() {
+  document.querySelectorAll("input[data-money='1']").forEach((input) => {
+    if (input.dataset.moneyBound === "1") return;
+    input.dataset.moneyBound = "1";
+    input.addEventListener("focus", () => {
+      if (!input.value) return;
+      input.value = normalizeEditableMoney(input.value);
+    });
+    input.addEventListener("blur", () => {
+      if (!input.value.trim()) return;
+      input.value = formatMoneyInputValue(input.value);
+    });
+    if (input.value) input.value = formatMoneyInputValue(input.value);
+  });
+}
+
+function parseMoneyInput(value) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  let text = String(value || "").trim();
+  if (!text) return 0;
+  text = text.replace(/[^\d,.-]/g, "");
+  if (text.includes(",")) {
+    text = text.replace(/\./g, "").replace(",", ".");
+  } else {
+    const dotCount = (text.match(/\./g) || []).length;
+    if (dotCount > 1) {
+      const lastDotIndex = text.lastIndexOf(".");
+      text = `${text.slice(0, lastDotIndex).replace(/\./g, "")}.${text.slice(lastDotIndex + 1)}`;
+    }
+  }
+  const parsed = Number(text);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeEditableMoney(value) {
+  const parsed = parseMoneyInput(value);
+  return Number.isFinite(parsed) ? String(parsed).replace(".", ",") : "";
+}
+
+function formatMoneyInputValue(value) {
+  const parsed = parseMoneyInput(value);
+  return parsed.toLocaleString("tr-TR", {
+    minimumFractionDigits: Number.isInteger(parsed) ? 0 : 2,
+    maximumFractionDigits: 2,
   });
 }
 
@@ -534,11 +887,11 @@ function renderOfferProductsPicker(products) {
       data-product-id="${item.id}"
       data-product-name="${escapeHtml(item.name)}"
       data-product-category="${escapeHtml(item.category || "")}"
-      data-product-price="${item.salePrice || item.m2Price || 0}"
+      data-product-price="${item.costAmount || item.m2Price || item.salePrice || 0}"
       data-product-cover-options="${escapeHtml(JSON.stringify(getPresetCoverTypes(item.category, item.name)))}">
       <strong>${escapeHtml(item.name)}</strong>
       <span>${escapeHtml(item.category || "Urun")}</span>
-      <small>Satis ${formatCurrency(item.salePrice || item.m2Price || 0)}</small>
+      <small>Maliyet ${formatCurrency(item.costAmount || item.m2Price || item.salePrice || 0)}</small>
     </button>
   `).join("") : `<div class="entity-card empty-state">Urun bulunamadi. Once Urunler sayfasindan kayit ekleyin.</div>`;
 }
@@ -552,7 +905,7 @@ function handleOfferProductPick(event) {
   if (offerLineInputs.materialGroup) {
     offerLineInputs.materialGroup.innerHTML = createOfferMaterialOptions(categoryToMaterialGroup(button.dataset.productCategory));
   }
-  if (offerLineInputs.unitPrice) offerLineInputs.unitPrice.value = button.dataset.productPrice || "";
+  if (offerLineInputs.unitPrice) offerLineInputs.unitPrice.value = formatMoneyInputValue(button.dataset.productPrice || 0);
   if (offerLineInputs.note && !offerLineInputs.note.value) {
     offerLineInputs.note.value = `${button.dataset.productCategory || "Urun"} secildi`;
   }
@@ -604,7 +957,7 @@ function getOfferLineInputValues() {
   const materialGroup = offerLineInputs.materialGroup?.value || "";
   const coverType = offerLineInputs.coverType?.value?.trim() || "";
   const color = offerLineInputs.color?.value?.trim() || "";
-  const unitPrice = Number(offerLineInputs.unitPrice?.value || 0);
+  const unitPrice = parseMoneyInput(offerLineInputs.unitPrice?.value || 0);
   const note = offerLineInputs.note?.value?.trim() || "";
 
   if (!width || !height || !quantity || !coverType) {
@@ -824,16 +1177,7 @@ async function addRecord(storeName, payload) {
         status: payload.status,
       });
     case STORES.products:
-      return api.products.create({
-        name: payload.name,
-        category: payload.category,
-        purchase_price: payload.purchasePrice,
-        sale_price: payload.salePrice,
-        m2_price: payload.m2Price,
-        raw_m2_price: payload.rawM2Price,
-        painted_m2_price: payload.paintedM2Price,
-        cost_notes: payload.costNotes,
-      });
+      return api.products.create(buildProductApiPayload(payload));
     case STORES.stocks:
       return api.stocks.create({
         name: payload.name,
@@ -941,6 +1285,7 @@ async function refreshUI() {
   renderOfferProductsPicker(cache.products);
   renderOrdersTable(cache.orders);
   renderProducts(cache.products);
+  renderCategoryTypeManager(cache.products);
   renderStocks(cache.stocks);
   renderFinance(cache.finance, cache.products, cache.orders);
   renderReports(cache);
@@ -985,11 +1330,15 @@ function renderRecentOrders(records) {
 
 function clearCariSelection() {
   selectedCariId = null;
+  resetCariFormEditor();
+  renderCariSticky(null, [], []);
+  renderCariDetail(null, [], []);
+}
+
+function resetCariFormEditor() {
   forms.cari?.reset();
   if (cariEditId) cariEditId.value = "";
   if (cariSubmitBtn) cariSubmitBtn.textContent = "Cariyi Kaydet";
-  renderCariSticky(null, [], []);
-  renderCariDetail(null, [], []);
 }
 
 function resetMovementForm() {
@@ -1003,6 +1352,7 @@ function resetMovementForm() {
   if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
   if (movementReceiptPanel) movementReceiptPanel.hidden = true;
   renderMovements(cache.movements || [], cache.cari || []);
+  initializeMoneyInputs();
 }
 
 function fillMovementForm(movement) {
@@ -1016,7 +1366,7 @@ function fillMovementForm(movement) {
   const noteInput = forms.movement.querySelector('[name="note"]');
   if (cariInput) cariInput.value = String(movement.cariId);
   if (typeInput) typeInput.value = movement.movementType;
-  if (amountInput) amountInput.value = String(movement.amount || 0);
+  if (amountInput) amountInput.value = formatMoneyInputValue(movement.amount || 0);
   if (dateInput) dateInput.value = movement.date || "";
   if (noteInput) noteInput.value = movement.note || "";
   if (movementSubmitBtn) movementSubmitBtn.textContent = "Hareketi Guncelle";
@@ -1137,52 +1487,218 @@ function buildMovementReceiptHtml(data) {
       <head>
         <meta charset="utf-8">
         <title>${escapeHtml(data.receiptTitle || "Cari Dekont Makbuzu")}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 28px; color: #1d2a3a; }
-            .sheet { border: 1px solid #dbe4ef; border-radius: 14px; padding: 26px; }
-            .head { display:flex; justify-content:space-between; gap:16px; margin-bottom:20px; }
-            .brand { display:flex; gap:14px; align-items:center; }
-            .logo { width:72px; height:72px; object-fit:contain; border:1px solid #e7edf5; border-radius:12px; padding:8px; background:#fff; }
-            .head h1 { margin:0; font-size:22px; }
-            .meta { color:#5d6b7b; font-size:12px; }
-            .grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:14px; margin-bottom:18px; }
-            .item { border:1px solid #e7edf5; border-radius:10px; padding:12px 14px; background:#fbfdff; }
-            .item span { display:block; color:#6a7684; font-size:11px; margin-bottom:5px; }
-            .item strong { display:block; font-size:15px; }
-            .wide { grid-column:1 / -1; }
-            .note { min-height:90px; white-space:pre-wrap; }
-            .signature { display:flex; justify-content:flex-end; margin-top:26px; }
-            .signature-box { min-width:240px; text-align:center; padding-top:26px; border-top:1px solid #b9c6d8; }
-            .signature-box strong { display:block; font-size:14px; margin-bottom:4px; }
-            .signature-box span { color:#6a7684; font-size:12px; }
-          </style>
-        </head>
+        <style>
+          @page { size: A4; margin: 14mm; }
+          * { box-sizing: border-box; }
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            color: #162233;
+            background: #ffffff;
+          }
+          .sheet {
+            width: 100%;
+            min-height: calc(297mm - 28mm);
+            border: 1px solid #d8e1ec;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #fff;
+          }
+          .top-band {
+            height: 10px;
+            background: linear-gradient(90deg, #1d4ed8 0%, #60a5fa 100%);
+          }
+          .content {
+            padding: 22px 24px 26px;
+          }
+          .head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 18px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #e6edf5;
+          }
+          .brand {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+          }
+          .logo {
+            width: 78px;
+            height: 78px;
+            object-fit: contain;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 8px;
+            background: #fff;
+          }
+          .brand-copy h1 {
+            margin: 0 0 6px;
+            font-size: 24px;
+            letter-spacing: 0.2px;
+          }
+          .subtitle {
+            color: #64748b;
+            font-size: 12px;
+          }
+          .doc-box {
+            min-width: 220px;
+            padding: 14px 16px;
+            border: 1px solid #dbe4ef;
+            border-radius: 14px;
+            background: #f8fbff;
+          }
+          .doc-box span {
+            display: block;
+            font-size: 11px;
+            color: #64748b;
+            margin-bottom: 4px;
+          }
+          .doc-box strong {
+            display: block;
+            font-size: 15px;
+            margin-bottom: 10px;
+          }
+          .summary-strip {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr 0.8fr;
+            gap: 12px;
+            margin: 18px 0;
+          }
+          .summary-card {
+            border: 1px solid #dbe4ef;
+            border-radius: 14px;
+            padding: 14px 16px;
+            background: #fbfdff;
+          }
+          .summary-card span {
+            display: block;
+            color: #64748b;
+            font-size: 11px;
+            margin-bottom: 6px;
+          }
+          .summary-card strong {
+            display: block;
+            font-size: 18px;
+          }
+          .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+          }
+          .item {
+            border: 1px solid #e6edf5;
+            border-radius: 12px;
+            padding: 14px 16px;
+            background: #ffffff;
+          }
+          .item span {
+            display: block;
+            color: #6b7280;
+            font-size: 11px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .item strong {
+            display: block;
+            font-size: 15px;
+            line-height: 1.45;
+          }
+          .wide { grid-column: 1 / -1; }
+          .note {
+            min-height: 96px;
+            white-space: pre-wrap;
+          }
+          .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 18px;
+            margin-top: 28px;
+          }
+          .footer-note {
+            max-width: 55%;
+            color: #64748b;
+            font-size: 11px;
+            line-height: 1.5;
+          }
+          .signature {
+            min-width: 250px;
+            text-align: center;
+          }
+          .signature-line {
+            margin-top: 34px;
+            border-top: 1px solid #94a3b8;
+            padding-top: 10px;
+          }
+          .signature-line strong {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 4px;
+          }
+          .signature-line span {
+            color: #64748b;
+            font-size: 12px;
+          }
+          @media print {
+            body { background: #fff; }
+            .sheet { border: 0; border-radius: 0; }
+          }
+        </style>
+      </head>
       <body>
         <div class="sheet">
-          <div class="head">
-            <div class="brand">
-              ${logoMarkup}
-              <div>
-                <h1>${escapeHtml(data.receiptTitle || "Cari Dekont Makbuzu")}</h1>
-                <div class="meta">Silva Ahsap Kapak Imalat Programi</div>
+          <div class="top-band"></div>
+          <div class="content">
+            <div class="head">
+              <div class="brand">
+                ${logoMarkup}
+                <div class="brand-copy">
+                  <h1>${escapeHtml(data.receiptTitle || "Cari Dekont Makbuzu")}</h1>
+                  <div class="subtitle">Silva Ahsap Kapak Imalat Programi</div>
+                </div>
+              </div>
+              <div class="doc-box">
+                <span>Belge No</span>
+                <strong>${escapeHtml(data.receiptNo || "-")}</strong>
+                <span>Belge Tarihi</span>
+                <strong>${escapeHtml(data.date || "-")}</strong>
               </div>
             </div>
-            <div class="meta">Belge No: ${escapeHtml(data.receiptNo || "-")}</div>
-          </div>
-          <div class="grid">
-            <div class="item"><span>Firma</span><strong>${escapeHtml(data.companyName || "-")}</strong></div>
-            <div class="item"><span>Yetkili Kisi</span><strong>${escapeHtml(data.contactName || "-")}</strong></div>
-            <div class="item"><span>Telefon</span><strong>${escapeHtml(data.phone || "-")}</strong></div>
-            <div class="item"><span>Dekont Turu</span><strong>${escapeHtml(data.movementType || "-")}</strong></div>
-            <div class="item"><span>Tutar</span><strong>${escapeHtml(data.amount || "-")}</strong></div>
-            <div class="item"><span>Tarih</span><strong>${escapeHtml(data.date || "-")}</strong></div>
-            <div class="item wide"><span>Aciklama</span><strong class="note">${escapeHtml(data.description || "-")}</strong></div>
-            <div class="item wide"><span>Ek Not</span><strong class="note">${escapeHtml(data.receiptNote || "-")}</strong></div>
-          </div>
-          <div class="signature">
-            <div class="signature-box">
-              <strong>${escapeHtml(data.signatureName || "Yetkili Imza")}</strong>
-              <span>${escapeHtml(data.signatureTitle || "Silva Ahsap Yetkilisi")}</span>
+            <div class="summary-strip">
+              <div class="summary-card">
+                <span>Firma</span>
+                <strong>${escapeHtml(data.companyName || "-")}</strong>
+              </div>
+              <div class="summary-card">
+                <span>Dekont Turu</span>
+                <strong>${escapeHtml(data.movementType || "-")}</strong>
+              </div>
+              <div class="summary-card">
+                <span>Tutar</span>
+                <strong>${escapeHtml(data.amount || "-")}</strong>
+              </div>
+            </div>
+            <div class="grid">
+              <div class="item"><span>Yetkili Kisi</span><strong>${escapeHtml(data.contactName || "-")}</strong></div>
+              <div class="item"><span>Telefon</span><strong>${escapeHtml(data.phone || "-")}</strong></div>
+              <div class="item wide"><span>Aciklama</span><strong class="note">${escapeHtml(data.description || "-")}</strong></div>
+              <div class="item wide"><span>Ek Not</span><strong class="note">${escapeHtml(data.receiptNote || "-")}</strong></div>
+            </div>
+            <div class="footer">
+              <div class="footer-note">
+                Bu belge, cari hareket kaydina istinaden bilgi ve onay amacli duzenlenmistir.
+                Gerekli durumlarda firma yetkilisi ile iletisime geciniz.
+              </div>
+              <div class="signature">
+                <div class="signature-line">
+                  <strong>${escapeHtml(data.signatureName || "Yetkili Imza")}</strong>
+                  <span>${escapeHtml(data.signatureTitle || "Silva Ahsap Yetkilisi")}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1201,8 +1717,8 @@ function fillCariForm(cari) {
   setCariFormValue("taxOffice", cari.taxOffice || "");
   setCariFormValue("taxNumber", cari.taxNumber || "");
   setCariFormValue("discountRate", String(cari.discountRate || 0));
-  setCariFormValue("balanceLimit", String(cari.balanceLimit || 0));
-  setCariFormValue("riskLimit", String(cari.riskLimit || 0));
+  setCariFormValue("balanceLimit", formatMoneyInputValue(cari.balanceLimit || 0));
+  setCariFormValue("riskLimit", formatMoneyInputValue(cari.riskLimit || 0));
   setCariFormValue("type", cari.type || "Musteri");
   if (cariSubmitBtn) cariSubmitBtn.textContent = "Cariyi Guncelle";
   renderCariSticky(cari, cache.movements || [], cache.orders || []);
@@ -1322,7 +1838,7 @@ function renderCari(records, movements, orders) {
         <div><strong>${escapeHtml(item.companyName || item.fullName)}</strong><span>${escapeHtml(item.fullName || item.type || "-")}</span></div>
         <div><small>${escapeHtml(item.phone || "-")}</small><span>${escapeHtml(item.type)} | Iskonto %${item.discountRate || 0}</span></div>
         <div><small>${getCariLastMovementText(item.id, movements)}</small><span>Bakiye ${formatCurrency(balances.get(item.id) || 0)}</span></div>
-        <div class="entity-actions"><button class="ghost-action delete-btn" data-store="${STORES.cari}" data-id="${item.id}">Sil</button></div>
+        <div class="entity-actions"><button class="ghost-action edit-cari-btn" data-id="${item.id}">Cariyi Duzenle</button><button class="ghost-action delete-btn" data-store="${STORES.cari}" data-id="${item.id}">Sil</button></div>
       </article>
     `).join("") : `<div class="entity-card empty-state">Cari kaydi bulunamadi.</div>`;
   }
@@ -1413,18 +1929,29 @@ function renderMovements(movements, cariler) {
     if (right.id === selectedMovementId) return 1;
     return new Date(right.date || 0) - new Date(left.date || 0) || (right.id || 0) - (left.id || 0);
   });
-  target.innerHTML = sortedMovements.length ? sortedMovements.map((item) => {
-        const cari = cariMap.get(item.cariId);
-        const sign = isCreditMovement(item.movementType) ? "+" : "-";
-        return `
-          <article class="entity-card ${selectedMovementId === item.id ? "is-selected" : ""}">
-          <div><strong>${escapeHtml(cari?.companyName || cari?.fullName || "Cari")}</strong><span>${escapeHtml(item.movementType)} | ${formatDate(item.date)}</span></div>
-          <div><small>${sign}${formatCurrency(item.amount)}</small><span>${escapeHtml(item.note || "-")}</span></div>
-          <div class="entity-actions"><button class="ghost-action edit-movement-btn" data-id="${item.id}">Duzenle</button><button class="ghost-action delete-btn" data-store="${STORES.movements}" data-id="${item.id}">Sil</button></div>
-        </article>
-      `;
-  }).join("") : `<div class="entity-card empty-state">Cari hareketi bulunamadi.</div>`;
-}
+  const visibleMovements = movementsFilter?.value === "all" ? sortedMovements : sortedMovements.slice(0, 10);
+    target.innerHTML = visibleMovements.length ? visibleMovements.map((item) => {
+          const cari = cariMap.get(item.cariId);
+          const sign = isCreditMovement(item.movementType) ? "+" : "-";
+          const noteText = item.note ? escapeHtml(shortenText(item.note, 42)) : "-";
+          return `
+            <article class="entity-card ${selectedMovementId === item.id ? "is-selected" : ""}">
+              <div class="movement-card-main">
+                <strong>${escapeHtml(cari?.companyName || cari?.fullName || "Cari")}</strong>
+                <span>${escapeHtml(item.movementType)} | ${formatDate(item.date)}</span>
+                <small>${noteText}</small>
+              </div>
+              <div class="movement-card-side">
+                <strong>${sign}${formatCurrency(item.amount)}</strong>
+                <div class="entity-actions">
+                  <button class="ghost-action edit-movement-btn" data-id="${item.id}">Duzenle</button>
+                  <button class="ghost-action delete-btn" data-store="${STORES.movements}" data-id="${item.id}">Sil</button>
+                </div>
+              </div>
+          </article>
+        `;
+    }).join("") : `<div class="entity-card empty-state">Cari hareketi bulunamadi.</div>`;
+  }
 
 function renderCariStatements(cariler, movements, orders) {
   const target = document.getElementById("cariStatementList");
@@ -1495,15 +2022,398 @@ function createOrdersMarkup(records) {
   `;
 }
 
+function getStoredProductCategories() {
+  try {
+    return JSON.parse(window.localStorage.getItem(PRODUCT_CATEGORY_STORAGE_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveStoredProductCategories(categories) {
+  window.localStorage.setItem(PRODUCT_CATEGORY_STORAGE_KEY, JSON.stringify([...new Set((categories || []).filter(Boolean))]));
+}
+
+function collectProductCategories(records) {
+  return [...new Set([
+    ...getStoredProductCategories(),
+    ...(records || []).map((item) => item.category).filter(Boolean),
+  ])].sort((left, right) => left.localeCompare(right, "tr"));
+}
+
+function syncProductCategorySelect(records, selectedValue = "") {
+  if (!productCategorySelect) return;
+  const categories = collectProductCategories(records);
+  productCategorySelect.innerHTML = [
+    `<option value="">Kategori Secin</option>`,
+    ...categories.map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`),
+  ].join("");
+  if (selectedValue && categories.includes(selectedValue)) {
+    productCategorySelect.value = selectedValue;
+  }
+}
+
+function renderProductCategories(records) {
+  const categories = collectProductCategories(records);
+  const selectedValue = productCategorySelect?.value || "";
+  if (!selectedCategoryManager || !categories.includes(selectedCategoryManager)) {
+    selectedCategoryManager = categories[0] || "";
+  }
+  syncProductCategorySelect(records, selectedValue);
+  const productsMarkup = categories.length ? categories.map((category) => `
+    <article class="product-category-item ${category === selectedValue ? "active" : ""}">
+      <button class="product-category-pick" type="button" data-category-pick="${escapeHtml(category)}">
+        <strong>${escapeHtml(category)}</strong>
+        <span>Form secimi</span>
+      </button>
+      <div class="product-category-actions">
+        <button class="ghost-action compact-action" type="button" data-category-edit="${escapeHtml(category)}">Duzenle</button>
+        <button class="ghost-action compact-action danger-action" type="button" data-category-delete="${escapeHtml(category)}">Sil</button>
+      </div>
+    </article>
+  `).join("") : `<div class="entity-card empty-state">Henuz kategori eklenmedi.</div>`;
+  const managerMarkup = categories.length ? categories.map((category) => `
+    <article class="product-category-item ${category === selectedCategoryManager ? "active" : ""}">
+      <button class="product-category-pick" type="button" data-category-pick="${escapeHtml(category)}">
+        <strong>${escapeHtml(category)}</strong>
+        <span>${(records || []).filter((item) => item.category === category).length} cins</span>
+      </button>
+      <div class="product-category-actions">
+        <button class="ghost-action compact-action" type="button" data-category-edit="${escapeHtml(category)}">Duzenle</button>
+        <button class="ghost-action compact-action danger-action" type="button" data-category-delete="${escapeHtml(category)}">Sil</button>
+      </div>
+    </article>
+  `).join("") : `<div class="entity-card empty-state">Henuz kategori eklenmedi.</div>`;
+  if (productCategoryList) {
+    productCategoryList.innerHTML = productsMarkup;
+  }
+  if (categoryManagerList) {
+    categoryManagerList.innerHTML = managerMarkup;
+  }
+}
+
+function resetCategoryTypeForm() {
+  categoryTypeForm?.reset();
+  if (categoryTypeEditId) categoryTypeEditId.value = "";
+  if (categoryTypeSubmitBtn) categoryTypeSubmitBtn.textContent = "Cinsi Kaydet";
+  categoryTypeSubmitBtn?.classList.remove("is-active");
+  categoryTypeResetBtn?.classList.remove("is-active");
+}
+
+function fillCategoryTypeForm(product) {
+  if (!product) return;
+  selectedCategoryManager = product.category || selectedCategoryManager;
+  if (categoryTypeEditId) categoryTypeEditId.value = String(product.id || "");
+  if (categoryTypeInput) categoryTypeInput.value = product.name || "";
+  if (categoryTypeSubmitBtn) categoryTypeSubmitBtn.textContent = "Cinsi Guncelle";
+  categoryTypeSubmitBtn?.classList.add("is-active");
+  categoryTypeResetBtn?.classList.add("is-active");
+  renderProductCategories(cache.products || []);
+  renderCategoryTypeManager(cache.products || []);
+  categoryTypeInput?.focus();
+}
+
+function renderCategoryTypeManager(records) {
+  const categories = collectProductCategories(records);
+  if (!selectedCategoryManager || !categories.includes(selectedCategoryManager)) {
+    selectedCategoryManager = categories[0] || "";
+  }
+  if (categoryTypeSelectedName) {
+    categoryTypeSelectedName.textContent = selectedCategoryManager || "Kategori secilmedi";
+  }
+  if (categoryTypeSelectedMeta) {
+    categoryTypeSelectedMeta.textContent = selectedCategoryManager
+      ? `"${selectedCategoryManager}" kategorisine bagli urun cinsleri`
+      : "Urun cinsi eklemek icin once soldan bir kategori secin.";
+  }
+  if (categoryTypeInput) {
+    categoryTypeInput.disabled = !selectedCategoryManager;
+  }
+  if (categoryTypeSubmitBtn) {
+    categoryTypeSubmitBtn.disabled = !selectedCategoryManager;
+  }
+  if (!categoryTypeList) return;
+  if (!selectedCategoryManager) {
+    categoryTypeList.innerHTML = `<div class="entity-card empty-state">Once bir kategori secin.</div>`;
+    return;
+  }
+  const items = (records || []).filter((item) => item.category === selectedCategoryManager);
+  categoryTypeList.innerHTML = items.length ? items.map((item) => `
+    <article class="category-type-item">
+      <div class="category-type-content">
+        <strong>${escapeHtml(item.name || "-")}</strong>
+        <span>${escapeHtml(item.costType || "M2")} bazli maliyet</span>
+      </div>
+      <div class="product-category-actions">
+        <button class="ghost-action compact-action" type="button" data-category-type-edit="${item.id}">Duzenle</button>
+        <button class="ghost-action compact-action danger-action" type="button" data-category-type-delete="${item.id}">Sil</button>
+      </div>
+    </article>
+  `).join("") : `<div class="entity-card empty-state">Bu kategori icin henuz urun cinsi eklenmedi.</div>`;
+}
+
+function renderProductCategoryFilter(records) {
+  if (!productFilterList) return;
+  const categories = collectProductCategories(records);
+  const coverCount = (records || []).filter((item) => isCoverCategory(item.category, item.name)).length;
+  if (selectedProductCategoryFilter === "__covers__" && coverCount === 0) {
+    selectedProductCategoryFilter = "";
+  }
+  if (selectedProductCategoryFilter && selectedProductCategoryFilter !== "__covers__" && !categories.includes(selectedProductCategoryFilter)) {
+    if (selectedProductCategoryFilter !== "__covers__") {
+      selectedProductCategoryFilter = "__covers__";
+    }
+  }
+  const items = [
+    {
+      value: "__covers__",
+      label: "Kapak Kategorileri",
+      count: (records || []).filter((item) => isCoverCategory(item.category, item.name)).length,
+    },
+    {
+      value: "",
+      label: "Tum Kategoriler",
+      count: (records || []).length,
+    },
+    ...categories.map((category) => ({
+      value: category,
+      label: category,
+      count: (records || []).filter((item) => item.category === category).length,
+    })),
+  ];
+  productFilterList.innerHTML = items.length ? items.map((item) => `
+    <button class="product-filter-item ${item.value === selectedProductCategoryFilter ? "active" : ""}" type="button" data-product-filter="${escapeHtml(item.value)}">
+      <strong>${escapeHtml(item.label)}</strong>
+      <span>${item.count} urun</span>
+    </button>
+  `).join("") : `<div class="entity-card empty-state">Gosterilecek kategori bulunamadi.</div>`;
+  syncBulkCategorySelect(records);
+}
+
+async function renameProductCategory(oldName, newName) {
+  const records = cache.products || [];
+  const updatedCategories = collectProductCategories(records).map((item) => (item === oldName ? newName : item));
+  saveStoredProductCategories(updatedCategories);
+  const affected = records.filter((item) => item.category === oldName);
+  for (const product of affected) {
+      await api.products.update(product.id, buildProductApiPayload({
+        ...product,
+        category: newName,
+      }));
+  }
+  if (selectedProductCategoryFilter === oldName) selectedProductCategoryFilter = newName;
+  if (productCategorySelect?.value === oldName) productCategorySelect.value = newName;
+  await refreshUI();
+}
+
+async function deleteProductCategory(categoryName) {
+  const records = cache.products || [];
+  const filteredCategories = collectProductCategories(records).filter((item) => item !== categoryName);
+  saveStoredProductCategories(filteredCategories);
+  const affected = records.filter((item) => item.category === categoryName);
+  for (const product of affected) {
+      await api.products.update(product.id, buildProductApiPayload({
+        ...product,
+        category: "Kategorisiz",
+      }));
+  }
+  if (selectedProductCategoryFilter === categoryName) selectedProductCategoryFilter = "";
+  if (productCategorySelect?.value === categoryName) productCategorySelect.value = "Kategorisiz";
+  await refreshUI();
+}
+
+function isCoverCategory(category, name = "") {
+  const normalized = `${category || ""} ${name || ""}`.toLowerCase();
+  return ["kapak", "panjur", "lake", "ham", "cam", "mdf"].some((token) => normalized.includes(token));
+}
+
+function resolveProductImageUrl(value = "") {
+  if (!value) return "";
+  return api.resolveAssetUrl ? api.resolveAssetUrl(value) : value;
+}
+
+function renderProductImagePreview(value = "") {
+  if (!productImagePreview) return;
+  if (value) {
+    productImagePreview.innerHTML = `<img src="${escapeHtml(resolveProductImageUrl(value))}" alt="Urun gorseli onizleme">`;
+    productImagePreview.classList.add("has-image");
+    return;
+  }
+  productImagePreview.textContent = "Gorsel secildiginde burada gorunecek.";
+  productImagePreview.classList.remove("has-image");
+}
+
+function openProductImageModal(value = "") {
+  const imageUrl = resolveProductImageUrl(value);
+  if (!productImageModal || !productImageModalImg || !imageUrl) return;
+  productImageModalImg.src = imageUrl;
+  productImageModal.hidden = false;
+}
+
+function closeProductImageModal() {
+  if (!productImageModal || !productImageModalImg) return;
+  productImageModal.hidden = true;
+  productImageModalImg.src = "";
+}
+
+function syncBulkCategorySelect(records) {
+  if (!productBulkCategory) return;
+  const categories = collectProductCategories(records).filter(Boolean);
+  productBulkCategory.innerHTML = [
+    `<option value="">Kategori Secin</option>`,
+    ...categories.map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`),
+  ].join("");
+  if (selectedProductCategoryFilter && selectedProductCategoryFilter !== "__covers__" && categories.includes(selectedProductCategoryFilter)) {
+    productBulkCategory.value = selectedProductCategoryFilter;
+  }
+}
+
+function getSortedProducts(records) {
+  const direction = productSortState.dir === "asc" ? 1 : -1;
+  const key = productSortState.key;
+  return [...records].sort((left, right) => {
+    const leftValue = key === "name" || key === "category" || key === "costNotes"
+      ? String(left[key] || "").toLocaleLowerCase("tr")
+      : Number(left[key] || 0);
+    const rightValue = key === "name" || key === "category" || key === "costNotes"
+      ? String(right[key] || "").toLocaleLowerCase("tr")
+      : Number(right[key] || 0);
+    if (leftValue < rightValue) return -1 * direction;
+    if (leftValue > rightValue) return 1 * direction;
+    return 0;
+  });
+}
+
+function getProductSortLabel(key) {
+  return productSortState.key === key ? (productSortState.dir === "asc" ? "▲" : "▼") : "";
+}
+
+function exportProductsToCsv(records) {
+  const rows = [
+    ["Urun", "Kategori", "Alis", "Satis", "M2", "Ham", "Boyali", "Not"],
+    ...records.map((item) => [
+      item.name || "",
+      item.category || "",
+      Number(item.purchasePrice || 0),
+      Number(item.salePrice || 0),
+      Number(item.m2Price || 0),
+      Number(item.rawM2Price || 0),
+      Number(item.paintedM2Price || 0),
+      item.costNotes || "",
+    ]),
+  ];
+  const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(";")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "urunler.csv";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function resetProductFormEditor() {
+  forms.product?.reset();
+  if (productEditId) productEditId.value = "";
+  if (productSubmitBtn) productSubmitBtn.textContent = "Urunu Kaydet";
+  productSubmitBtn?.classList.remove("is-active");
+  productResetBtn?.classList.remove("is-active");
+  if (productCategorySelect) {
+    syncProductCategorySelect(cache.products || []);
+  }
+  renderProductCategories(cache.products || []);
+  if (productImageFile) productImageFile.value = "";
+  renderProductImagePreview("");
+  initializeMoneyInputs();
+}
+
+function fillProductForm(product) {
+  if (!forms.product || !product) return;
+  const nameInput = forms.product.querySelector("[name='name']");
+  const purchaseInput = forms.product.querySelector("[name='purchasePrice']");
+  const saleInput = forms.product.querySelector("[name='salePrice']");
+  const m2Input = forms.product.querySelector("[name='m2Price']");
+  const rawInput = forms.product.querySelector("[name='rawM2Price']");
+  const paintedInput = forms.product.querySelector("[name='paintedM2Price']");
+  const imageInput = forms.product.querySelector("[name='imageUrl']");
+  const notesInput = forms.product.querySelector("[name='costNotes']");
+  if (nameInput) nameInput.value = product.name || "";
+  if (productCategorySelect) {
+    syncProductCategorySelect(cache.products || [], product.category || "");
+  }
+  renderProductCategories(cache.products || []);
+  if (purchaseInput) purchaseInput.value = formatMoneyInputValue(product.purchasePrice || 0);
+  if (saleInput) saleInput.value = formatMoneyInputValue(product.salePrice || 0);
+  if (m2Input) m2Input.value = formatMoneyInputValue(product.m2Price || 0);
+  if (rawInput) rawInput.value = formatMoneyInputValue(product.rawM2Price || 0);
+  if (paintedInput) paintedInput.value = formatMoneyInputValue(product.paintedM2Price || 0);
+  if (imageInput) imageInput.value = product.imageUrl || "";
+  if (notesInput) notesInput.value = product.costNotes || "";
+  if (productEditId) productEditId.value = String(product.id);
+  if (productSubmitBtn) productSubmitBtn.textContent = "Urunu Guncelle";
+  productSubmitBtn?.classList.add("is-active");
+  productResetBtn?.classList.add("is-active");
+  if (productImageFile) productImageFile.value = "";
+  renderProductImagePreview(product.imageUrl || "");
+  forms.product.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function renderProducts(records) {
   const target = document.getElementById("productsList");
-  target.innerHTML = records.length ? records.map((item) => `
-    <article class="entity-card">
-      <div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.category || "-")}</span></div>
-      <div><small>Alis ${formatCurrency(item.purchasePrice)}</small><span>Satis ${formatCurrency(item.salePrice)} | M2 ${formatCurrency(item.m2Price)}</span></div>
-      <div class="entity-actions"><button class="ghost-action delete-btn" data-store="${STORES.products}" data-id="${item.id}">Sil</button></div>
-    </article>
-  `).join("") : `<div class="entity-card empty-state">Urun kaydi bulunamadi.</div>`;
+  if (!target) return;
+  const searchTerm = productsSearch?.value?.trim().toLowerCase() || "";
+  renderProductCategories(records || []);
+  renderProductCategoryFilter(records || []);
+  const filtered = (records || []).filter((item) => {
+    const haystack = [item.name, item.category, item.costNotes].join(" ").toLowerCase();
+    const matchesSearch = !searchTerm || haystack.includes(searchTerm);
+    const matchesCategory =
+      selectedProductCategoryFilter === "__covers__"
+        ? isCoverCategory(item.category, item.name)
+        : !selectedProductCategoryFilter || item.category === selectedProductCategoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+  const sorted = getSortedProducts(filtered);
+  target.innerHTML = sorted.length ? `
+    <div class="products-table">
+      <div class="products-table-head">
+        <span>Gorsel</span>
+        <button type="button" data-product-sort="name">Urun ${getProductSortLabel("name")}</button>
+        <button type="button" data-product-sort="category">Kategori ${getProductSortLabel("category")}</button>
+        <button type="button" data-product-sort="purchasePrice">Alis ${getProductSortLabel("purchasePrice")}</button>
+        <button type="button" data-product-sort="salePrice">Satis ${getProductSortLabel("salePrice")}</button>
+        <button type="button" data-product-sort="m2Price">M2 ${getProductSortLabel("m2Price")}</button>
+        <button type="button" data-product-sort="rawM2Price">Ham ${getProductSortLabel("rawM2Price")}</button>
+        <button type="button" data-product-sort="paintedM2Price">Boyali ${getProductSortLabel("paintedM2Price")}</button>
+        <button type="button" data-product-sort="costNotes">Not ${getProductSortLabel("costNotes")}</button>
+        <span class="products-export-cell"><button class="ghost-action compact-action" type="button" id="productsExportBtn">Excel'e Aktar</button></span>
+      </div>
+      ${sorted.map((item) => `
+        <div class="products-table-row" data-product-edit="${item.id}">
+          <span class="products-cell visual">
+            ${item.imageUrl
+              ? `<button class="product-image-open" type="button" data-product-image-open="${escapeHtml(item.imageUrl)}"><img class="product-thumb" src="${escapeHtml(resolveProductImageUrl(item.imageUrl))}" alt="${escapeHtml(item.name)}"></button>`
+              : `<div class="product-thumb placeholder">${escapeHtml((item.name || "?").slice(0, 1).toUpperCase())}</div>`}
+          </span>
+          <span class="products-cell"><strong>${escapeHtml(item.name)}</strong></span>
+          <span class="products-cell">${escapeHtml(item.category || "-")}</span>
+          <span class="products-cell">${formatCurrency(item.purchasePrice)}</span>
+          <span class="products-cell">${formatCurrency(item.salePrice)}</span>
+          <span class="products-cell">${formatCurrency(item.m2Price)}</span>
+          <span class="products-cell">${formatCurrency(item.rawM2Price)}</span>
+          <span class="products-cell">${formatCurrency(item.paintedM2Price)}</span>
+          <span class="products-cell note">${escapeHtml(item.costNotes || "-")}</span>
+          <span class="products-cell actions">
+            <button class="ghost-action compact-action" type="button">Duzenle</button>
+            <button class="ghost-action delete-btn compact-action" data-store="${STORES.products}" data-id="${item.id}">Sil</button>
+          </span>
+        </div>
+      `).join("")}
+    </div>
+  ` : `<div class="entity-card empty-state">Urun kaydi bulunamadi.</div>`;
+  document.getElementById("productsExportBtn")?.addEventListener("click", () => exportProductsToCsv(sorted), { once: true });
 }
 
 function renderStocks(records) {
@@ -1944,6 +2854,7 @@ function normalizeProducts(rows) {
     m2Price: Number(row.m2_price || 0),
     rawM2Price: Number(row.raw_m2_price || 0),
     paintedM2Price: Number(row.painted_m2_price || 0),
+    imageUrl: row.image_url || "",
     costNotes: row.cost_notes,
     createdAt: row.created_at,
   }));

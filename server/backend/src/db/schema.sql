@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS products (
   m2_price REAL NOT NULL DEFAULT 0,
   raw_m2_price REAL NOT NULL DEFAULT 0,
   painted_m2_price REAL NOT NULL DEFAULT 0,
+  image_url TEXT,
   cost_notes TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
