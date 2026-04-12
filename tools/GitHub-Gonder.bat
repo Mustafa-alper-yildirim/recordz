@@ -10,6 +10,13 @@ cd /d "%PROJECT_DIR%"
 
 echo GitHub'a gonderim basliyor...
 echo ==== %date% %time% GitHub Gonder Basladi ====>> "%LOG_FILE%"
+call :ensure_git_identity
+if errorlevel 1 (
+  echo [HATA] Git kullanici bilgileri ayarlanamadi. Ayrinti: %LOG_FILE%
+  echo [HATA] Git kullanici bilgileri ayarlanamadi.>> "%LOG_FILE%"
+  pause
+  exit /b 1
+)
 git status >> "%LOG_FILE%" 2>&1
 echo.
 
@@ -59,3 +66,25 @@ echo [OK] GitHub'a gonderim tamamlandi.>> "%LOG_FILE%"
 echo ==== %date% %time% GitHub Gonder Tamamlandi ====>> "%LOG_FILE%"
 pause
 endlocal
+exit /b 0
+
+:ensure_git_identity
+git config --get user.name >nul 2>&1
+if not errorlevel 1 goto check_email
+
+set /p GIT_USER_NAME=Git kullanici adini yazin: 
+if "%GIT_USER_NAME%"=="" exit /b 1
+git config user.name "%GIT_USER_NAME%" >> "%LOG_FILE%" 2>&1
+if errorlevel 1 exit /b 1
+echo [BILGI] Git user.name ayarlandi.>> "%LOG_FILE%"
+
+:check_email
+git config --get user.email >nul 2>&1
+if not errorlevel 1 exit /b 0
+
+set /p GIT_USER_EMAIL=Git e-posta adresini yazin: 
+if "%GIT_USER_EMAIL%"=="" exit /b 1
+git config user.email "%GIT_USER_EMAIL%" >> "%LOG_FILE%" 2>&1
+if errorlevel 1 exit /b 1
+echo [BILGI] Git user.email ayarlandi.>> "%LOG_FILE%"
+exit /b 0
