@@ -10,6 +10,9 @@ const productColumns = db.prepare(`PRAGMA table_info(products)`).all();
 if (!productColumns.some((column) => column.name === "image_url")) {
   db.prepare(`ALTER TABLE products ADD COLUMN image_url TEXT`).run();
 }
+if (!productColumns.some((column) => column.name === "unit")) {
+  db.prepare(`ALTER TABLE products ADD COLUMN unit TEXT NOT NULL DEFAULT 'M2'`).run();
+}
 
 const uploadsDir = path.resolve(process.cwd(), "uploads", "products");
 fs.mkdirSync(uploadsDir, { recursive: true });
@@ -65,8 +68,8 @@ router.post(
     const payload = req.body;
     const info = db.prepare(`
       INSERT INTO products
-      (name, category, purchase_price, sale_price, m2_price, raw_m2_price, painted_m2_price, image_url, cost_notes)
-      VALUES (@name, @category, @purchase_price, @sale_price, @m2_price, @raw_m2_price, @painted_m2_price, @image_url, @cost_notes)
+      (name, category, purchase_price, sale_price, m2_price, raw_m2_price, painted_m2_price, unit, image_url, cost_notes)
+      VALUES (@name, @category, @purchase_price, @sale_price, @m2_price, @raw_m2_price, @painted_m2_price, @unit, @image_url, @cost_notes)
     `).run(payload);
 
     res.status(201).json({ id: info.lastInsertRowid, message: "Urun olusturuldu." });
@@ -131,6 +134,7 @@ router.patch(
         m2_price = @m2_price,
         raw_m2_price = @raw_m2_price,
         painted_m2_price = @painted_m2_price,
+        unit = @unit,
         image_url = @image_url,
         cost_notes = @cost_notes
       WHERE id = @id

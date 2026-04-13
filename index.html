@@ -651,10 +651,20 @@
             </div>
             <form id="categoryTypeForm" class="products-category-form category-type-form">
               <input id="categoryTypeEditId" type="hidden">
-              <label>
-                <span>Urun Cinsi</span>
-                <input id="categoryTypeInput" name="productTypeName" type="text" placeholder="Lake Kapak 18 mm, Camli Kapak" required>
-              </label>
+              <div class="category-type-inline">
+                <label>
+                  <span>Urun Cinsi</span>
+                  <input id="categoryTypeInput" name="productTypeName" type="text" placeholder="Lake Kapak 18 mm, Camli Kapak" required>
+                </label>
+                <label class="category-type-unit">
+                  <span>Birim</span>
+                  <select id="categoryTypeUnit" name="productTypeUnit">
+                    <option value="M2">M2</option>
+                    <option value="Adet">Adet</option>
+                    <option value="Boy Adet">Boy Adet</option>
+                  </select>
+                </label>
+              </div>
               <div class="inline-form-actions">
                 <button class="ghost-action compact-action" id="categoryTypeResetBtn" type="button">Yeni Cins</button>
                 <button class="primary-btn" id="categoryTypeSubmitBtn" type="submit">Cinsi Kaydet</button>
@@ -670,31 +680,11 @@
 
       <section class="view" id="view-products">
         <section class="products-layout">
-          <section class="panel products-side-panel">
-            <div class="panel-header-row compact">
-              <div>
-                <h2>Kategori Ekle</h2>
-                <p>Yeni kategori tanimlayin ve alttaki listeden secin.</p>
-              </div>
-            </div>
-            <form id="productCategoryForm" class="products-category-form">
-              <label>
-                <span>Kategori Adi</span>
-                <input id="productCategoryInput" name="categoryName" type="text" placeholder="Lake Kapak, Ham Kapak" required>
-              </label>
-              <button class="primary-btn" type="submit">Kategori Ekle</button>
-            </form>
-            <div class="panel-header-row compact products-subhead">
-              <h2>Kategori Listesi</h2>
-            </div>
-            <div class="card-list products-category-list" id="productCategoryList"></div>
-          </section>
-
           <section class="panel form-panel products-form-panel">
             <div class="panel-header-row compact">
               <div>
                 <h2>Yeni Urun Ekle</h2>
-                <p>Urunu secili kategori altina fiyatlariyla birlikte kaydedin.</p>
+                <p>Urunu kategori, maliyet ve gorsel bilgileriyle kaydedin.</p>
               </div>
             </div>
             <form id="productForm" class="products-form-grid">
@@ -731,10 +721,11 @@
             </div>
             <div class="products-list-layout">
               <aside class="products-filter-panel">
+                <div class="products-selection-summary" id="productsSelectionSummary"></div>
                 <div class="panel-header-row compact products-filter-head">
-                  <h2>Kategori Secimi</h2>
+                  <h2>Kategori / Urun Cinsi</h2>
                 </div>
-                <div class="products-filter-list" id="productFilterList"></div>
+                <div class="products-hierarchy-tree" id="productsHierarchyTree"></div>
                 <div class="products-bulk-panel">
                   <div class="panel-header-row compact products-filter-head">
                     <h2>Toplu Fiyat</h2>

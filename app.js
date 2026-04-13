@@ -43,6 +43,7 @@ const categoryManagerInput = document.getElementById("categoryManagerInput");
 const categoryManagerList = document.getElementById("categoryManagerList");
 const categoryTypeForm = document.getElementById("categoryTypeForm");
 const categoryTypeInput = document.getElementById("categoryTypeInput");
+const categoryTypeUnit = document.getElementById("categoryTypeUnit");
 const categoryTypeList = document.getElementById("categoryTypeList");
 const categoryTypeEditId = document.getElementById("categoryTypeEditId");
 const categoryTypeResetBtn = document.getElementById("categoryTypeResetBtn");
@@ -56,7 +57,10 @@ const productImagePreview = document.getElementById("productImagePreview");
 const productResetBtn = document.getElementById("productResetBtn");
 const productSubmitBtn = document.getElementById("productSubmitBtn");
 const productsSearch = document.getElementById("productsSearch");
+const productsSelectionSummary = document.getElementById("productsSelectionSummary");
 const productFilterList = document.getElementById("productFilterList");
+const productTypeFilterList = document.getElementById("productTypeFilterList");
+const productsHierarchyTree = document.getElementById("productsHierarchyTree");
 const productBulkUpdateForm = document.getElementById("productBulkUpdateForm");
 const productBulkCategory = document.getElementById("productBulkCategory");
 const productImageModal = document.getElementById("productImageModal");
@@ -139,7 +143,9 @@ let currentView = "dashboard";
 let cache = {};
 let selectedCariId = null;
 let selectedMovementId = null;
-let selectedProductCategoryFilter = "__covers__";
+let selectedProductCategoryFilter = "";
+let selectedProductTypeFilter = "";
+let selectedExpandedProductCategory = "";
 let selectedCategoryManager = "";
 let productSortState = {
   key: "name",
@@ -361,6 +367,7 @@ function addProductCategory(value = "") {
 function buildProductApiPayload(payload = {}) {
   const costType = payload.costType || payload.cost_type || "M2";
   const costAmount = Number(payload.costAmount ?? payload.cost_amount ?? payload.salePrice ?? payload.sale_price ?? 0) || 0;
+  const unit = payload.unit || payload.productTypeUnit || "M2";
   return {
     name: payload.name || "",
     category: payload.category || "Kategorisiz",
@@ -369,6 +376,7 @@ function buildProductApiPayload(payload = {}) {
     m2_price: Number(payload.m2Price ?? payload.m2_price ?? (costType === "M2" ? costAmount : 0)) || 0,
     raw_m2_price: Number(payload.rawM2Price ?? payload.raw_m2_price ?? 0) || 0,
     painted_m2_price: Number(payload.paintedM2Price ?? payload.painted_m2_price ?? 0) || 0,
+    unit,
     cost_type: costType,
     cost_amount: costAmount,
     image_url: payload.imageUrl ?? payload.image_url ?? "",
@@ -401,6 +409,7 @@ categoryTypeForm?.addEventListener("submit", async (event) => {
   }
   const name = categoryTypeInput?.value?.trim();
   if (!name) return;
+  const unit = categoryTypeUnit?.value || "M2";
 
   if (categoryTypeEditId?.value) {
     const existing = (cache.products || []).find((item) => item.id === Number(categoryTypeEditId.value));
@@ -409,11 +418,13 @@ categoryTypeForm?.addEventListener("submit", async (event) => {
       ...existing,
       name,
       category: selectedCategoryManager,
+      unit,
     }));
   } else {
     await api.products.create(buildProductApiPayload({
       name,
       category: selectedCategoryManager,
+      unit,
       cost_type: "M2",
       cost_amount: 0,
       image_url: "",
@@ -667,7 +678,38 @@ productFilterList?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-product-filter]");
   if (!button) return;
   selectedProductCategoryFilter = button.dataset.productFilter || "";
+  selectedProductTypeFilter = "";
   renderProducts(cache.products || []);
+});
+productTypeFilterList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-product-type-filter]");
+  if (!button) return;
+  selectedProductTypeFilter = button.dataset.productTypeFilter || "";
+  renderProducts(cache.products || []);
+});
+productsHierarchyTree?.addEventListener("click", (event) => {
+  const toggleButton = event.target.closest("[data-hierarchy-toggle]");
+  if (toggleButton) {
+    const category = toggleButton.dataset.hierarchyToggle || "";
+    selectedExpandedProductCategory = selectedExpandedProductCategory === category ? "" : category;
+    renderProducts(cache.products || []);
+    return;
+  }
+  const categoryButton = event.target.closest("[data-hierarchy-category]");
+  if (categoryButton) {
+    selectedProductCategoryFilter = categoryButton.dataset.hierarchyCategory || "";
+    selectedExpandedProductCategory = selectedProductCategoryFilter;
+    selectedProductTypeFilter = "";
+    renderProducts(cache.products || []);
+    return;
+  }
+  const typeButton = event.target.closest("[data-hierarchy-product-type]");
+  if (typeButton) {
+    selectedProductCategoryFilter = typeButton.dataset.hierarchyCategory || "";
+    selectedExpandedProductCategory = selectedProductCategoryFilter;
+    selectedProductTypeFilter = typeButton.dataset.hierarchyProductType || "";
+    renderProducts(cache.products || []);
+  }
 });
 productBulkUpdateForm?.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -2095,6 +2137,7 @@ function renderProductCategories(records) {
 function resetCategoryTypeForm() {
   categoryTypeForm?.reset();
   if (categoryTypeEditId) categoryTypeEditId.value = "";
+  if (categoryTypeUnit) categoryTypeUnit.value = "M2";
   if (categoryTypeSubmitBtn) categoryTypeSubmitBtn.textContent = "Cinsi Kaydet";
   categoryTypeSubmitBtn?.classList.remove("is-active");
   categoryTypeResetBtn?.classList.remove("is-active");
@@ -2105,6 +2148,7 @@ function fillCategoryTypeForm(product) {
   selectedCategoryManager = product.category || selectedCategoryManager;
   if (categoryTypeEditId) categoryTypeEditId.value = String(product.id || "");
   if (categoryTypeInput) categoryTypeInput.value = product.name || "";
+  if (categoryTypeUnit) categoryTypeUnit.value = product.unit || "M2";
   if (categoryTypeSubmitBtn) categoryTypeSubmitBtn.textContent = "Cinsi Guncelle";
   categoryTypeSubmitBtn?.classList.add("is-active");
   categoryTypeResetBtn?.classList.add("is-active");
@@ -2142,7 +2186,7 @@ function renderCategoryTypeManager(records) {
     <article class="category-type-item">
       <div class="category-type-content">
         <strong>${escapeHtml(item.name || "-")}</strong>
-        <span>${escapeHtml(item.costType || "M2")} bazli maliyet</span>
+        <span>${escapeHtml(item.unit || item.costType || "M2")}</span>
       </div>
       <div class="product-category-actions">
         <button class="ghost-action compact-action" type="button" data-category-type-edit="${item.id}">Duzenle</button>
@@ -2188,6 +2232,103 @@ function renderProductCategoryFilter(records) {
     </button>
   `).join("") : `<div class="entity-card empty-state">Gosterilecek kategori bulunamadi.</div>`;
   syncBulkCategorySelect(records);
+}
+
+function matchesSelectedProductCategory(item) {
+  return !selectedProductCategoryFilter || item.category === selectedProductCategoryFilter;
+}
+
+function getProductTypesForSelectedCategory(records) {
+  const scoped = (records || []).filter((item) => matchesSelectedProductCategory(item));
+  return [...new Set(scoped.map((item) => item.name).filter(Boolean))].sort((left, right) => left.localeCompare(right, "tr"));
+}
+
+function renderProductTypeFilter(records) {
+  if (!productTypeFilterList) return;
+  const scoped = (records || []).filter((item) => matchesSelectedProductCategory(item));
+  const types = getProductTypesForSelectedCategory(records);
+  if (selectedProductTypeFilter && !types.includes(selectedProductTypeFilter)) {
+    selectedProductTypeFilter = "";
+  }
+  const items = [
+    {
+      value: "",
+      label: "Tum Urun Cinsleri",
+      count: scoped.length,
+    },
+    ...types.map((typeName) => ({
+      value: typeName,
+      label: typeName,
+      count: scoped.filter((item) => item.name === typeName).length,
+    })),
+  ];
+  productTypeFilterList.innerHTML = items.length ? items.map((item) => `
+    <button class="product-filter-item product-type-item ${item.value === selectedProductTypeFilter ? "active" : ""}" type="button" data-product-type-filter="${escapeHtml(item.value)}">
+      <strong>${escapeHtml(item.label)}</strong>
+      <span>${item.count} kayit</span>
+    </button>
+  `).join("") : `<div class="entity-card empty-state">Urun cinsi bulunamadi.</div>`;
+}
+
+function renderProductHierarchyTree(records) {
+  if (!productsHierarchyTree) return;
+  const categories = collectProductCategories(records);
+  if (selectedProductCategoryFilter && !categories.includes(selectedProductCategoryFilter)) {
+    selectedProductCategoryFilter = "";
+  }
+  if (selectedExpandedProductCategory && !categories.includes(selectedExpandedProductCategory)) {
+    selectedExpandedProductCategory = "";
+  }
+  if (!selectedExpandedProductCategory) {
+    selectedExpandedProductCategory = selectedProductCategoryFilter || categories[0] || "";
+  }
+
+  productsHierarchyTree.innerHTML = categories.length ? categories.map((category) => {
+    const items = (records || []).filter((item) => item.category === category);
+    const types = [...new Set(items.map((item) => item.name).filter(Boolean))].sort((left, right) => left.localeCompare(right, "tr"));
+    const isExpanded = selectedExpandedProductCategory === category;
+    const isActiveCategory = selectedProductCategoryFilter === category && !selectedProductTypeFilter;
+    return `
+      <article class="products-tree-group ${isExpanded ? "expanded" : ""}">
+        <div class="products-tree-category ${isActiveCategory ? "active" : ""}">
+          <button class="products-tree-main" type="button" data-hierarchy-category="${escapeHtml(category)}">
+            <strong>${escapeHtml(category)}</strong>
+            <span>${items.length} kayit</span>
+          </button>
+          <button class="products-tree-toggle" type="button" data-hierarchy-toggle="${escapeHtml(category)}">${isExpanded ? "−" : "+"}</button>
+        </div>
+        <div class="products-tree-children" ${isExpanded ? "" : "hidden"}>
+          <button class="products-tree-child ${selectedProductCategoryFilter === category && !selectedProductTypeFilter ? "active" : ""}" type="button" data-hierarchy-category="${escapeHtml(category)}" data-hierarchy-product-type="">
+            <strong>Tum Cinsler</strong>
+            <span>${items.length} kayit</span>
+          </button>
+          ${types.map((typeName) => `
+            <button class="products-tree-child ${selectedProductCategoryFilter === category && selectedProductTypeFilter === typeName ? "active" : ""}" type="button" data-hierarchy-category="${escapeHtml(category)}" data-hierarchy-product-type="${escapeHtml(typeName)}">
+              <strong>${escapeHtml(typeName)}</strong>
+              <span>${items.filter((item) => item.name === typeName).length} kayit</span>
+            </button>
+          `).join("")}
+        </div>
+      </article>
+    `;
+  }).join("") : `<div class="entity-card empty-state">Kategori bulunamadi.</div>`;
+}
+
+function getProductDisplayBasis(item) {
+  if (item.costType) return item.costType;
+  if (Number(item.m2Price || 0) > 0) return "M2";
+  if (item.unit === "Boy Adet") return "Boy Adet";
+  return item.unit || "Adet";
+}
+
+function getProductDisplayPrice(item) {
+  return Number(
+    item.costAmount
+    || (getProductDisplayBasis(item) === "M2" ? item.m2Price : 0)
+    || item.salePrice
+    || item.purchasePrice
+    || 0
+  );
 }
 
 async function renameProductCategory(oldName, newName) {
@@ -2272,10 +2413,10 @@ function getSortedProducts(records) {
   const direction = productSortState.dir === "asc" ? 1 : -1;
   const key = productSortState.key;
   return [...records].sort((left, right) => {
-    const leftValue = key === "name" || key === "category" || key === "costNotes"
+    const leftValue = key === "name" || key === "category" || key === "costNotes" || key === "unit" || key === "costType"
       ? String(left[key] || "").toLocaleLowerCase("tr")
       : Number(left[key] || 0);
-    const rightValue = key === "name" || key === "category" || key === "costNotes"
+    const rightValue = key === "name" || key === "category" || key === "costNotes" || key === "unit" || key === "costType"
       ? String(right[key] || "").toLocaleLowerCase("tr")
       : Number(right[key] || 0);
     if (leftValue < rightValue) return -1 * direction;
@@ -2290,15 +2431,13 @@ function getProductSortLabel(key) {
 
 function exportProductsToCsv(records) {
   const rows = [
-    ["Urun", "Kategori", "Alis", "Satis", "M2", "Ham", "Boyali", "Not"],
+    ["Urun Cinsi", "Kategori", "Birim", "Fiyat Tipi", "Fiyat", "Not"],
     ...records.map((item) => [
       item.name || "",
       item.category || "",
-      Number(item.purchasePrice || 0),
-      Number(item.salePrice || 0),
-      Number(item.m2Price || 0),
-      Number(item.rawM2Price || 0),
-      Number(item.paintedM2Price || 0),
+      item.unit || "",
+      getProductDisplayBasis(item),
+      Number(getProductDisplayPrice(item)),
       item.costNotes || "",
     ]),
   ];
@@ -2332,11 +2471,8 @@ function resetProductFormEditor() {
 function fillProductForm(product) {
   if (!forms.product || !product) return;
   const nameInput = forms.product.querySelector("[name='name']");
-  const purchaseInput = forms.product.querySelector("[name='purchasePrice']");
-  const saleInput = forms.product.querySelector("[name='salePrice']");
-  const m2Input = forms.product.querySelector("[name='m2Price']");
-  const rawInput = forms.product.querySelector("[name='rawM2Price']");
-  const paintedInput = forms.product.querySelector("[name='paintedM2Price']");
+  const costTypeInput = forms.product.querySelector("[name='costType']");
+  const costAmountInput = forms.product.querySelector("[name='costAmount']");
   const imageInput = forms.product.querySelector("[name='imageUrl']");
   const notesInput = forms.product.querySelector("[name='costNotes']");
   if (nameInput) nameInput.value = product.name || "";
@@ -2344,11 +2480,8 @@ function fillProductForm(product) {
     syncProductCategorySelect(cache.products || [], product.category || "");
   }
   renderProductCategories(cache.products || []);
-  if (purchaseInput) purchaseInput.value = formatMoneyInputValue(product.purchasePrice || 0);
-  if (saleInput) saleInput.value = formatMoneyInputValue(product.salePrice || 0);
-  if (m2Input) m2Input.value = formatMoneyInputValue(product.m2Price || 0);
-  if (rawInput) rawInput.value = formatMoneyInputValue(product.rawM2Price || 0);
-  if (paintedInput) paintedInput.value = formatMoneyInputValue(product.paintedM2Price || 0);
+  if (costTypeInput) costTypeInput.value = getProductDisplayBasis(product);
+  if (costAmountInput) costAmountInput.value = formatMoneyInputValue(getProductDisplayPrice(product));
   if (imageInput) imageInput.value = product.imageUrl || "";
   if (notesInput) notesInput.value = product.costNotes || "";
   if (productEditId) productEditId.value = String(product.id);
@@ -2365,28 +2498,46 @@ function renderProducts(records) {
   if (!target) return;
   const searchTerm = productsSearch?.value?.trim().toLowerCase() || "";
   renderProductCategories(records || []);
-  renderProductCategoryFilter(records || []);
+  renderProductHierarchyTree(records || []);
   const filtered = (records || []).filter((item) => {
     const haystack = [item.name, item.category, item.costNotes].join(" ").toLowerCase();
     const matchesSearch = !searchTerm || haystack.includes(searchTerm);
-    const matchesCategory =
-      selectedProductCategoryFilter === "__covers__"
-        ? isCoverCategory(item.category, item.name)
-        : !selectedProductCategoryFilter || item.category === selectedProductCategoryFilter;
-    return matchesSearch && matchesCategory;
+    const matchesCategory = matchesSelectedProductCategory(item);
+    const matchesType = !selectedProductTypeFilter || item.name === selectedProductTypeFilter;
+    return matchesSearch && matchesCategory && matchesType;
   });
   const sorted = getSortedProducts(filtered);
+  const scopedForCategory = (records || []).filter((item) => matchesSelectedProductCategory(item));
+  const categoryLabel = selectedProductCategoryFilter || "Tum Kategoriler";
+  const typeCount = getProductTypesForSelectedCategory(records || []).length;
+  if (productsSelectionSummary) {
+    productsSelectionSummary.innerHTML = `
+      <article class="products-summary-card">
+        <span>Kategori</span>
+        <strong>${escapeHtml(categoryLabel)}</strong>
+        <small>${scopedForCategory.length} kayit</small>
+      </article>
+      <article class="products-summary-card">
+        <span>Urun Cinsi</span>
+        <strong>${escapeHtml(selectedProductTypeFilter || "Tum Cinsler")}</strong>
+        <small>${typeCount} farkli cins</small>
+      </article>
+      <article class="products-summary-card">
+        <span>Liste</span>
+        <strong>${sorted.length}</strong>
+        <small>gosterilen satir</small>
+      </article>
+    `;
+  }
   target.innerHTML = sorted.length ? `
     <div class="products-table">
       <div class="products-table-head">
         <span>Gorsel</span>
         <button type="button" data-product-sort="name">Urun ${getProductSortLabel("name")}</button>
         <button type="button" data-product-sort="category">Kategori ${getProductSortLabel("category")}</button>
-        <button type="button" data-product-sort="purchasePrice">Alis ${getProductSortLabel("purchasePrice")}</button>
-        <button type="button" data-product-sort="salePrice">Satis ${getProductSortLabel("salePrice")}</button>
-        <button type="button" data-product-sort="m2Price">M2 ${getProductSortLabel("m2Price")}</button>
-        <button type="button" data-product-sort="rawM2Price">Ham ${getProductSortLabel("rawM2Price")}</button>
-        <button type="button" data-product-sort="paintedM2Price">Boyali ${getProductSortLabel("paintedM2Price")}</button>
+        <button type="button" data-product-sort="unit">Birim ${getProductSortLabel("unit")}</button>
+        <button type="button" data-product-sort="costType">Fiyat Tipi ${getProductSortLabel("costType")}</button>
+        <button type="button" data-product-sort="costAmount">Fiyat ${getProductSortLabel("costAmount")}</button>
         <button type="button" data-product-sort="costNotes">Not ${getProductSortLabel("costNotes")}</button>
         <span class="products-export-cell"><button class="ghost-action compact-action" type="button" id="productsExportBtn">Excel'e Aktar</button></span>
       </div>
@@ -2399,11 +2550,9 @@ function renderProducts(records) {
           </span>
           <span class="products-cell"><strong>${escapeHtml(item.name)}</strong></span>
           <span class="products-cell">${escapeHtml(item.category || "-")}</span>
-          <span class="products-cell">${formatCurrency(item.purchasePrice)}</span>
-          <span class="products-cell">${formatCurrency(item.salePrice)}</span>
-          <span class="products-cell">${formatCurrency(item.m2Price)}</span>
-          <span class="products-cell">${formatCurrency(item.rawM2Price)}</span>
-          <span class="products-cell">${formatCurrency(item.paintedM2Price)}</span>
+          <span class="products-cell">${escapeHtml(item.unit || "-")}</span>
+          <span class="products-cell">${escapeHtml(getProductDisplayBasis(item))}</span>
+          <span class="products-cell">${formatCurrency(getProductDisplayPrice(item))}</span>
           <span class="products-cell note">${escapeHtml(item.costNotes || "-")}</span>
           <span class="products-cell actions">
             <button class="ghost-action compact-action" type="button">Duzenle</button>
@@ -2854,6 +3003,9 @@ function normalizeProducts(rows) {
     m2Price: Number(row.m2_price || 0),
     rawM2Price: Number(row.raw_m2_price || 0),
     paintedM2Price: Number(row.painted_m2_price || 0),
+    costType: row.cost_type || (Number(row.m2_price || 0) > 0 ? "M2" : (row.unit || "Adet")),
+    costAmount: Number(row.cost_amount || row.m2_price || row.sale_price || 0),
+    unit: row.unit || "M2",
     imageUrl: row.image_url || "",
     costNotes: row.cost_notes,
     createdAt: row.created_at,
