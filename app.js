@@ -13,6 +13,7 @@ const api = window.silvaApi;
 const menuToggle = document.getElementById("menuToggle");
 const sidebar = document.getElementById("sidebar");
 const navLinks = [...document.querySelectorAll(".nav-link")];
+const navGroupToggles = [...document.querySelectorAll("[data-nav-group]")];
 const views = [...document.querySelectorAll(".view")];
 const quickLinks = [...document.querySelectorAll("[data-action], [data-view-link]")];
 const primaryActionBtn = document.getElementById("primaryActionBtn");
@@ -75,6 +76,8 @@ const cariList = document.getElementById("cariList");
 const cariEditId = document.getElementById("cariEditId");
 const clearCariSelectionBtn = document.getElementById("clearCariSelectionBtn");
 const cariSubmitBtn = document.getElementById("cariSubmitBtn");
+const cariFormSection = document.getElementById("cariFormSection");
+const cariListSection = document.getElementById("cariListSection");
 const movementEditId = document.getElementById("movementEditId");
 const movementResetBtn = document.getElementById("movementResetBtn");
 const movementSubmitBtn = document.getElementById("movementSubmitBtn");
@@ -136,6 +139,8 @@ const viewMeta = {
   finance: ["Muhasebe ve Maliyet", "Hammadde, iscilik ve genel giderleri analiz edin.", "+ Yeni Gider"],
   reports: ["Raporlar", "Siparis, ciro, cari ve personel raporlarini bu ekranda izleyin.", "+ Rapor Olustur"],
   personnel: ["Personel Takibi", "Ozluk, maas ve mesai bilgilerini kayit altina alin.", "+ Yeni Personel"],
+  users: ["Kullanici Yonetimi", "Kullanici, rol ve yetki ekranlari burada yer alacak.", "+ Yeni Kullanici"],
+  sms: ["Sms Modulu", "Sms sablonlari ve gonderim surecleri burada yonetilecek.", "+ Yeni Sms"],
   settings: ["Ayarlar", "Programin kullanim notlari ve demo sifirlama islemleri.", "Panele Don"],
 };
 
@@ -147,6 +152,7 @@ let selectedProductCategoryFilter = "";
 let selectedProductTypeFilter = "";
 let selectedExpandedProductCategory = "";
 let selectedCategoryManager = "";
+let currentCariSubview = "list";
 let productSortState = {
   key: "name",
   dir: "asc",
@@ -167,13 +173,24 @@ if (menuToggle && sidebar) {
 }
 
 navLinks.forEach((link) => link.addEventListener("click", () => {
+  if (!link.dataset.view) return;
   setActiveView(link.dataset.view);
+  if (link.dataset.view === "cari") {
+    const targetId = link.dataset.sectionTarget || "";
+    currentCariSubview = targetId === "cariFormSection" ? "form" : "list";
+    applyCariSubview(currentCariSubview);
+  }
   const targetId = link.dataset.sectionTarget;
   if (targetId) {
     window.requestAnimationFrame(() => {
       document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
+}));
+navGroupToggles.forEach((toggle) => toggle.addEventListener("click", () => {
+  const groupName = toggle.dataset.navGroup;
+  const wrap = document.querySelector(`[data-nav-group-wrap="${groupName}"]`);
+  wrap?.classList.toggle("open");
 }));
 quickLinks.forEach((link) => link.addEventListener("click", () => setActiveView(link.dataset.action || link.dataset.viewLink)));
 
@@ -189,10 +206,16 @@ primaryActionBtn?.addEventListener("click", () => {
     finance: ["finance", forms.finance],
     reports: ["reports", null],
     personnel: ["personnel", forms.personnel],
+    users: ["users", null],
+    sms: ["sms", null],
     settings: ["dashboard", null],
   };
   const [viewName, form] = targetMap[currentView] || ["dashboard", null];
   setActiveView(viewName);
+  if (viewName === "cari") {
+    currentCariSubview = "form";
+    applyCariSubview(currentCariSubview);
+  }
   form?.scrollIntoView({ behavior: "smooth", block: "start" });
   form?.querySelector("input, select")?.focus();
 });
@@ -230,9 +253,10 @@ forms.cari?.addEventListener("submit", async (event) => {
     taxOffice: data.taxOffice,
     taxNumber: data.taxNumber,
     discountRate: Number(data.discountRate || 0),
-    balanceLimit: parseMoneyInput(data.balanceLimit),
+    balanceLimit: 0,
     riskLimit: parseMoneyInput(data.riskLimit),
     type: data.type,
+    notes: data.notes || "",
   };
   if (cariEditId?.value) {
     await api.cari.update(Number(cariEditId.value), {
@@ -245,6 +269,7 @@ forms.cari?.addEventListener("submit", async (event) => {
       balance_limit: payload.balanceLimit,
       risk_limit: payload.riskLimit,
       type: payload.type,
+      notes: payload.notes,
     });
   } else {
     await addRecord(STORES.cari, payload);
@@ -749,13 +774,29 @@ function setActiveView(viewName) {
   currentView = viewName;
   views.forEach((view) => view.classList.toggle("active", view.id === `view-${viewName}`));
   navLinks.forEach((link) => link.classList.toggle("active", link.dataset.view === viewName));
+  document.querySelectorAll("[data-nav-group-wrap]").forEach((group) => {
+    const hasActiveChild = !!group.querySelector(`.nav-link[data-view="${viewName}"].active`);
+    group.classList.toggle("active", hasActiveChild);
+    if (hasActiveChild) {
+      group.classList.add("open");
+    }
+  });
   const meta = viewMeta[viewName];
   if (meta) {
     pageTitle.textContent = meta[0];
     pageDescription.textContent = meta[1];
     primaryActionBtn.textContent = meta[2];
   }
+  if (viewName === "cari") {
+    applyCariSubview(currentCariSubview);
+  }
   sidebar?.classList.remove("open");
+}
+
+function applyCariSubview(mode) {
+  const showForm = mode === "form";
+  if (cariFormSection) cariFormSection.hidden = !showForm;
+  if (cariListSection) cariListSection.hidden = showForm;
 }
 
 function setDefaultDates() {
@@ -1192,12 +1233,13 @@ async function addRecord(storeName, payload) {
         company_name: payload.companyName,
         phone: payload.phone,
         tax_office: payload.taxOffice,
-        tax_number: payload.taxNumber,
-        discount_rate: payload.discountRate,
-        balance_limit: payload.balanceLimit,
-        risk_limit: payload.riskLimit,
-        type: payload.type,
-      });
+      tax_number: payload.taxNumber,
+      discount_rate: payload.discountRate,
+      balance_limit: payload.balanceLimit,
+      risk_limit: payload.riskLimit,
+      type: payload.type,
+      notes: payload.notes,
+    });
     case STORES.offers:
       return api.offers.create({
         offer_no: payload.offerNo,
@@ -1759,9 +1801,9 @@ function fillCariForm(cari) {
   setCariFormValue("taxOffice", cari.taxOffice || "");
   setCariFormValue("taxNumber", cari.taxNumber || "");
   setCariFormValue("discountRate", String(cari.discountRate || 0));
-  setCariFormValue("balanceLimit", formatMoneyInputValue(cari.balanceLimit || 0));
   setCariFormValue("riskLimit", formatMoneyInputValue(cari.riskLimit || 0));
   setCariFormValue("type", cari.type || "Musteri");
+  setCariFormValue("notes", cari.notes || "");
   if (cariSubmitBtn) cariSubmitBtn.textContent = "Cariyi Guncelle";
   renderCariSticky(cari, cache.movements || [], cache.orders || []);
   renderCariDetail(cari, cache.movements || [], cache.orders || []);
@@ -1829,7 +1871,7 @@ function renderCariDetail(cari, movements, orders) {
   if (cariDetailPhone) cariDetailPhone.textContent = cari.phone || "-";
   if (cariDetailLastMovement) cariDetailLastMovement.textContent = lastMovement ? formatDate(lastMovement.date) : "Hareket yok";
   if (cariDetailBalance) cariDetailBalance.textContent = formatCurrency(balance);
-  if (cariDetailLimit) cariDetailLimit.textContent = formatCurrency(cari.balanceLimit || 0);
+  if (cariDetailLimit) cariDetailLimit.textContent = formatCurrency(cari.riskLimit || 0);
 }
 
 function renderCari(records, movements, orders) {
@@ -2944,6 +2986,7 @@ function normalizeCari(rows) {
     balanceLimit: Number(row.balance_limit || 0),
     riskLimit: Number(row.risk_limit || 0),
     type: row.type,
+    notes: row.notes || "",
     createdAt: row.created_at,
   }));
 }

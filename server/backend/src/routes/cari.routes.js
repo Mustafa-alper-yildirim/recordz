@@ -3,6 +3,12 @@ import { db } from "../db/client.js";
 
 const router = Router();
 
+try {
+  db.prepare(`SELECT notes FROM cari_accounts LIMIT 1`).get();
+} catch {
+  db.exec(`ALTER TABLE cari_accounts ADD COLUMN notes TEXT DEFAULT ''`);
+}
+
 router.get("/", (_req, res) => {
   const rows = db.prepare(`
     SELECT c.*,
@@ -27,8 +33,8 @@ router.post("/", (req, res) => {
   const payload = req.body;
   const info = db.prepare(`
     INSERT INTO cari_accounts
-    (full_name, company_name, phone, tax_office, tax_number, discount_rate, balance_limit, risk_limit, type)
-    VALUES (@full_name, @company_name, @phone, @tax_office, @tax_number, @discount_rate, @balance_limit, @risk_limit, @type)
+    (full_name, company_name, phone, tax_office, tax_number, discount_rate, balance_limit, risk_limit, type, notes)
+    VALUES (@full_name, @company_name, @phone, @tax_office, @tax_number, @discount_rate, @balance_limit, @risk_limit, @type, @notes)
   `).run(payload);
 
   res.status(201).json({ id: info.lastInsertRowid, message: "Cari olusturuldu." });
@@ -53,7 +59,8 @@ router.patch("/:id", (req, res) => {
       discount_rate = @discount_rate,
       balance_limit = @balance_limit,
       risk_limit = @risk_limit,
-      type = @type
+      type = @type,
+      notes = @notes
     WHERE id = @id
   `).run({
     id,

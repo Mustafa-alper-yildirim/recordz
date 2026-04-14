@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS cari_accounts (
   balance_limit REAL NOT NULL DEFAULT 0,
   risk_limit REAL NOT NULL DEFAULT 0,
   type TEXT NOT NULL CHECK(type IN ('Musteri','Tedarikci','Musteri/Tedarikci')),
+  notes TEXT DEFAULT '',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
