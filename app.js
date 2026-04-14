@@ -68,7 +68,6 @@ const productImageModal = document.getElementById("productImageModal");
 const productImageModalImg = document.getElementById("productImageModalImg");
 const productImageModalClose = document.getElementById("productImageModalClose");
 const cariSearch = document.getElementById("cariSearch");
-const cariLetterFilter = document.getElementById("cariLetterFilter");
 const cariTypeFilter = document.getElementById("cariTypeFilter");
 const cariBalanceFilter = document.getElementById("cariBalanceFilter");
 const cariSort = document.getElementById("cariSort");
@@ -159,7 +158,6 @@ let productSortState = {
 };
 const PRODUCT_CATEGORY_STORAGE_KEY = "silva-product-categories";
 
-populateCariLetterFilter();
 initializeMoneyInputs();
 
 if (menuToggle && sidebar) {
@@ -537,7 +535,6 @@ forms.personnel?.addEventListener("submit", async (event) => {
 
 orderSearch?.addEventListener("input", () => renderOrdersTable(cache.orders || []));
 cariSearch?.addEventListener("input", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
-cariLetterFilter?.addEventListener("change", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
 cariTypeFilter?.addEventListener("change", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
 cariBalanceFilter?.addEventListener("change", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
 cariSort?.addEventListener("change", () => renderCari(cache.cari || [], cache.movements || [], cache.orders || []));
@@ -1814,14 +1811,6 @@ function setCariFormValue(name, value) {
   if (input) input.value = value;
 }
 
-function populateCariLetterFilter() {
-  if (!cariLetterFilter || cariLetterFilter.options.length > 5) return;
-  const letters = ["", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "R", "S", "T", "U", "V", "Y", "Z"];
-  cariLetterFilter.innerHTML = letters
-    .map((letter) => `<option value="${letter}">${letter || "Tum Harfler"}</option>`)
-    .join("");
-}
-
 function renderCariSticky(cari, movements, orders) {
   if (!cari) {
     if (cariStickyName) cariStickyName.textContent = "Cari secilmedi";
@@ -1876,13 +1865,13 @@ function renderCariDetail(cari, movements, orders) {
 
 function renderCari(records, movements, orders) {
   const target = document.getElementById("cariList");
+  if (!target) return;
   const totalEl = document.getElementById("cariStatTotal");
   const debtEl = document.getElementById("cariStatDebt");
   const riskEl = document.getElementById("cariStatRisk");
   const debtAmountEl = cariStatDebtAmount;
   const creditAmountEl = cariStatCreditAmount;
   const searchTerm = cariSearch?.value?.trim().toLowerCase() || "";
-  const letterFilter = cariLetterFilter?.value || "";
   const typeTerm = cariTypeFilter?.value || "";
   const balanceFilter = cariBalanceFilter?.value || "";
   const sortMode = cariSort?.value || "name-asc";
@@ -1899,8 +1888,6 @@ function renderCari(records, movements, orders) {
   const filtered = (records || []).filter((item) => {
       const haystack = [item.companyName, item.fullName, item.phone, item.taxNumber].join(" ").toLowerCase();
       const matchesSearch = !searchTerm || haystack.includes(searchTerm);
-      const firstLetterSource = String(item.companyName || item.fullName || "").trim().charAt(0).toUpperCase();
-      const matchesLetter = !letterFilter || firstLetterSource === letterFilter;
       const matchesType = !typeTerm || item.type === typeTerm;
       const balance = balances.get(item.id) || 0;
       const exceeds = isCariLimitExceeded(item.id, movements, orders, item.balanceLimit);
@@ -1909,23 +1896,40 @@ function renderCari(records, movements, orders) {
         (balanceFilter === "debt" && balance > 0) ||
         (balanceFilter === "credit" && balance <= 0) ||
         (balanceFilter === "risk" && exceeds);
-      return matchesSearch && matchesLetter && matchesType && matchesBalance;
+      return matchesSearch && matchesType && matchesBalance;
     });
   const sorted = [...filtered].sort((left, right) => sortCariRecords(left, right, movements, orders, sortMode));
   const selectedCari = (records || []).find((item) => item.id === selectedCariId) || null;
 
   renderCariSticky(selectedCari, movements, orders);
-  renderCariMiniChart(records || [], balances);
-
-    target.innerHTML = sorted.length ? sorted.map((item) => `
-      <article class="entity-card cari-card ${selectedCariId === item.id ? "is-selected" : ""} ${isCariLimitExceeded(item.id, movements, orders, item.balanceLimit) ? "is-risk" : ""}" data-cari-select="${item.id}">
-        <div><strong>${escapeHtml(item.companyName || item.fullName)}</strong><span>${escapeHtml(item.fullName || item.type || "-")}</span></div>
-        <div><small>${escapeHtml(item.phone || "-")}</small><span>${escapeHtml(item.type)} | Iskonto %${item.discountRate || 0}</span></div>
-        <div><small>${getCariLastMovementText(item.id, movements)}</small><span>Bakiye ${formatCurrency(balances.get(item.id) || 0)}</span></div>
-        <div class="entity-actions"><button class="ghost-action edit-cari-btn" data-id="${item.id}">Cariyi Duzenle</button><button class="ghost-action delete-btn" data-store="${STORES.cari}" data-id="${item.id}">Sil</button></div>
+  target.innerHTML = sorted.length ? sorted.map((item, index) => {
+    const orderDebt = calcCariOrderTotal(item.id, orders);
+    const movementTotals = calcCariMovementTotals(item.id, movements);
+    const movementDebt = movementTotals.debt;
+    const creditTotal = movementTotals.credit;
+    const debtTotal = orderDebt + movementDebt;
+    const balance = balances.get(item.id) || 0;
+    const exceeded = isCariLimitExceeded(item.id, movements, orders, item.balanceLimit);
+    const statusText = balance > 0 ? "Borclu" : balance < 0 ? "Alacakli" : "Bakiye Yok";
+    return `
+      <article class="cari-table-row ${selectedCariId === item.id ? "is-selected" : ""} ${exceeded ? "is-risk" : ""}" data-cari-select="${item.id}">
+        <span class="cari-cell cell-no">${String(index + 1).padStart(3, "0")}</span>
+        <span class="cari-cell cell-name">
+          <strong>${escapeHtml(item.companyName || item.fullName || "-")}</strong>
+          <small>${escapeHtml(item.fullName || item.type || "-")}</small>
+        </span>
+        <span class="cari-cell cell-money">${formatCurrency(debtTotal)}</span>
+        <span class="cari-cell cell-money">${formatCurrency(creditTotal)}</span>
+        <span class="cari-cell cell-money ${balance > 0 ? "is-debt" : balance < 0 ? "is-credit" : ""}">${formatCurrency(balance)}</span>
+        <span class="cari-cell cell-status"><b class="cari-row-status ${balance > 0 ? "is-debt" : balance < 0 ? "is-credit" : ""} ${exceeded ? "is-risk" : ""}">${statusText}</b></span>
+        <span class="cari-cell cell-actions">
+          <button class="ghost-action compact-action" type="button" data-cari-select="${item.id}">Detay</button>
+          <button class="ghost-action compact-action edit-cari-btn" type="button" data-id="${item.id}">Duzenle</button>
+        </span>
       </article>
-    `).join("") : `<div class="entity-card empty-state">Cari kaydi bulunamadi.</div>`;
-  }
+    `;
+  }).join("") : `<div class="entity-card empty-state">Cari kaydi bulunamadi.</div>`;
+}
 
 function renderCariMiniChart(records, balances) {
   if (!cariMiniChart) return;
@@ -2006,6 +2010,7 @@ function renderMovementCariSelect(records) {
 
 function renderMovements(movements, cariler) {
   const target = document.getElementById("movementsList");
+  if (!target) return;
   const cariMap = new Map(cariler.map((item) => [item.id, item]));
   const filteredMovements = selectedCariId ? movements.filter((item) => item.cariId === selectedCariId) : movements;
   const sortedMovements = [...filteredMovements].sort((left, right) => {
@@ -2039,6 +2044,7 @@ function renderMovements(movements, cariler) {
 
 function renderCariStatements(cariler, movements, orders) {
   const target = document.getElementById("cariStatementList");
+  if (!target) return;
   const filteredCariler = selectedCariId ? cariler.filter((cari) => cari.id === selectedCariId) : cariler;
   target.innerHTML = filteredCariler.length ? filteredCariler.map((cari) => {
     const orderTotal = calcCariOrderTotal(cari.id, orders);
@@ -3117,6 +3123,19 @@ function calcCariBalance(cariId, movements, orders) {
     return sum + Number(item.amount || 0);
   }, 0);
   return orderTotal + movementDelta;
+}
+
+function calcCariMovementTotals(cariId, movements) {
+  return (movements || [])
+    .filter((item) => item.cariId === cariId)
+    .reduce((totals, item) => {
+      if (isCreditMovement(item.movementType)) {
+        totals.credit += Number(item.amount || 0);
+      } else {
+        totals.debt += Number(item.amount || 0);
+      }
+      return totals;
+    }, { debt: 0, credit: 0 });
 }
 
 function isCreditMovement(type) {

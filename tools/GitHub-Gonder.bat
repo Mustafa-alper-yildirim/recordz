@@ -3,6 +3,7 @@ setlocal
 set "PROJECT_DIR=%~dp0.."
 set "LOG_DIR=%PROJECT_DIR%\logs"
 set "LOG_FILE=%LOG_DIR%\github-gonder.log"
+set "STATUS_FILE=%TEMP%\silva_git_status_%RANDOM%.txt"
 
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
 
@@ -20,18 +21,27 @@ if errorlevel 1 (
 git status >> "%LOG_FILE%" 2>&1
 echo.
 
-git diff --quiet
-if errorlevel 1 goto has_changes
+git status --porcelain > "%STATUS_FILE%" 2>> "%LOG_FILE%"
+if errorlevel 1 (
+  echo [HATA] git status calistirilamadi. Ayrinti: %LOG_FILE%
+  echo [HATA] git status calistirilamadi.>> "%LOG_FILE%"
+  if exist "%STATUS_FILE%" del "%STATUS_FILE%"
+  pause
+  exit /b 1
+)
 
-git diff --cached --quiet
-if errorlevel 1 goto has_changes
+for %%A in ("%STATUS_FILE%") do set "STATUS_SIZE=%%~zA"
+if not defined STATUS_SIZE set "STATUS_SIZE=0"
+if %STATUS_SIZE% GTR 0 goto has_changes
 
 echo Degisiklik yok. GitHub'a gonderilecek yeni bir sey bulunmadi.
 echo [BILGI] Degisiklik yok.>> "%LOG_FILE%"
+if exist "%STATUS_FILE%" del "%STATUS_FILE%"
 pause
 exit /b 0
 
 :has_changes
+if exist "%STATUS_FILE%" del "%STATUS_FILE%"
 git add .
 if errorlevel 1 (
   echo [HATA] git add basarisiz. Ayrinti: %LOG_FILE%

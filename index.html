@@ -375,32 +375,6 @@
             </div>
             <div class="cari-filter-bar">
               <input id="cariSearch" class="table-search" type="search" placeholder="Firma, kisi veya telefon ara">
-              <select id="cariLetterFilter">
-                <option value="">Tum Harfler</option>
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-                <option value="E">E</option>
-                <option value="F">F</option>
-                <option value="G">G</option>
-                <option value="H">H</option>
-                <option value="I">I</option>
-                <option value="J">J</option>
-                <option value="K">K</option>
-                <option value="L">L</option>
-                <option value="M">M</option>
-                <option value="N">N</option>
-                <option value="O">O</option>
-                <option value="P">P</option>
-                <option value="R">R</option>
-                <option value="S">S</option>
-                <option value="T">T</option>
-                <option value="U">U</option>
-                <option value="V">V</option>
-                <option value="Y">Y</option>
-                <option value="Z">Z</option>
-              </select>
               <select id="cariTypeFilter">
                 <option value="">Tum Kayitlar</option>
                 <option value="Musteri">Musteri</option>
@@ -460,7 +434,18 @@
                 <h2>Cari Kayitlari</h2>
                 <span class="panel-hint">Filtreye gore listelenen kayitlar</span>
               </div>
-              <div class="card-list compact-card-list" id="cariList"></div>
+              <div class="cari-table-shell">
+                <div class="cari-table-head">
+                  <span>No</span>
+                  <span>Cari Adi</span>
+                  <span>Borc Tutari</span>
+                  <span>Alacak Tutari</span>
+                  <span>Bakiye</span>
+                  <span>Durum</span>
+                  <span>Detay</span>
+                </div>
+                <div class="cari-table-body" id="cariList"></div>
+              </div>
             </section>
 
             <section class="cari-insight-column">
