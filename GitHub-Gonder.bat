@@ -4,6 +4,7 @@ set "PROJECT_DIR=%~dp0"
 set "LOG_DIR=%PROJECT_DIR%\logs"
 set "LOG_FILE=%LOG_DIR%\github-gonder.log"
 set "STATUS_FILE=%TEMP%\silva_git_status_%RANDOM%.txt"
+set "AHEAD_FILE=%TEMP%\silva_git_ahead_%RANDOM%.txt"
 
 if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
 
@@ -26,6 +27,7 @@ if errorlevel 1 (
   echo [HATA] git status calistirilamadi. Ayrinti: %LOG_FILE%
   echo [HATA] git status calistirilamadi.>> "%LOG_FILE%"
   if exist "%STATUS_FILE%" del "%STATUS_FILE%"
+  if exist "%AHEAD_FILE%" del "%AHEAD_FILE%"
   pause
   exit /b 1
 )
@@ -34,14 +36,26 @@ for %%A in ("%STATUS_FILE%") do set "STATUS_SIZE=%%~zA"
 if not defined STATUS_SIZE set "STATUS_SIZE=0"
 if %STATUS_SIZE% GTR 0 goto has_changes
 
+git rev-list --left-right --count origin/main...main > "%AHEAD_FILE%" 2>> "%LOG_FILE%"
+if not errorlevel 1 (
+  set /p AHEAD_COUNTS=<"%AHEAD_FILE%"
+  for /f "tokens=1,2" %%L in ("%AHEAD_COUNTS%") do (
+    set "BEHIND_COUNT=%%L"
+    set "AHEAD_COUNT=%%M"
+  )
+  if defined AHEAD_COUNT if not "%AHEAD_COUNT%"=="0" goto sync_and_push
+)
+
 echo Degisiklik yok. GitHub'a gonderilecek yeni bir sey bulunmadi.
 echo [BILGI] Degisiklik yok.>> "%LOG_FILE%"
 if exist "%STATUS_FILE%" del "%STATUS_FILE%"
+if exist "%AHEAD_FILE%" del "%AHEAD_FILE%"
 pause
 exit /b 0
 
 :has_changes
 if exist "%STATUS_FILE%" del "%STATUS_FILE%"
+if exist "%AHEAD_FILE%" del "%AHEAD_FILE%"
 git add .
 if errorlevel 1 (
   echo [HATA] git add basarisiz. Ayrinti: %LOG_FILE%
@@ -57,6 +71,16 @@ git commit -m "%COMMIT_MSG%" >> "%LOG_FILE%" 2>&1
 if errorlevel 1 (
   echo [HATA] git commit basarisiz. Ayrinti: %LOG_FILE%
   echo [HATA] git commit basarisiz.>> "%LOG_FILE%"
+  pause
+  exit /b 1
+)
+
+:sync_and_push
+echo Uzak depodaki son degisiklikler aliniyor...
+git pull --rebase origin main >> "%LOG_FILE%" 2>&1
+if errorlevel 1 (
+  echo [HATA] git pull --rebase basarisiz. Muhtemel cakisma var. Ayrinti: %LOG_FILE%
+  echo [HATA] git pull --rebase basarisiz.>> "%LOG_FILE%"
   pause
   exit /b 1
 )
