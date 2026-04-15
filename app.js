@@ -77,6 +77,16 @@ const clearCariSelectionBtn = document.getElementById("clearCariSelectionBtn");
 const cariSubmitBtn = document.getElementById("cariSubmitBtn");
 const cariFormSection = document.getElementById("cariFormSection");
 const cariListSection = document.getElementById("cariListSection");
+const movementFormSection = document.getElementById("movementFormSection");
+const cariStatementSection = document.getElementById("cariStatementSection");
+const cariStatementSearch = document.getElementById("cariStatementSearch");
+const cariStatementBalanceFilter = document.getElementById("cariStatementBalanceFilter");
+const cariStatementSort = document.getElementById("cariStatementSort");
+const cariStatementDetailPanel = document.getElementById("cariStatementDetailPanel");
+const cariStatementDetailTitle = document.getElementById("cariStatementDetailTitle");
+const cariStatementDetailMeta = document.getElementById("cariStatementDetailMeta");
+const cariStatementDetailContent = document.getElementById("cariStatementDetailContent");
+const cariStatementDetailCloseBtn = document.getElementById("cariStatementDetailCloseBtn");
 const movementEditId = document.getElementById("movementEditId");
 const movementResetBtn = document.getElementById("movementResetBtn");
 const movementSubmitBtn = document.getElementById("movementSubmitBtn");
@@ -135,7 +145,7 @@ const viewMeta = {
   categories: ["Kategori Yonetimi", "Kapak ve urun kategorilerini ayri ekranda ekleyin ve duzenleyin.", "+ Yeni Kategori"],
   products: ["Urun ve Kapak Fiyatlari", "Alis, satis ve m2 fiyatlarini detayli yonetin.", "+ Yeni Urun"],
   stocks: ["Stok ve Hammadde", "Hammadde ve stok kalemlerini miktar ve birim fiyatlariyla izleyin.", "+ Yeni Stok"],
-  finance: ["Muhasebe ve Maliyet", "Hammadde, iscilik ve genel giderleri analiz edin.", "+ Yeni Gider"],
+  finance: ["Cari Hareket ve Takip", "Cari borc ve alacak dekontlarini girin, cari durumunu tablo halinde izleyin.", "+ Yeni Dekont"],
   reports: ["Raporlar", "Siparis, ciro, cari ve personel raporlarini bu ekranda izleyin.", "+ Rapor Olustur"],
   personnel: ["Personel Takibi", "Ozluk, maas ve mesai bilgilerini kayit altina alin.", "+ Yeni Personel"],
   users: ["Kullanici Yonetimi", "Kullanici, rol ve yetki ekranlari burada yer alacak.", "+ Yeni Kullanici"],
@@ -152,11 +162,17 @@ let selectedProductTypeFilter = "";
 let selectedExpandedProductCategory = "";
 let selectedCategoryManager = "";
 let currentCariSubview = "list";
+let currentFinanceSubview = "movement";
+let selectedStatementCariId = null;
 let productSortState = {
   key: "name",
   dir: "asc",
 };
 const PRODUCT_CATEGORY_STORAGE_KEY = "silva-product-categories";
+
+function setActiveNavLink(activeLink) {
+  navLinks.forEach((link) => link.classList.toggle("active", link === activeLink));
+}
 
 initializeMoneyInputs();
 
@@ -171,12 +187,18 @@ if (menuToggle && sidebar) {
 }
 
 navLinks.forEach((link) => link.addEventListener("click", () => {
+  setActiveNavLink(link);
   if (!link.dataset.view) return;
   setActiveView(link.dataset.view);
   if (link.dataset.view === "cari") {
     const targetId = link.dataset.sectionTarget || "";
     currentCariSubview = targetId === "cariFormSection" ? "form" : "list";
     applyCariSubview(currentCariSubview);
+  }
+  if (link.dataset.view === "finance") {
+    const targetId = link.dataset.sectionTarget || "";
+    currentFinanceSubview = targetId === "cariStatementSection" ? "statement" : "movement";
+    applyFinanceSubview(currentFinanceSubview);
   }
   const targetId = link.dataset.sectionTarget;
   if (targetId) {
@@ -186,6 +208,7 @@ navLinks.forEach((link) => link.addEventListener("click", () => {
   }
 }));
 navGroupToggles.forEach((toggle) => toggle.addEventListener("click", () => {
+  setActiveNavLink(toggle);
   const groupName = toggle.dataset.navGroup;
   const wrap = document.querySelector(`[data-nav-group-wrap="${groupName}"]`);
   wrap?.classList.toggle("open");
@@ -201,7 +224,7 @@ primaryActionBtn?.addEventListener("click", () => {
     categories: ["categories", categoryManagerForm],
     products: ["products", forms.product],
     stocks: ["stocks", forms.stock],
-    finance: ["finance", forms.finance],
+    finance: ["finance", forms.movement],
     reports: ["reports", null],
     personnel: ["personnel", forms.personnel],
     users: ["users", null],
@@ -213,6 +236,10 @@ primaryActionBtn?.addEventListener("click", () => {
   if (viewName === "cari") {
     currentCariSubview = "form";
     applyCariSubview(currentCariSubview);
+  }
+  if (viewName === "finance") {
+    currentFinanceSubview = "movement";
+    applyFinanceSubview(currentFinanceSubview);
   }
   form?.scrollIntoView({ behavior: "smooth", block: "start" });
   form?.querySelector("input, select")?.focus();
@@ -542,6 +569,13 @@ clearCariSelectionBtn?.addEventListener("click", clearCariSelection);
 movementResetBtn?.addEventListener("click", resetMovementForm);
 movementsFilter?.addEventListener("change", () => renderMovements(cache.movements || [], cache.cari || []));
 movementReceiptBtn?.addEventListener("click", openMovementReceiptBuilder);
+cariStatementSearch?.addEventListener("input", () => renderCariStatements(cache.cari || [], cache.movements || [], cache.orders || []));
+cariStatementBalanceFilter?.addEventListener("change", () => renderCariStatements(cache.cari || [], cache.movements || [], cache.orders || []));
+cariStatementSort?.addEventListener("change", () => renderCariStatements(cache.cari || [], cache.movements || [], cache.orders || []));
+cariStatementDetailCloseBtn?.addEventListener("click", () => {
+  selectedStatementCariId = null;
+  renderCariStatements(cache.cari || [], cache.movements || [], cache.orders || []);
+});
 movementReceiptCloseBtn?.addEventListener("click", () => {
   if (movementReceiptPanel) movementReceiptPanel.hidden = true;
 });
@@ -620,6 +654,13 @@ cariList?.addEventListener("click", (event) => {
   renderCariDetail(cari, cache.movements || [], cache.orders || []);
   renderCari(cache.cari || [], cache.movements || [], cache.orders || []);
   renderMovements(cache.movements || [], cache.cari || []);
+  renderCariStatements(cache.cari || [], cache.movements || [], cache.orders || []);
+});
+
+document.getElementById("cariStatementList")?.addEventListener("click", (event) => {
+  const detailButton = event.target.closest("[data-cari-statement-detail]");
+  if (!detailButton) return;
+  selectedStatementCariId = Number(detailButton.dataset.cariStatementDetail);
   renderCariStatements(cache.cari || [], cache.movements || [], cache.orders || []);
 });
 
@@ -770,14 +811,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 function setActiveView(viewName) {
   currentView = viewName;
   views.forEach((view) => view.classList.toggle("active", view.id === `view-${viewName}`));
-  navLinks.forEach((link) => link.classList.toggle("active", link.dataset.view === viewName));
-  document.querySelectorAll("[data-nav-group-wrap]").forEach((group) => {
-    const hasActiveChild = !!group.querySelector(`.nav-link[data-view="${viewName}"].active`);
-    group.classList.toggle("active", hasActiveChild);
-    if (hasActiveChild) {
-      group.classList.add("open");
-    }
-  });
   const meta = viewMeta[viewName];
   if (meta) {
     pageTitle.textContent = meta[0];
@@ -787,6 +820,9 @@ function setActiveView(viewName) {
   if (viewName === "cari") {
     applyCariSubview(currentCariSubview);
   }
+  if (viewName === "finance") {
+    applyFinanceSubview(currentFinanceSubview);
+  }
   sidebar?.classList.remove("open");
 }
 
@@ -794,6 +830,12 @@ function applyCariSubview(mode) {
   const showForm = mode === "form";
   if (cariFormSection) cariFormSection.hidden = !showForm;
   if (cariListSection) cariListSection.hidden = showForm;
+}
+
+function applyFinanceSubview(mode) {
+  const showMovement = mode === "movement";
+  if (movementFormSection) movementFormSection.hidden = !showMovement;
+  if (cariStatementSection) cariStatementSection.hidden = showMovement;
 }
 
 function setDefaultDates() {
@@ -834,6 +876,12 @@ function parseMoneyInput(value) {
     if (dotCount > 1) {
       const lastDotIndex = text.lastIndexOf(".");
       text = `${text.slice(0, lastDotIndex).replace(/\./g, "")}.${text.slice(lastDotIndex + 1)}`;
+    } else if (dotCount === 1) {
+      const [left = "", right = ""] = text.split(".");
+      const looksLikeThousandsSeparator = right.length === 3 && left.length >= 1;
+      if (looksLikeThousandsSeparator) {
+        text = `${left}${right}`;
+      }
     }
   }
   const parsed = Number(text);
@@ -1412,6 +1460,10 @@ function renderRecentOrders(records) {
 function clearCariSelection() {
   selectedCariId = null;
   resetCariFormEditor();
+  currentCariSubview = "list";
+  if (currentView === "cari") {
+    applyCariSubview(currentCariSubview);
+  }
   renderCariSticky(null, [], []);
   renderCariDetail(null, [], []);
 }
@@ -1438,6 +1490,9 @@ function resetMovementForm() {
 
 function fillMovementForm(movement) {
   if (!movement || !forms.movement) return;
+  setActiveView("finance");
+  currentFinanceSubview = "movement";
+  applyFinanceSubview(currentFinanceSubview);
   if (movementEditId) movementEditId.value = String(movement.id);
   selectedMovementId = movement.id;
   const cariInput = forms.movement.querySelector('[name="cariId"]');
@@ -1454,7 +1509,7 @@ function fillMovementForm(movement) {
   movementResetBtn?.classList.add("is-active");
   movementSubmitBtn?.classList.add("is-active");
   renderMovements(cache.movements || [], cache.cari || []);
-  forms.movement.scrollIntoView({ behavior: "smooth", block: "center" });
+  document.getElementById("movementFormSection")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function openMovementReceiptBuilder() {
@@ -1790,6 +1845,9 @@ function buildMovementReceiptHtml(data) {
 
 function fillCariForm(cari) {
   if (!cari || !forms.cari) return;
+  setActiveView("cari");
+  currentCariSubview = "form";
+  applyCariSubview(currentCariSubview);
   selectedCariId = cari.id;
   if (cariEditId) cariEditId.value = String(cari.id);
   setCariFormValue("fullName", cari.fullName || "");
@@ -2045,20 +2103,122 @@ function renderMovements(movements, cariler) {
 function renderCariStatements(cariler, movements, orders) {
   const target = document.getElementById("cariStatementList");
   if (!target) return;
-  const filteredCariler = selectedCariId ? cariler.filter((cari) => cari.id === selectedCariId) : cariler;
-  target.innerHTML = filteredCariler.length ? filteredCariler.map((cari) => {
+  const searchTerm = cariStatementSearch?.value?.trim().toLowerCase() || "";
+  const balanceFilter = cariStatementBalanceFilter?.value || "all";
+  const sortValue = cariStatementSort?.value || "balance_desc";
+  const statementRows = (cariler || []).map((cari) => {
     const orderTotal = calcCariOrderTotal(cari.id, orders);
     const creditTotal = (movements || []).filter((item) => item.cariId === cari.id && isCreditMovement(item.movementType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
     const debtTotal = (movements || []).filter((item) => item.cariId === cari.id && !isCreditMovement(item.movementType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
     const balance = calcCariBalance(cari.id, movements, orders);
+    return { cari, orderTotal, creditTotal, debtTotal, balance };
+  }).filter(({ cari, balance }) => {
+    const searchText = [cari.companyName, cari.fullName, cari.type].join(" ").toLowerCase();
+    if (searchTerm && !searchText.includes(searchTerm)) return false;
+    if (balanceFilter === "debt") return balance > 0;
+    if (balanceFilter === "credit") return balance < 0;
+    if (balanceFilter === "zero") return balance === 0;
+    return true;
+  });
+  statementRows.sort((left, right) => {
+    switch (sortValue) {
+      case "balance_asc":
+        return left.balance - right.balance;
+      case "name_asc":
+        return String(left.cari.companyName || left.cari.fullName || "").localeCompare(String(right.cari.companyName || right.cari.fullName || ""), "tr");
+      case "name_desc":
+        return String(right.cari.companyName || right.cari.fullName || "").localeCompare(String(left.cari.companyName || left.cari.fullName || ""), "tr");
+      case "credit_desc":
+        return right.creditTotal - left.creditTotal;
+      case "debt_desc":
+        return right.debtTotal - left.debtTotal;
+      case "order_desc":
+        return right.orderTotal - left.orderTotal;
+      case "balance_desc":
+      default:
+        return right.balance - left.balance;
+    }
+  });
+  target.innerHTML = statementRows.length ? `
+    <div class="cari-statement-table-shell">
+      <div class="cari-statement-table-head">
+        <span>No</span>
+        <span>Cari</span>
+        <span>Siparis</span>
+        <span>Alacak</span>
+        <span>Borc</span>
+        <span>Bakiye</span>
+        <span>Detay</span>
+      </div>
+      <div class="cari-statement-table-body">
+        ${statementRows.map(({ cari, orderTotal, creditTotal, debtTotal, balance }, index) => {
+    const balanceClass = balance > 0 ? "is-debt" : balance < 0 ? "is-credit" : "";
     return `
-      <article class="entity-card">
-        <div><strong>${escapeHtml(cari.companyName || cari.fullName)}</strong><span>${escapeHtml(cari.type)}</span></div>
-        <div><small>Siparis ${formatCurrency(orderTotal)}</small><span>Alacak ${formatCurrency(creditTotal)} | Borc ${formatCurrency(debtTotal)}</span></div>
-        <div><strong>${formatCurrency(balance)}</strong></div>
+      <article class="cari-statement-row">
+        <span class="cari-statement-cell">${String(index + 1).padStart(3, "0")}</span>
+        <span class="cari-statement-cell cell-name">
+          <strong>${escapeHtml(cari.companyName || cari.fullName)}</strong>
+          <small>${escapeHtml(cari.type)}</small>
+        </span>
+        <span class="cari-statement-cell cell-money">${formatCurrency(orderTotal)}</span>
+        <span class="cari-statement-cell cell-money is-credit">${formatCurrency(creditTotal)}</span>
+        <span class="cari-statement-cell cell-money is-debt">${formatCurrency(debtTotal)}</span>
+        <span class="cari-statement-cell cell-money ${balanceClass}">${formatCurrency(balance)}</span>
+        <span class="cari-statement-cell cell-detail-action">
+          <button class="ghost-action icon-action-btn ${selectedStatementCariId === cari.id ? "is-active" : ""}" type="button" data-cari-statement-detail="${cari.id}" aria-label="Muhasebe kayitlarini goster">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 12s3.6-6 9-6 9 6 9 6-3.6 6-9 6-9-6-9-6Z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </span>
       </article>
     `;
-  }).join("") : `<div class="entity-card empty-state">Cari ekstre verisi bulunamadi.</div>`;
+  }).join("")}
+      </div>
+    </div>
+  ` : `<div class="entity-card empty-state">Cari ekstre verisi bulunamadi.</div>`;
+  renderCariStatementDetail(movements, orders, statementRows);
+}
+
+function renderCariStatementDetail(movements, orders, statementRows) {
+  if (!cariStatementDetailPanel || !cariStatementDetailContent || !cariStatementDetailTitle || !cariStatementDetailMeta) return;
+  const activeRow = statementRows.find(({ cari }) => cari.id === selectedStatementCariId);
+  if (!activeRow) {
+    cariStatementDetailPanel.hidden = true;
+    cariStatementDetailContent.innerHTML = "";
+    return;
+  }
+  const { cari, balance, orderTotal, creditTotal, debtTotal } = activeRow;
+  const movementRows = (movements || [])
+    .filter((item) => item.cariId === cari.id)
+    .sort((left, right) => new Date(right.date || 0) - new Date(left.date || 0) || (right.id || 0) - (left.id || 0));
+  cariStatementDetailTitle.textContent = `${cari.companyName || cari.fullName} - Muhasebe Kayitlari`;
+  cariStatementDetailMeta.textContent = `Siparis ${formatCurrency(orderTotal)} | Alacak ${formatCurrency(creditTotal)} | Borc ${formatCurrency(debtTotal)} | Bakiye ${formatCurrency(balance)}`;
+  cariStatementDetailContent.innerHTML = movementRows.length ? `
+    <div class="cari-statement-movement-table">
+      <div class="cari-statement-movement-head">
+        <span>Tarih</span>
+        <span>Kayit Turu</span>
+        <span>Aciklama</span>
+        <span>Tutar</span>
+      </div>
+      <div class="cari-statement-movement-body">
+        ${movementRows.map((item) => {
+          const amountClass = isCreditMovement(item.movementType) ? "is-credit" : "is-debt";
+          return `
+            <article class="cari-statement-movement-row">
+              <span>${formatDate(item.date)}</span>
+              <span>${escapeHtml(item.movementType || "-")}</span>
+              <span>${escapeHtml(item.note || "-")}</span>
+              <span class="${amountClass}">${formatCurrency(item.amount)}</span>
+            </article>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  ` : `<div class="entity-card empty-state">Bu cariye ait muhasebe kaydi bulunamadi.</div>`;
+  cariStatementDetailPanel.hidden = false;
 }
 
 function renderOffers(records) {
@@ -2625,20 +2785,27 @@ function renderStocks(records) {
 }
 
 function renderFinance(finance, products, orders) {
+  const target = document.getElementById("financeList");
+  if (!target) return;
   const totalCost = finance.reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const totalSales = orders.reduce((sum, item) => sum + Number(item.netTotal || 0), 0) || products.reduce((sum, item) => sum + Number(item.salePrice || 0), 0);
   const estimatedProfit = totalSales - totalCost;
   const generalExpenses = finance.filter((item) => item.type === "Dukkan" || item.type === "Showroom").reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const totalCollection = (cache.movements || []).filter((item) => isCreditMovement(item.movementType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
   const totalPayment = (cache.movements || []).filter((item) => !isCreditMovement(item.movementType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  document.getElementById("metricTotalCost").textContent = formatCurrency(totalCost);
-  document.getElementById("metricTotalSales").textContent = formatCurrency(totalSales);
-  document.getElementById("metricEstimatedProfit").textContent = formatCurrency(estimatedProfit);
-  document.getElementById("metricGeneralExpenses").textContent = formatCurrency(generalExpenses);
-  document.getElementById("metricTotalCollection").textContent = formatCurrency(totalCollection);
-  document.getElementById("metricTotalPayment").textContent = formatCurrency(totalPayment);
+  const metricTotalCost = document.getElementById("metricTotalCost");
+  const metricTotalSales = document.getElementById("metricTotalSales");
+  const metricEstimatedProfit = document.getElementById("metricEstimatedProfit");
+  const metricGeneralExpenses = document.getElementById("metricGeneralExpenses");
+  const metricTotalCollection = document.getElementById("metricTotalCollection");
+  const metricTotalPayment = document.getElementById("metricTotalPayment");
+  if (metricTotalCost) metricTotalCost.textContent = formatCurrency(totalCost);
+  if (metricTotalSales) metricTotalSales.textContent = formatCurrency(totalSales);
+  if (metricEstimatedProfit) metricEstimatedProfit.textContent = formatCurrency(estimatedProfit);
+  if (metricGeneralExpenses) metricGeneralExpenses.textContent = formatCurrency(generalExpenses);
+  if (metricTotalCollection) metricTotalCollection.textContent = formatCurrency(totalCollection);
+  if (metricTotalPayment) metricTotalPayment.textContent = formatCurrency(totalPayment);
 
-  const target = document.getElementById("financeList");
   target.innerHTML = finance.length ? finance.map((item) => `
     <article class="entity-card">
       <div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.type)}</span></div>

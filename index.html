@@ -176,10 +176,10 @@
             <span class="nav-label">Muhasebe</span>
           </button>
           <div class="nav-submenu-static">
-            <button class="nav-link nav-sublink" data-view="cari" data-section-target="movementFormSection">
+            <button class="nav-link nav-sublink" data-view="finance" data-section-target="movementFormSection">
               <span class="nav-label">Cari Hareket Ekle</span>
             </button>
-            <button class="nav-link nav-sublink" data-view="cari" data-section-target="cariStatementSection">
+            <button class="nav-link nav-sublink" data-view="finance" data-section-target="cariStatementSection">
               <span class="nav-label">Cari Takip Ekrani</span>
             </button>
           </div>
@@ -475,58 +475,6 @@
             </section>
           </section>
 
-          <section class="cari-operations-grid">
-            <section class="panel form-panel" id="movementFormSection">
-              <div class="panel-header-row compact">
-                <h2>Borc / Alacak Dekont Girisi</h2>
-              </div>
-              <form id="movementForm" class="form-grid three-col">
-                <input id="movementEditId" type="hidden">
-                <label><span>Cari</span><select name="cariId" id="movementCariSelect" required></select></label>
-                <label><span>Hareket Turu</span>
-                  <select name="movementType">
-                    <option value="Borc Dekontu">Borc Dekontu</option>
-                    <option value="Alacak Dekontu">Alacak Dekontu</option>
-                  </select>
-                </label>
-                <label><span>Tutar</span><input name="amount" type="text" inputmode="decimal" data-money="1" required></label>
-                <label><span>Tarih</span><input name="date" type="date" required></label>
-                <label><span>Aciklama</span><input name="note" type="text" placeholder="Aciklama"></label>
-                <div class="inline-form-actions">
-                  <button class="ghost-action" id="movementResetBtn" type="button">Yeni Dekont</button>
-                  <button class="primary-btn form-submit" id="movementSubmitBtn" type="submit">Hareketi Kaydet</button>
-                  <button class="receipt-action-btn" id="movementReceiptBtn" type="button">Makbuz / WhatsApp</button>
-                </div>
-              </form>
-              <div class="receipt-builder-panel" id="movementReceiptPanel" hidden>
-                <div class="panel-header-row compact">
-                  <h2>Makbuz Formu</h2>
-                </div>
-                <form id="movementReceiptForm" class="form-grid two-col">
-                  <label><span>Belge Basligi</span><input name="receiptTitle" type="text" value="Cari Dekont Makbuzu"></label>
-                  <label><span>Belge No</span><input name="receiptNo" type="text"></label>
-                  <label class="receipt-wide"><span>Firma Logo URL</span><input name="logoUrl" type="text" placeholder="https://... veya logo dosya yolu"></label>
-                  <label><span>Firma</span><input name="companyName" type="text"></label>
-                  <label><span>Yetkili Kisi</span><input name="contactName" type="text"></label>
-                  <label><span>Telefon</span><input name="phone" type="text"></label>
-                  <label><span>Dekont Turu</span><input name="movementType" type="text"></label>
-                  <label><span>Tutar</span><input name="amount" type="text"></label>
-                  <label><span>Tarih</span><input name="date" type="text"></label>
-                  <label><span>Gonderim Telefonu</span><input name="whatsappPhone" type="text" placeholder="90555..."></label>
-                  <label class="receipt-wide"><span>Aciklama</span><textarea name="description" rows="3" placeholder="Makbuz aciklamasi"></textarea></label>
-                  <label class="receipt-wide"><span>Ek Not</span><textarea name="receiptNote" rows="4" placeholder="Teslim notu, aciklama, odeme bilgisi"></textarea></label>
-                  <label><span>Imza Yetkilisi</span><input name="signatureName" type="text" value="Yetkili Imza"></label>
-                  <label><span>Imza Unvani</span><input name="signatureTitle" type="text" value="Silva Ahsap Yetkilisi"></label>
-                  <div class="inline-form-actions receipt-actions">
-                    <button class="ghost-action" id="movementReceiptCloseBtn" type="button">Kapat</button>
-                    <button class="primary-btn receipt-print-btn" id="movementReceiptPrintBtn" type="button">Yazdir / PDF</button>
-                    <button class="receipt-copy-btn" id="movementReceiptCopyBtn" type="button">Mesaji Kopyala</button>
-                    <button class="receipt-whatsapp-btn" id="movementReceiptWhatsappBtn" type="button">WhatsApp Web Ac</button>
-                  </div>
-                </form>
-              </div>
-            </section>
-          </section>
         </section>
       </section>
 
@@ -859,55 +807,100 @@
       </section>
 
       <section class="view" id="view-finance">
-        <section class="summary-grid finance-grid">
-          <article class="summary-card">
-            <div><span>Toplam Maliyet</span><strong id="metricTotalCost">0 TL</strong></div>
-            <div class="summary-icon gold">M</div>
-          </article>
-          <article class="summary-card">
-            <div><span>Toplam Satis</span><strong id="metricTotalSales">0 TL</strong></div>
-            <div class="summary-icon blue">S</div>
-          </article>
-          <article class="summary-card">
-            <div><span>Tahmini Kar</span><strong id="metricEstimatedProfit">0 TL</strong></div>
-            <div class="summary-icon green">K</div>
-          </article>
-          <article class="summary-card">
-            <div><span>Genel Gider</span><strong id="metricGeneralExpenses">0 TL</strong></div>
-            <div class="summary-icon pink">G</div>
-          </article>
-          <article class="summary-card">
-            <div><span>Toplam Alacak</span><strong id="metricTotalCollection">0 TL</strong></div>
-            <div class="summary-icon green">T</div>
-          </article>
-          <article class="summary-card">
-            <div><span>Toplam Borc</span><strong id="metricTotalPayment">0 TL</strong></div>
-            <div class="summary-icon gold">O</div>
-          </article>
-        </section>
-        <section class="panel form-panel">
-          <div class="panel-header-row compact">
-            <h2>Gider ve Maliyet Kalemi Ekle</h2>
-          </div>
-          <form id="financeForm" class="form-grid three-col">
-            <label><span>Kalem Turu</span>
-              <select name="type">
-                <option value="Hammadde">Hammadde</option>
-                <option value="Iscilik">Iscilik</option>
-                <option value="Dukkan">Dukkan</option>
-                <option value="Showroom">Showroom</option>
-              </select>
-            </label>
-            <label><span>Aciklama</span><input name="title" type="text" required></label>
-            <label><span>Tutar</span><input name="amount" type="text" inputmode="decimal" data-money="1" required></label>
-            <button class="primary-btn form-submit" type="submit">Kalemi Kaydet</button>
-          </form>
-        </section>
-        <section class="panel list-panel">
-          <div class="panel-header-row">
-            <h2>Maliyet Analizi</h2>
-          </div>
-          <div class="card-list" id="financeList"></div>
+        <section class="cari-operations-grid">
+          <section class="panel form-panel" id="movementFormSection">
+            <div class="panel-header-row compact">
+              <h2>Borc / Alacak Dekont Girisi</h2>
+            </div>
+            <form id="movementForm" class="form-grid three-col">
+              <input id="movementEditId" type="hidden">
+              <label><span>Cari</span><select name="cariId" id="movementCariSelect" required></select></label>
+              <label><span>Hareket Turu</span>
+                <select name="movementType">
+                  <option value="Borc Dekontu">Borc Dekontu</option>
+                  <option value="Alacak Dekontu">Alacak Dekontu</option>
+                </select>
+              </label>
+              <label><span>Tutar</span><input name="amount" type="text" inputmode="decimal" data-money="1" required></label>
+              <label><span>Tarih</span><input name="date" type="date" required></label>
+              <label><span>Aciklama</span><input name="note" type="text" placeholder="Aciklama"></label>
+              <div class="inline-form-actions">
+                <button class="ghost-action" id="movementResetBtn" type="button">Yeni Dekont</button>
+                <button class="primary-btn form-submit" id="movementSubmitBtn" type="submit">Hareketi Kaydet</button>
+                <button class="receipt-action-btn" id="movementReceiptBtn" type="button">Makbuz / WhatsApp</button>
+              </div>
+            </form>
+            <div class="receipt-builder-panel" id="movementReceiptPanel" hidden>
+              <div class="panel-header-row compact">
+                <h2>Makbuz Formu</h2>
+              </div>
+              <form id="movementReceiptForm" class="form-grid two-col">
+                <label><span>Belge Basligi</span><input name="receiptTitle" type="text" value="Cari Dekont Makbuzu"></label>
+                <label><span>Belge No</span><input name="receiptNo" type="text"></label>
+                <label class="receipt-wide"><span>Firma Logo URL</span><input name="logoUrl" type="text" placeholder="https://... veya logo dosya yolu"></label>
+                <label><span>Firma</span><input name="companyName" type="text"></label>
+                <label><span>Yetkili Kisi</span><input name="contactName" type="text"></label>
+                <label><span>Telefon</span><input name="phone" type="text"></label>
+                <label><span>Dekont Turu</span><input name="movementType" type="text"></label>
+                <label><span>Tutar</span><input name="amount" type="text"></label>
+                <label><span>Tarih</span><input name="date" type="text"></label>
+                <label><span>Gonderim Telefonu</span><input name="whatsappPhone" type="text" placeholder="90555..."></label>
+                <label class="receipt-wide"><span>Aciklama</span><textarea name="description" rows="3" placeholder="Makbuz aciklamasi"></textarea></label>
+                <label class="receipt-wide"><span>Ek Not</span><textarea name="receiptNote" rows="4" placeholder="Teslim notu, aciklama, odeme bilgisi"></textarea></label>
+                <label><span>Imza Yetkilisi</span><input name="signatureName" type="text" value="Yetkili Imza"></label>
+                <label><span>Imza Unvani</span><input name="signatureTitle" type="text" value="Silva Ahsap Yetkilisi"></label>
+                <div class="inline-form-actions receipt-actions">
+                  <button class="ghost-action" id="movementReceiptCloseBtn" type="button">Kapat</button>
+                  <button class="primary-btn receipt-print-btn" id="movementReceiptPrintBtn" type="button">Yazdir / PDF</button>
+                  <button class="receipt-copy-btn" id="movementReceiptCopyBtn" type="button">Mesaji Kopyala</button>
+                  <button class="receipt-whatsapp-btn" id="movementReceiptWhatsappBtn" type="button">WhatsApp Web Ac</button>
+                </div>
+              </form>
+            </div>
+          </section>
+          <section class="panel list-panel" id="cariStatementSection" hidden>
+            <div class="panel-header-row">
+              <h2>Cari Takip Ekrani</h2>
+            </div>
+            <div class="cari-statement-toolbar">
+              <label>
+                <span>Arama</span>
+                <input id="cariStatementSearch" type="search" placeholder="Cari, firma veya tip ara">
+              </label>
+              <label>
+                <span>Filtre</span>
+                <select id="cariStatementBalanceFilter">
+                  <option value="all">Tum Bakiyeler</option>
+                  <option value="debt">Borclular</option>
+                  <option value="credit">Alacaklilar</option>
+                  <option value="zero">Bakiye Sifir</option>
+                </select>
+              </label>
+              <label>
+                <span>Siralama</span>
+                <select id="cariStatementSort">
+                  <option value="balance_desc">Bakiye (Azalan)</option>
+                  <option value="balance_asc">Bakiye (Artan)</option>
+                  <option value="name_asc">Cari Adi (A-Z)</option>
+                  <option value="name_desc">Cari Adi (Z-A)</option>
+                  <option value="credit_desc">Alacak (Azalan)</option>
+                  <option value="debt_desc">Borc (Azalan)</option>
+                  <option value="order_desc">Siparis (Azalan)</option>
+                </select>
+              </label>
+            </div>
+            <div id="cariStatementList"></div>
+            <section class="cari-statement-detail-panel" id="cariStatementDetailPanel" hidden>
+              <div class="panel-header-row compact">
+                <div>
+                  <h2 id="cariStatementDetailTitle">Muhasebe Kayit Detayi</h2>
+                  <p id="cariStatementDetailMeta">Secilen carinin tum borc ve alacak hareketleri.</p>
+                </div>
+                <button class="ghost-action" id="cariStatementDetailCloseBtn" type="button">Kapat</button>
+              </div>
+              <div id="cariStatementDetailContent"></div>
+            </section>
+          </section>
         </section>
       </section>
 

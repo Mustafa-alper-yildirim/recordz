@@ -15,6 +15,7 @@
   --pink: #b874f6;
   --pink-soft: #f6ebff;
   --nav-hover: #e8f1f0;
+  --nav-active: #d8ecea;
   --teal-dark: #165d63;
   --teal-mid: #1d6c72;
   --teal-soft: #edf7f6;
@@ -225,22 +226,14 @@ body.sidebar-collapsed .layout {
   stroke-width: 2;
 }
 
-.nav-link:hover,
 .nav-link.active {
-  background: var(--nav-hover);
+  background: linear-gradient(90deg, var(--nav-active), #edf7f6);
   color: var(--teal-dark);
-  box-shadow: inset 3px 0 0 var(--teal-dark);
+  box-shadow: inset 5px 0 0 var(--teal-dark), 0 6px 14px rgba(22, 93, 99, 0.08);
+  font-weight: 700;
 }
 
-.nav-group-static.active > .nav-group-toggle {
-  background: var(--nav-hover);
-  color: var(--teal-dark);
-  box-shadow: inset 3px 0 0 var(--teal-dark);
-}
-
-.nav-link.active .nav-icon,
-.nav-link:hover .nav-icon,
-.nav-group-static.active > .nav-group-toggle .nav-icon {
+.nav-link.active .nav-icon {
   color: var(--teal-dark);
 }
 
@@ -1114,6 +1107,216 @@ body.sidebar-collapsed .nav-group-static {
   height: 24px;
   padding: 0 8px;
   font-size: 9px;
+}
+
+.cari-statement-table-head,
+.cari-statement-row {
+  display: grid;
+  grid-template-columns: 48px minmax(180px, 1.45fr) repeat(4, minmax(104px, 0.88fr)) 86px;
+  gap: 0;
+}
+
+.cari-statement-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(160px, 0.8fr) minmax(180px, 0.9fr);
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cari-statement-toolbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cari-statement-toolbar span {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.cari-statement-toolbar input,
+.cari-statement-toolbar select {
+  height: 38px;
+  border: 1px solid #dbe4ef;
+  border-radius: 12px;
+  background: #f9fbfd;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.cari-statement-table-head {
+  background: #f2f6fb;
+  border-bottom: 1px solid var(--line);
+}
+
+.cari-statement-table-head span {
+  padding: 10px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  border-right: 1px solid var(--line);
+}
+
+.cari-statement-table-head span:last-child {
+  border-right: 0;
+}
+
+.cari-statement-table-body {
+  max-height: 560px;
+  overflow-y: auto;
+}
+
+.cari-statement-row {
+  min-height: 52px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.cari-statement-row:last-child {
+  border-bottom: 0;
+}
+
+.cari-statement-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-right: 1px solid #edf2f7;
+  font-size: 10px;
+}
+
+.cari-statement-cell:last-child {
+  border-right: 0;
+}
+
+.cari-statement-cell.cell-name {
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.cari-statement-cell.cell-name strong,
+.cari-statement-cell.cell-name small {
+  display: block;
+}
+
+.cari-statement-cell.cell-name strong {
+  font-size: 10px;
+}
+
+.cari-statement-cell.cell-name small {
+  color: var(--text-muted);
+  font-size: 8px;
+  margin-top: 1px;
+}
+
+.cari-statement-cell.cell-money {
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.cari-statement-cell.cell-money.is-debt {
+  color: #bf3d2b;
+  font-weight: 700;
+}
+
+.cari-statement-cell.cell-money.is-credit {
+  color: #15825c;
+  font-weight: 700;
+}
+
+.cari-statement-cell.cell-detail-action {
+  justify-content: center;
+}
+
+.icon-action-btn {
+  width: 34px;
+  min-width: 34px;
+  padding: 0;
+  border-radius: 10px;
+}
+
+.icon-action-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+.icon-action-btn.is-active {
+  background: #e8f1ff;
+  color: #1d4ed8;
+  border-color: #bfd4ff;
+}
+
+.cari-statement-detail-panel {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #edf2f7;
+}
+
+.cari-statement-movement-head,
+.cari-statement-movement-row {
+  display: grid;
+  grid-template-columns: 120px 180px minmax(220px, 1fr) 120px;
+  gap: 0;
+}
+
+.cari-statement-movement-head {
+  background: #f7f9fc;
+  border: 1px solid #edf2f7;
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+}
+
+.cari-statement-movement-head span,
+.cari-statement-movement-row span {
+  padding: 10px 12px;
+  font-size: 11px;
+  border-right: 1px solid #edf2f7;
+}
+
+.cari-statement-movement-head span:last-child,
+.cari-statement-movement-row span:last-child {
+  border-right: 0;
+}
+
+.cari-statement-movement-head span {
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.cari-statement-movement-body {
+  border: 1px solid #edf2f7;
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+}
+
+.cari-statement-movement-row {
+  background: #fff;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.cari-statement-movement-row:last-child {
+  border-bottom: 0;
+}
+
+.cari-statement-movement-row span:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cari-statement-movement-row .is-debt {
+  color: #bf3d2b;
+  font-weight: 700;
+}
+
+.cari-statement-movement-row .is-credit {
+  color: #15825c;
+  font-weight: 700;
 }
 
 .cari-panel-head {
