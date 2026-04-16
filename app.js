@@ -87,6 +87,10 @@ const cariStatementDetailTitle = document.getElementById("cariStatementDetailTit
 const cariStatementDetailMeta = document.getElementById("cariStatementDetailMeta");
 const cariStatementDetailContent = document.getElementById("cariStatementDetailContent");
 const cariStatementDetailCloseBtn = document.getElementById("cariStatementDetailCloseBtn");
+const cariStatementPrintBtn = document.getElementById("cariStatementPrintBtn");
+const cariStatementOutputForm = document.getElementById("cariStatementOutputForm");
+const cariStatementLogoFile = document.getElementById("cariStatementLogoFile");
+const cariStatementPreviewFrame = document.getElementById("cariStatementPreviewFrame");
 const movementEditId = document.getElementById("movementEditId");
 const movementResetBtn = document.getElementById("movementResetBtn");
 const movementSubmitBtn = document.getElementById("movementSubmitBtn");
@@ -111,6 +115,8 @@ const cariDetailPhone = document.getElementById("cariDetailPhone");
 const cariDetailLastMovement = document.getElementById("cariDetailLastMovement");
 const cariDetailBalance = document.getElementById("cariDetailBalance");
 const cariDetailLimit = document.getElementById("cariDetailLimit");
+const cariDetailDiscount = document.getElementById("cariDetailDiscount");
+const cariDetailNotes = document.getElementById("cariDetailNotes");
 const roleControlledViews = {
   finance: document.querySelector('[data-view="finance"]'),
   personnel: document.querySelector('[data-view="personnel"]'),
@@ -214,6 +220,8 @@ navGroupToggles.forEach((toggle) => toggle.addEventListener("click", () => {
   wrap?.classList.toggle("open");
 }));
 quickLinks.forEach((link) => link.addEventListener("click", () => setActiveView(link.dataset.action || link.dataset.viewLink)));
+cariStatementOutputForm?.addEventListener("input", refreshCariStatementPreview);
+cariStatementOutputForm?.addEventListener("change", refreshCariStatementPreview);
 
 primaryActionBtn?.addEventListener("click", () => {
   const targetMap = {
@@ -270,37 +278,42 @@ logoutBtn?.addEventListener("click", async () => {
 
 forms.cari?.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const data = formToObject(forms.cari);
-  const payload = {
-    fullName: data.fullName,
-    companyName: data.companyName,
-    phone: data.phone,
-    taxOffice: data.taxOffice,
-    taxNumber: data.taxNumber,
-    discountRate: Number(data.discountRate || 0),
-    balanceLimit: 0,
-    riskLimit: parseMoneyInput(data.riskLimit),
-    type: data.type,
-    notes: data.notes || "",
-  };
-  if (cariEditId?.value) {
-    await api.cari.update(Number(cariEditId.value), {
-      full_name: payload.fullName,
-      company_name: payload.companyName,
-      phone: payload.phone,
-      tax_office: payload.taxOffice,
-      tax_number: payload.taxNumber,
-      discount_rate: payload.discountRate,
-      balance_limit: payload.balanceLimit,
-      risk_limit: payload.riskLimit,
-      type: payload.type,
-      notes: payload.notes,
-    });
-  } else {
-    await addRecord(STORES.cari, payload);
+  try {
+    const data = formToObject(forms.cari);
+    const payload = {
+      fullName: data.fullName,
+      companyName: data.companyName,
+      phone: data.phone,
+      taxOffice: data.taxOffice,
+      taxNumber: data.taxNumber,
+      discountRate: Math.max(0, Math.min(100, parseDecimalInput(data.discountRate))),
+      balanceLimit: 0,
+      riskLimit: parseMoneyInput(data.riskLimit),
+      type: data.type,
+      notes: data.notes || "",
+    };
+    if (cariEditId?.value) {
+      await api.cari.update(Number(cariEditId.value), {
+        full_name: payload.fullName,
+        company_name: payload.companyName,
+        phone: payload.phone,
+        tax_office: payload.taxOffice,
+        tax_number: payload.taxNumber,
+        discount_rate: payload.discountRate,
+        balance_limit: payload.balanceLimit,
+        risk_limit: payload.riskLimit,
+        type: payload.type,
+        notes: payload.notes,
+      });
+    } else {
+      await addRecord(STORES.cari, payload);
+    }
+    clearCariSelection();
+    await refreshUI();
+  } catch (error) {
+    console.error("Cari kaydi guncellenemedi:", error);
+    window.alert(`Cari kaydi guncellenemedi: ${error?.message || "Bilinmeyen hata"}`);
   }
-  clearCariSelection();
-  await refreshUI();
 });
 
 forms.movement?.addEventListener("submit", async (event) => {
@@ -576,6 +589,21 @@ cariStatementDetailCloseBtn?.addEventListener("click", () => {
   selectedStatementCariId = null;
   renderCariStatements(cache.cari || [], cache.movements || [], cache.orders || []);
 });
+cariStatementPrintBtn?.addEventListener("click", printCariStatementDetail);
+cariStatementLogoFile?.addEventListener("change", () => {
+  const file = cariStatementLogoFile.files?.[0];
+  if (!file) {
+    setFormFieldValue(cariStatementOutputForm, "logoDataUrl", "");
+    refreshCariStatementPreview();
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    setFormFieldValue(cariStatementOutputForm, "logoDataUrl", String(reader.result || ""));
+    refreshCariStatementPreview();
+  };
+  reader.readAsDataURL(file);
+});
 movementReceiptCloseBtn?.addEventListener("click", () => {
   if (movementReceiptPanel) movementReceiptPanel.hidden = true;
 });
@@ -660,7 +688,8 @@ cariList?.addEventListener("click", (event) => {
 document.getElementById("cariStatementList")?.addEventListener("click", (event) => {
   const detailButton = event.target.closest("[data-cari-statement-detail]");
   if (!detailButton) return;
-  selectedStatementCariId = Number(detailButton.dataset.cariStatementDetail);
+  const clickedCariId = Number(detailButton.dataset.cariStatementDetail);
+  selectedStatementCariId = selectedStatementCariId === clickedCariId ? null : clickedCariId;
   renderCariStatements(cache.cari || [], cache.movements || [], cache.orders || []);
 });
 
@@ -891,6 +920,20 @@ function parseMoneyInput(value) {
 function normalizeEditableMoney(value) {
   const parsed = parseMoneyInput(value);
   return Number.isFinite(parsed) ? String(parsed).replace(".", ",") : "";
+}
+
+function parseDecimalInput(value) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  let text = String(value || "").trim();
+  if (!text) return 0;
+  text = text.replace(/[^\d,.-]/g, "");
+  if (text.includes(",") && text.includes(".")) {
+    text = text.replace(/\./g, "").replace(",", ".");
+  } else {
+    text = text.replace(",", ".");
+  }
+  const parsed = Number(text);
+  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function formatMoneyInputValue(value) {
@@ -1857,11 +1900,16 @@ function fillCariForm(cari) {
   setCariFormValue("taxNumber", cari.taxNumber || "");
   setCariFormValue("discountRate", String(cari.discountRate || 0));
   setCariFormValue("riskLimit", formatMoneyInputValue(cari.riskLimit || 0));
-  setCariFormValue("type", cari.type || "Musteri");
+  setCariFormValue("type", normalizeCariType(cari.type));
   setCariFormValue("notes", cari.notes || "");
   if (cariSubmitBtn) cariSubmitBtn.textContent = "Cariyi Guncelle";
   renderCariSticky(cari, cache.movements || [], cache.orders || []);
   renderCariDetail(cari, cache.movements || [], cache.orders || []);
+}
+
+function normalizeCariType(value) {
+  const validTypes = new Set(["Musteri", "Tedarikci", "Musteri/Tedarikci"]);
+  return validTypes.has(value) ? value : "Musteri";
 }
 
 function setCariFormValue(name, value) {
@@ -1899,6 +1947,8 @@ function renderCariDetail(cari, movements, orders) {
     if (cariDetailLastMovement) cariDetailLastMovement.textContent = "-";
     if (cariDetailBalance) cariDetailBalance.textContent = "0 TL";
     if (cariDetailLimit) cariDetailLimit.textContent = "0 TL";
+    if (cariDetailDiscount) cariDetailDiscount.textContent = "0%";
+    if (cariDetailNotes) cariDetailNotes.textContent = "-";
     return;
   }
 
@@ -1919,6 +1969,8 @@ function renderCariDetail(cari, movements, orders) {
   if (cariDetailLastMovement) cariDetailLastMovement.textContent = lastMovement ? formatDate(lastMovement.date) : "Hareket yok";
   if (cariDetailBalance) cariDetailBalance.textContent = formatCurrency(balance);
   if (cariDetailLimit) cariDetailLimit.textContent = formatCurrency(cari.riskLimit || 0);
+  if (cariDetailDiscount) cariDetailDiscount.textContent = `%${Number(cari.discountRate || 0)}`;
+  if (cariDetailNotes) cariDetailNotes.textContent = (cari.notes || "").trim() || "-";
 }
 
 function renderCari(records, movements, orders) {
@@ -2105,7 +2157,7 @@ function renderCariStatements(cariler, movements, orders) {
   if (!target) return;
   const searchTerm = cariStatementSearch?.value?.trim().toLowerCase() || "";
   const balanceFilter = cariStatementBalanceFilter?.value || "all";
-  const sortValue = cariStatementSort?.value || "balance_desc";
+  const sortValue = cariStatementSort?.value || "name_asc";
   const statementRows = (cariler || []).map((cari) => {
     const orderTotal = calcCariOrderTotal(cari.id, orders);
     const creditTotal = (movements || []).filter((item) => item.cariId === cari.id && isCreditMovement(item.movementType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
@@ -2142,13 +2194,13 @@ function renderCariStatements(cariler, movements, orders) {
   target.innerHTML = statementRows.length ? `
     <div class="cari-statement-table-shell">
       <div class="cari-statement-table-head">
-        <span>No</span>
-        <span>Cari</span>
-        <span>Siparis</span>
-        <span>Alacak</span>
-        <span>Borc</span>
-        <span>Bakiye</span>
-        <span>Detay</span>
+        <span class="is-center">No</span>
+        <span class="is-left">Cari</span>
+        <span class="is-right">Siparis</span>
+        <span class="is-right">Alacak</span>
+        <span class="is-right">Borc</span>
+        <span class="is-right">Bakiye</span>
+        <span class="is-center">Detay</span>
       </div>
       <div class="cari-statement-table-body">
         ${statementRows.map(({ cari, orderTotal, creditTotal, debtTotal, balance }, index) => {
@@ -2218,7 +2270,271 @@ function renderCariStatementDetail(movements, orders, statementRows) {
       </div>
     </div>
   ` : `<div class="entity-card empty-state">Bu cariye ait muhasebe kaydi bulunamadi.</div>`;
+  syncCariStatementOutputForm(cari);
   cariStatementDetailPanel.hidden = false;
+}
+
+function syncCariStatementOutputForm(cari) {
+  if (!cariStatementOutputForm || !cari) return;
+  const shouldInit = cariStatementOutputForm.dataset.initialized !== "1";
+  if (shouldInit) {
+    setFormFieldValue(cariStatementOutputForm, "documentTitle", "Cari Muhasebe Dokumu");
+    setFormFieldValue(cariStatementOutputForm, "logoUrl", "");
+    setFormFieldValue(cariStatementOutputForm, "logoDataUrl", "");
+    if (cariStatementLogoFile) cariStatementLogoFile.value = "";
+    setFormFieldValue(cariStatementOutputForm, "pageSize", "A4");
+    setFormFieldValue(cariStatementOutputForm, "pageOrientation", "portrait");
+    setFormFieldValue(cariStatementOutputForm, "pageMarginMm", "14");
+    setFormFieldValue(cariStatementOutputForm, "fontFamily", "Arial, sans-serif");
+    setFormFieldValue(cariStatementOutputForm, "baseFontSize", "12");
+    setFormFieldValue(cariStatementOutputForm, "titleFontSize", "22");
+    setFormFieldValue(cariStatementOutputForm, "metaFontSize", "12");
+    setFormFieldValue(cariStatementOutputForm, "accentColor", "#0f766e");
+    setFormFieldValue(cariStatementOutputForm, "headerBgColor", "#eceff4");
+    setFormFieldValue(cariStatementOutputForm, "headerTextColor", "#394657");
+    setFormFieldValue(cariStatementOutputForm, "cardBgColor", "#ffffff");
+    setFormFieldValue(cariStatementOutputForm, "borderColor", "#d6dbe4");
+    setFormFieldValue(cariStatementOutputForm, "tableStyle", "classic");
+    setFormFieldValue(cariStatementOutputForm, "tableDensity", "compact");
+    setFormFieldValue(cariStatementOutputForm, "signatureName", "Yetkili Imza");
+    setFormFieldValue(cariStatementOutputForm, "signatureTitle", "Silva Ahsap Yetkilisi");
+    setFormFieldValue(cariStatementOutputForm, "introText", "Cariye ait tum muhasebe kayitlari, bakiye ozeti ve hareket dokumu");
+    setFormFieldValue(cariStatementOutputForm, "customCss", "");
+    cariStatementOutputForm.dataset.initialized = "1";
+  }
+  setFormFieldValue(cariStatementOutputForm, "taxOffice", cari.taxOffice || "");
+  setFormFieldValue(cariStatementOutputForm, "taxNumber", cari.taxNumber || "");
+  setFormFieldValue(cariStatementOutputForm, "extraNote", (cari.notes || "").trim());
+  refreshCariStatementPreview();
+}
+
+function setFormFieldValue(form, name, value) {
+  const input = form?.querySelector(`[name="${name}"]`);
+  if (input) input.value = value || "";
+}
+
+function getSelectedCariStatementSnapshot() {
+  const cari = (cache.cari || []).find((item) => item.id === selectedStatementCariId);
+  if (!cari) return null;
+  const movements = (cache.movements || [])
+    .filter((item) => item.cariId === cari.id)
+    .sort((left, right) => new Date(right.date || 0) - new Date(left.date || 0) || (right.id || 0) - (left.id || 0));
+  const orders = cache.orders || [];
+  const orderTotal = calcCariOrderTotal(cari.id, orders);
+  const creditTotal = movements.filter((item) => isCreditMovement(item.movementType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const debtTotal = movements.filter((item) => !isCreditMovement(item.movementType)).reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const balance = calcCariBalance(cari.id, cache.movements || [], orders);
+  return { cari, movements, orderTotal, creditTotal, debtTotal, balance };
+}
+
+function printCariStatementDetail() {
+  const snapshot = getSelectedCariStatementSnapshot();
+  if (!snapshot) {
+    window.alert("Detayli cikti almak icin once bir cari secin.");
+    return;
+  }
+  const outputConfig = formToObject(cariStatementOutputForm);
+  const printWindow = window.open("", "_blank", "width=980,height=820");
+  if (!printWindow) return;
+  printWindow.document.write(buildCariStatementPrintHtml(snapshot, outputConfig));
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => printWindow.print(), 250);
+}
+
+function getCariStatementPreviewSnapshot() {
+  return getSelectedCariStatementSnapshot() || buildFallbackCariStatementSnapshot();
+}
+
+function buildFallbackCariStatementSnapshot() {
+  const sampleCari = (cache.cari || [])[0];
+  if (sampleCari) {
+    const movements = (cache.movements || []).filter((item) => item.cariId === sampleCari.id);
+    const orders = cache.orders || [];
+    return {
+      cari: sampleCari,
+      movements,
+      orderTotal: calcCariOrderTotal(sampleCari.id, orders),
+      creditTotal: movements.filter((item) => isCreditMovement(item.movementType)).reduce((sum, item) => sum + Number(item.amount || 0), 0),
+      debtTotal: movements.filter((item) => !isCreditMovement(item.movementType)).reduce((sum, item) => sum + Number(item.amount || 0), 0),
+      balance: calcCariBalance(sampleCari.id, cache.movements || [], orders),
+    };
+  }
+  return {
+    cari: {
+      companyName: "Ornek Cari Ltd.",
+      fullName: "Yetkili Kisi",
+      phone: "0555 000 00 00",
+      type: "Musteri",
+      discountRate: 0,
+      notes: "Burada ornek notlar gorunur.",
+    },
+    movements: [
+      { id: 1, date: new Date().toISOString().slice(0, 10), movementType: "Alacak Dekontu", amount: 12500, note: "Pesin odeme" },
+      { id: 2, date: new Date().toISOString().slice(0, 10), movementType: "Borc Dekontu", amount: 3200, note: "Sevkiyat farki" },
+    ],
+    orderTotal: 18500,
+    creditTotal: 12500,
+    debtTotal: 3200,
+    balance: 6000,
+  };
+}
+
+function refreshCariStatementPreview() {
+  if (!cariStatementPreviewFrame || !cariStatementOutputForm) return;
+  const snapshot = getCariStatementPreviewSnapshot();
+  const outputConfig = formToObject(cariStatementOutputForm);
+  cariStatementPreviewFrame.srcdoc = buildCariStatementPrintHtml(snapshot, outputConfig);
+}
+
+function buildCariStatementPrintHtml(snapshot, outputConfig = {}) {
+  const { cari, movements, orderTotal, creditTotal, debtTotal, balance } = snapshot;
+  const noteText = String(outputConfig.extraNote || "").trim() || (cari.notes || "").trim() || "-";
+  const documentTitle = String(outputConfig.documentTitle || "").trim() || "Cari Muhasebe Dokumu";
+  const introText = String(outputConfig.introText || "").trim() || "Cariye ait tum muhasebe kayitlari, bakiye ozeti ve hareket dokumu";
+  const logoUrl = String(outputConfig.logoDataUrl || "").trim() || String(outputConfig.logoUrl || "").trim();
+  const taxOffice = String(outputConfig.taxOffice || "").trim() || "-";
+  const taxNumber = String(outputConfig.taxNumber || "").trim() || "-";
+  const signatureName = String(outputConfig.signatureName || "").trim() || "Yetkili Imza";
+  const signatureTitle = String(outputConfig.signatureTitle || "").trim() || "Silva Ahsap Yetkilisi";
+  const pageSize = String(outputConfig.pageSize || "A4").trim() || "A4";
+  const pageOrientation = String(outputConfig.pageOrientation || "portrait").trim() || "portrait";
+  const pageMarginMm = Math.max(5, Math.min(30, Number(outputConfig.pageMarginMm || 14) || 14));
+  const fontFamily = String(outputConfig.fontFamily || "Arial, sans-serif").trim() || "Arial, sans-serif";
+  const baseFontSize = Math.max(9, Math.min(16, Number(outputConfig.baseFontSize || 12) || 12));
+  const titleFontSize = Math.max(16, Math.min(34, Number(outputConfig.titleFontSize || 22) || 22));
+  const metaFontSize = Math.max(10, Math.min(18, Number(outputConfig.metaFontSize || 12) || 12));
+  const accentColor = String(outputConfig.accentColor || "#0f766e").trim() || "#0f766e";
+  const headerBgColor = String(outputConfig.headerBgColor || "#eceff4").trim() || "#eceff4";
+  const headerTextColor = String(outputConfig.headerTextColor || "#394657").trim() || "#394657";
+  const cardBgColor = String(outputConfig.cardBgColor || "#ffffff").trim() || "#ffffff";
+  const borderColor = String(outputConfig.borderColor || "#d6dbe4").trim() || "#d6dbe4";
+  const tableStyle = String(outputConfig.tableStyle || "classic").trim() || "classic";
+  const tableDensity = String(outputConfig.tableDensity || "compact").trim() || "compact";
+  const customCss = String(outputConfig.customCss || "");
+  const logoMarkup = logoUrl ? `<img src="${escapeHtml(logoUrl)}" alt="Firma Logosu" class="logo">` : "";
+  const densityMap = {
+    compact: { cellPad: 7, cardPad: 10, notePad: 10 },
+    comfortable: { cellPad: 10, cardPad: 12, notePad: 12 },
+    spacious: { cellPad: 13, cardPad: 14, notePad: 14 },
+  };
+  const tablePaletteMap = {
+    classic: { bodyBg: "#ffffff", stripeBg: "#f8fafc" },
+    clean: { bodyBg: "#ffffff", stripeBg: "#ffffff" },
+    soft: { bodyBg: "#fffef8", stripeBg: "#f9fbff" },
+  };
+  const density = densityMap[tableDensity] || densityMap.compact;
+  const palette = tablePaletteMap[tableStyle] || tablePaletteMap.classic;
+  const rowsMarkup = movements.length ? movements.map((item, index) => `
+    <tr class="${index % 2 === 1 ? "is-striped" : ""}">
+      <td>${String(index + 1).padStart(3, "0")}</td>
+      <td>${escapeHtml(formatDate(item.date))}</td>
+      <td>${escapeHtml(item.movementType || "-")}</td>
+      <td>${escapeHtml(item.note || "-")}</td>
+      <td class="amount ${isCreditMovement(item.movementType) ? "is-credit" : "is-debt"}">${escapeHtml(formatCurrency(item.amount))}</td>
+    </tr>
+  `).join("") : `
+    <tr>
+      <td colspan="5" class="empty">Bu cariye ait muhasebe kaydi bulunamadi.</td>
+    </tr>
+  `;
+  return `
+    <!doctype html>
+    <html lang="tr">
+      <head>
+        <meta charset="utf-8">
+        <title>${escapeHtml(cari.companyName || cari.fullName || "Cari")} - ${escapeHtml(documentTitle)}</title>
+        <style>
+          @page { size: ${escapeHtml(pageSize)} ${escapeHtml(pageOrientation)}; margin: ${pageMarginMm}mm; }
+          * { box-sizing: border-box; }
+          body { font-family: ${escapeHtml(fontFamily)}; color: #1f2937; margin: 0; font-size: ${baseFontSize}px; }
+          .sheet { padding: 8mm; }
+          .head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+          .brand { display: flex; gap: 14px; align-items: flex-start; }
+          .logo { width: 64px; height: 64px; object-fit: contain; border: 1px solid ${borderColor}; padding: 6px; background: #fff; }
+          .title h1 { margin: 0 0 4px; font-size: ${titleFontSize}px; color: ${accentColor}; }
+          .title p { margin: 0; color: #5b6472; font-size: ${metaFontSize}px; }
+          .doc { border: 1px solid ${borderColor}; padding: ${density.cardPad}px 12px; min-width: 180px; background: ${cardBgColor}; }
+          .doc span { display: block; font-size: ${Math.max(10, baseFontSize - 1)}px; color: #6b7280; }
+          .doc strong { display: block; margin-top: 4px; font-size: ${baseFontSize + 2}px; }
+          .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; margin-bottom: 14px; }
+          .card { border: 1px solid ${borderColor}; padding: ${density.cardPad}px 12px; background: ${cardBgColor}; }
+          .card span { display: block; font-size: ${Math.max(10, baseFontSize - 1)}px; color: #6b7280; margin-bottom: 4px; }
+          .card strong { font-size: ${baseFontSize + 2}px; }
+          .note { border: 1px solid ${borderColor}; padding: ${density.notePad}px 12px; margin-bottom: 14px; background: ${cardBgColor}; }
+          .note span { display: block; font-size: ${Math.max(10, baseFontSize - 1)}px; color: #6b7280; margin-bottom: 6px; }
+          .note p { margin: 0; white-space: pre-wrap; font-size: ${baseFontSize + 1}px; line-height: 1.45; }
+          .signature { display: flex; justify-content: flex-end; margin-top: 22px; }
+          .signature-box { min-width: 220px; text-align: center; }
+          .signature-line { border-top: 1px solid #9ca3af; margin-top: 40px; padding-top: 8px; font-size: ${baseFontSize}px; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid ${borderColor}; padding: ${density.cellPad}px 8px; font-size: ${baseFontSize}px; text-align: left; vertical-align: top; }
+          th { background: ${headerBgColor}; color: ${headerTextColor}; font-size: ${Math.max(10, baseFontSize - 1)}px; }
+          tbody tr { background: ${palette.bodyBg}; }
+          tbody tr.is-striped { background: ${palette.stripeBg}; }
+          td.amount, th.amount { text-align: right; white-space: nowrap; }
+          .is-credit { color: ${accentColor}; font-weight: 700; }
+          .is-debt { color: #b91c1c; font-weight: 700; }
+          .empty { text-align: center; color: #6b7280; }
+          ${customCss}
+        </style>
+      </head>
+      <body>
+        <div class="sheet">
+          <div class="head">
+            <div class="brand">
+              ${logoMarkup}
+              <div class="title">
+                <h1>${escapeHtml(documentTitle)}</h1>
+                <p>${escapeHtml(introText)}</p>
+              </div>
+            </div>
+            <div class="doc">
+              <span>Cikti Tarihi</span>
+              <strong>${escapeHtml(formatDate(new Date().toISOString().slice(0, 10)))}</strong>
+            </div>
+          </div>
+          <div class="grid">
+            <div class="card"><span>Cari / Firma</span><strong>${escapeHtml(cari.companyName || cari.fullName || "-")}</strong></div>
+            <div class="card"><span>Yetkili</span><strong>${escapeHtml(cari.fullName || "-")}</strong></div>
+            <div class="card"><span>Telefon</span><strong>${escapeHtml(cari.phone || "-")}</strong></div>
+            <div class="card"><span>Cari Tipi</span><strong>${escapeHtml(cari.type || "-")}</strong></div>
+            <div class="card"><span>Vergi Dairesi</span><strong>${escapeHtml(taxOffice)}</strong></div>
+            <div class="card"><span>Vergi Numarasi</span><strong>${escapeHtml(taxNumber)}</strong></div>
+            <div class="card"><span>Iskonto Orani</span><strong>%${escapeHtml(String(Number(cari.discountRate || 0)))}</strong></div>
+            <div class="card"><span>Siparis Toplami</span><strong>${escapeHtml(formatCurrency(orderTotal))}</strong></div>
+            <div class="card"><span>Alacak Toplami</span><strong class="is-credit">${escapeHtml(formatCurrency(creditTotal))}</strong></div>
+            <div class="card"><span>Borc Toplami</span><strong class="is-debt">${escapeHtml(formatCurrency(debtTotal))}</strong></div>
+            <div class="card"><span>Guncel Bakiye</span><strong class="${balance >= 0 ? "is-debt" : "is-credit"}">${escapeHtml(formatCurrency(balance))}</strong></div>
+          </div>
+          <div class="note">
+            <span>Musteri ile Ilgili Notlar</span>
+            <p>${escapeHtml(noteText)}</p>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Tarih</th>
+                <th>Kayit Turu</th>
+                <th>Aciklama</th>
+                <th class="amount">Tutar</th>
+              </tr>
+            </thead>
+            <tbody>${rowsMarkup}</tbody>
+          </table>
+          <div class="signature">
+            <div class="signature-box">
+              <div class="signature-line">
+                <strong>${escapeHtml(signatureName)}</strong><br>
+                <span>${escapeHtml(signatureTitle)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
 }
 
 function renderOffers(records) {

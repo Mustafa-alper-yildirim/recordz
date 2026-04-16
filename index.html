@@ -47,7 +47,7 @@
           </span>
           <span class="nav-label">Panel (Ana Sayfa)</span>
         </button>
-        <div class="nav-group-static open" data-nav-group-wrap="cari">
+        <div class="nav-group-static" data-nav-group-wrap="cari">
           <button class="nav-link nav-group-toggle" type="button" data-nav-group="cari">
             <span class="nav-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -223,15 +223,25 @@
           </span>
           <span class="nav-label">Sms</span>
         </button>
-        <button class="nav-link" data-view="settings">
-          <span class="nav-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1A1.7 1.7 0 0 0 10 3.2V3a2 2 0 0 1 4 0v.2a1.7 1.7 0 0 0 1 1.5h.1a1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.2a1.7 1.7 0 0 0-1.4 1z"></path>
-            </svg>
-          </span>
-          <span class="nav-label">Ayarlar</span>
-        </button>
+        <div class="nav-group-static" data-nav-group-wrap="settings">
+          <button class="nav-link nav-group-toggle" type="button" data-nav-group="settings">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1A1.7 1.7 0 0 0 10 3.2V3a2 2 0 0 1 4 0v.2a1.7 1.7 0 0 0 1 1.5h.1a1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.2a1.7 1.7 0 0 0-1.4 1z"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Ayarlar</span>
+          </button>
+          <div class="nav-submenu-static">
+            <button class="nav-link nav-sublink" data-view="settings" data-section-target="settingsInfoSection">
+              <span class="nav-label">Panel Bilgisi</span>
+            </button>
+            <button class="nav-link nav-sublink" data-view="settings" data-section-target="cariExtreFormSection">
+              <span class="nav-label">Cari Extre Form</span>
+            </button>
+          </div>
+        </div>
       </nav>
 
       <div class="sidebar-bottom">
@@ -354,11 +364,12 @@
               <select name="type">
                 <option value="Musteri">Musteri</option>
                 <option value="Tedarikci">Tedarikci</option>
+                <option value="Musteri/Tedarikci">Musteri / Tedarikci</option>
               </select>
             </label>
             <label><span>Vergi Dairesi</span><input name="taxOffice" type="text"></label>
             <label><span>Vergi Numarasi</span><input name="taxNumber" type="text"></label>
-            <label><span>Iskonto Orani (%)</span><input name="discountRate" type="number" min="0" max="100" step="0.01" value="0"></label>
+            <label><span>Iskonto Orani (%)</span><input name="discountRate" type="text" inputmode="decimal" value="0"></label>
             <label><span>Risk Limiti</span><input name="riskLimit" type="text" inputmode="decimal" data-money="1" value="0"></label>
             <label class="cari-form-note"><span>Musteri ile Ilgili Notlar</span><textarea name="notes" rows="4" placeholder="Musteri, tahsilat, sevkiyat veya ozel notlar..."></textarea></label>
             <button class="primary-btn form-submit" id="cariSubmitBtn" type="submit">Cariyi Kaydet</button>
@@ -468,6 +479,8 @@
                     <div><small>Son Hareket</small><strong id="cariDetailLastMovement">-</strong></div>
                     <div><small>Bakiye</small><strong id="cariDetailBalance">0 TL</strong></div>
                     <div><small>Risk Limiti</small><strong id="cariDetailLimit">0 TL</strong></div>
+                    <div><small>Iskonto Orani</small><strong id="cariDetailDiscount">0%</strong></div>
+                    <div class="cari-detail-note"><small>Musteri ile Ilgili Notlar</small><strong id="cariDetailNotes">-</strong></div>
                   </div>
                 </div>
               </section>
@@ -879,10 +892,10 @@
               <label>
                 <span>Siralama</span>
                 <select id="cariStatementSort">
+                  <option value="name_asc" selected>Cari Adi (A-Z)</option>
+                  <option value="name_desc">Cari Adi (Z-A)</option>
                   <option value="balance_desc">Bakiye (Azalan)</option>
                   <option value="balance_asc">Bakiye (Artan)</option>
-                  <option value="name_asc">Cari Adi (A-Z)</option>
-                  <option value="name_desc">Cari Adi (Z-A)</option>
                   <option value="credit_desc">Alacak (Azalan)</option>
                   <option value="debt_desc">Borc (Azalan)</option>
                   <option value="order_desc">Siparis (Azalan)</option>
@@ -899,6 +912,13 @@
                 <button class="ghost-action" id="cariStatementDetailCloseBtn" type="button">Kapat</button>
               </div>
               <div id="cariStatementDetailContent"></div>
+              <div class="cari-statement-output-panel">
+                <div>
+                  <strong>Detayli Cikti</strong>
+                  <p>Secilen carinin tum muhasebe kayitlarini ozet ve hareket dokumu ile yazdirin.</p>
+                </div>
+                <button class="primary-btn" id="cariStatementPrintBtn" type="button">Detayli Yazdir / PDF</button>
+              </div>
             </section>
           </section>
         </section>
@@ -986,7 +1006,7 @@
       </section>
 
       <section class="view" id="view-settings">
-        <section class="panel settings-panel">
+        <section class="panel settings-panel" id="settingsInfoSection">
           <h2>Panel Bilgisi</h2>
           <p>Bu surum gercek veriyle calisir ve verileri tarayicinin IndexedDB veritabaninda saklar.</p>
           <ul class="settings-list">
@@ -995,6 +1015,83 @@
             <li>Dashboard kartlari ve durum dagilimi otomatik guncellenir.</li>
             <li>Veriler tarayiciyi kapatsaniz bile ayni cihazda kalir.</li>
           </ul>
+        </section>
+        <section class="settings-extre-layout" id="cariExtreFormSection">
+          <section class="panel settings-panel">
+            <div class="panel-header-row compact">
+              <div>
+                <h2>Cari Extre Form</h2>
+                <p>Cari muhasebe dokumunun tasarimini ve cikti alanlarini buradan duzenleyin.</p>
+              </div>
+            </div>
+            <form class="form-grid two-col cari-statement-output-form" id="cariStatementOutputForm">
+              <label><span>Belge Basligi</span><input name="documentTitle" type="text" value="Cari Muhasebe Dokumu"></label>
+              <label><span>Firma Logo URL</span><input name="logoUrl" type="text" placeholder="https://... veya logo dosya yolu"></label>
+              <label><span>Bilgisayardan Logo Yukle</span><input id="cariStatementLogoFile" type="file" accept="image/*"></label>
+              <input name="logoDataUrl" type="hidden">
+              <label><span>Sayfa Boyutu</span>
+                <select name="pageSize">
+                  <option value="A4">A4</option>
+                  <option value="A5">A5</option>
+                  <option value="Letter">Letter</option>
+                </select>
+              </label>
+              <label><span>Sayfa Yonu</span>
+                <select name="pageOrientation">
+                  <option value="portrait">Dikey</option>
+                  <option value="landscape">Yatay</option>
+                </select>
+              </label>
+              <label><span>Sayfa Kenar Boslugu (mm)</span><input name="pageMarginMm" type="number" min="5" max="30" step="1" value="14"></label>
+              <label><span>Yazi Tipi</span>
+                <select name="fontFamily">
+                  <option value="Arial, sans-serif">Arial</option>
+                  <option value="'Segoe UI', Arial, sans-serif">Segoe UI</option>
+                  <option value="'Tahoma', Arial, sans-serif">Tahoma</option>
+                  <option value="'Trebuchet MS', Arial, sans-serif">Trebuchet MS</option>
+                  <option value="'Times New Roman', serif">Times New Roman</option>
+                </select>
+              </label>
+              <label><span>Govde Yazi Boyutu</span><input name="baseFontSize" type="number" min="9" max="16" step="1" value="12"></label>
+              <label><span>Baslik Boyutu</span><input name="titleFontSize" type="number" min="16" max="34" step="1" value="22"></label>
+              <label><span>Alt Baslik Boyutu</span><input name="metaFontSize" type="number" min="10" max="18" step="1" value="12"></label>
+              <label><span>Vurgu Rengi</span><input name="accentColor" type="color" value="#0f766e"></label>
+              <label><span>Baslik Serif Rengi</span><input name="headerBgColor" type="color" value="#eceff4"></label>
+              <label><span>Baslik Yazi Rengi</span><input name="headerTextColor" type="color" value="#394657"></label>
+              <label><span>Kart Arka Plani</span><input name="cardBgColor" type="color" value="#ffffff"></label>
+              <label><span>Kenarlik Rengi</span><input name="borderColor" type="color" value="#d6dbe4"></label>
+              <label><span>Tablo Stili</span>
+                <select name="tableStyle">
+                  <option value="classic">Klasik</option>
+                  <option value="clean">Temiz</option>
+                  <option value="soft">Yumusak</option>
+                </select>
+              </label>
+              <label><span>Satir Yogunlugu</span>
+                <select name="tableDensity">
+                  <option value="compact">Sik</option>
+                  <option value="comfortable">Rahat</option>
+                  <option value="spacious">Genis</option>
+                </select>
+              </label>
+              <label><span>Vergi Dairesi</span><input name="taxOffice" type="text"></label>
+              <label><span>Vergi Numarasi</span><input name="taxNumber" type="text"></label>
+              <label><span>Imza Yetkilisi</span><input name="signatureName" type="text" value="Yetkili Imza"></label>
+              <label><span>Imza Unvani</span><input name="signatureTitle" type="text" value="Silva Ahsap Yetkilisi"></label>
+              <label class="receipt-wide"><span>Ust Aciklama</span><textarea name="introText" rows="3" placeholder="Cikti basliginin altinda gorunecek aciklama"></textarea></label>
+              <label class="receipt-wide"><span>Ek Not</span><textarea name="extraNote" rows="4" placeholder="Ciktiya eklenecek ek not"></textarea></label>
+              <label class="receipt-wide"><span>Ozel Stil (CSS)</span><textarea name="customCss" rows="6" placeholder=".title h1 { letter-spacing: 0.5px; }&#10;table { border-radius: 8px; overflow: hidden; }"></textarea></label>
+            </form>
+          </section>
+          <section class="panel settings-panel">
+            <div class="panel-header-row compact">
+              <div>
+                <h2>Canli Onizleme</h2>
+                <p>Yazdirmadan once tasarimin nasil gorunecegini izleyin.</p>
+              </div>
+            </div>
+            <iframe id="cariStatementPreviewFrame" class="cari-statement-preview-frame" title="Cari Extre Canli Onizleme"></iframe>
+          </section>
         </section>
       </section>
     </main>
