@@ -237,8 +237,8 @@
             <button class="nav-link nav-sublink" data-view="settings" data-section-target="settingsInfoSection">
               <span class="nav-label">Panel Bilgisi</span>
             </button>
-            <button class="nav-link nav-sublink" data-view="settings" data-section-target="cariExtreFormSection">
-              <span class="nav-label">Cari Extre Form</span>
+            <button class="nav-link nav-sublink" data-view="settings" data-section-target="formDesignSection">
+              <span class="nav-label">Form Tasarimi</span>
             </button>
           </div>
         </div>
@@ -1016,6 +1016,31 @@
             <li>Veriler tarayiciyi kapatsaniz bile ayni cihazda kalir.</li>
           </ul>
         </section>
+        <section id="formDesignSection" class="panel settings-panel">
+          <div class="panel-header-row compact">
+            <div>
+              <h2>Form Tasarimi</h2>
+              <p>Form tasarimlarini bu bolumde yonetin ve duzenleyin.</p>
+            </div>
+          </div>
+          <div class="settings-form-toolbar">
+            <label class="settings-form-name">
+              <span>Tasarim Ismi</span>
+              <input id="cariStatementDesignName" type="text" placeholder="Ornek: Klasik Cari Extre">
+            </label>
+            <div class="settings-form-actions">
+              <button class="ghost-action" id="cariStatementDesignCreateBtn" type="button">Yeni Form Tasarimi</button>
+              <button class="ghost-action" id="cariStatementDesignActivateBtn" type="button">Aktif Tasarimi Sec</button>
+              <button class="ghost-action" id="cariStatementDesignDuplicateBtn" type="button">Kopyala</button>
+              <button class="ghost-action danger-btn" id="cariStatementDesignDeleteBtn" type="button">Sil</button>
+            </div>
+          </div>
+          <div class="settings-form-list" id="cariStatementDesignList"></div>
+          <div class="settings-form-subtitle">
+            <strong>Cari Extre Form</strong>
+            <span>Asagidaki ayarlar secili tasarima uygulanir ve yazdirma ciktilarinda kullanilir.</span>
+          </div>
+        </section>
         <section class="settings-extre-layout" id="cariExtreFormSection">
           <section class="panel settings-panel">
             <div class="panel-header-row compact">
@@ -1025,7 +1050,10 @@
               </div>
             </div>
             <form class="form-grid two-col cari-statement-output-form" id="cariStatementOutputForm">
-              <label><span>Belge Basligi</span><input name="documentTitle" type="text" value="Cari Muhasebe Dokumu"></label>
+              <label><span>Belge Basligi</span><input name="documentTitle" type="text" value="Cari Hesap Ekstresi"></label>
+              <label><span>Firma Ust Baslik</span><input name="companyDisplayName" type="text" value="SILVA AHSAP"></label>
+              <label><span>Firma Kodu</span><input name="companyCode" type="text" value="CR02829"></label>
+              <label><span>Durum Metni</span><input name="statementStatusLabel" type="text" value="BORCLU"></label>
               <label><span>Firma Logo URL</span><input name="logoUrl" type="text" placeholder="https://... veya logo dosya yolu"></label>
               <label><span>Bilgisayardan Logo Yukle</span><input id="cariStatementLogoFile" type="file" accept="image/*"></label>
               <input name="logoDataUrl" type="hidden">
@@ -1078,6 +1106,11 @@
               <label><span>Vergi Numarasi</span><input name="taxNumber" type="text"></label>
               <label><span>Imza Yetkilisi</span><input name="signatureName" type="text" value="Yetkili Imza"></label>
               <label><span>Imza Unvani</span><input name="signatureTitle" type="text" value="Silva Ahsap Yetkilisi"></label>
+              <label><span>Para Birimi</span><input name="currencyCode" type="text" value="TRY"></label>
+              <label><span>Tarih Araligi Metni</span><input name="dateRangeText" type="text" placeholder="01.01.2026 - 31.12.2026"></label>
+              <label><span>Alt Bilgi Satiri</span><input name="footerText" type="text" value="SILVA AHSAP"></label>
+              <label><span>Alt Bilgi Iletisim</span><input name="footerContact" type="text" value="0543 632 89 71 | silvaahsap@gmail.com"></label>
+              <label><span>Sayfa Numarasi</span><input name="pageNumberText" type="text" value="1 / 1"></label>
               <label class="receipt-wide"><span>Ust Aciklama</span><textarea name="introText" rows="3" placeholder="Cikti basliginin altinda gorunecek aciklama"></textarea></label>
               <label class="receipt-wide"><span>Ek Not</span><textarea name="extraNote" rows="4" placeholder="Ciktiya eklenecek ek not"></textarea></label>
               <label class="receipt-wide"><span>Ozel Stil (CSS)</span><textarea name="customCss" rows="6" placeholder=".title h1 { letter-spacing: 0.5px; }&#10;table { border-radius: 8px; overflow: hidden; }"></textarea></label>

@@ -91,6 +91,12 @@ const cariStatementPrintBtn = document.getElementById("cariStatementPrintBtn");
 const cariStatementOutputForm = document.getElementById("cariStatementOutputForm");
 const cariStatementLogoFile = document.getElementById("cariStatementLogoFile");
 const cariStatementPreviewFrame = document.getElementById("cariStatementPreviewFrame");
+const cariStatementDesignList = document.getElementById("cariStatementDesignList");
+const cariStatementDesignName = document.getElementById("cariStatementDesignName");
+const cariStatementDesignCreateBtn = document.getElementById("cariStatementDesignCreateBtn");
+const cariStatementDesignActivateBtn = document.getElementById("cariStatementDesignActivateBtn");
+const cariStatementDesignDuplicateBtn = document.getElementById("cariStatementDesignDuplicateBtn");
+const cariStatementDesignDeleteBtn = document.getElementById("cariStatementDesignDeleteBtn");
 const movementEditId = document.getElementById("movementEditId");
 const movementResetBtn = document.getElementById("movementResetBtn");
 const movementSubmitBtn = document.getElementById("movementSubmitBtn");
@@ -175,6 +181,10 @@ let productSortState = {
   dir: "asc",
 };
 const PRODUCT_CATEGORY_STORAGE_KEY = "silva-product-categories";
+const CARI_STATEMENT_DESIGNS_STORAGE_KEY = "silva-cari-statement-designs";
+const CARI_STATEMENT_ACTIVE_DESIGN_STORAGE_KEY = "silva-cari-statement-active-design-id";
+let cariStatementDesigns = [];
+let activeCariStatementDesignId = "";
 
 function setActiveNavLink(activeLink) {
   navLinks.forEach((link) => link.classList.toggle("active", link === activeLink));
@@ -220,8 +230,38 @@ navGroupToggles.forEach((toggle) => toggle.addEventListener("click", () => {
   wrap?.classList.toggle("open");
 }));
 quickLinks.forEach((link) => link.addEventListener("click", () => setActiveView(link.dataset.action || link.dataset.viewLink)));
-cariStatementOutputForm?.addEventListener("input", refreshCariStatementPreview);
-cariStatementOutputForm?.addEventListener("change", refreshCariStatementPreview);
+cariStatementOutputForm?.addEventListener("input", handleCariStatementDesignFormChange);
+cariStatementOutputForm?.addEventListener("change", handleCariStatementDesignFormChange);
+
+cariStatementDesignList?.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-design-id]");
+  if (!card) return;
+  selectCariStatementDesign(card.dataset.designId || "");
+});
+
+cariStatementDesignName?.addEventListener("input", () => {
+  const design = getActiveCariStatementDesign();
+  if (!design) return;
+  design.name = String(cariStatementDesignName.value || "").trim() || "Yeni Form Tasarimi";
+  saveCariStatementDesignStore();
+  renderCariStatementDesignList();
+});
+
+cariStatementDesignCreateBtn?.addEventListener("click", () => {
+  createCariStatementDesign(String(cariStatementDesignName?.value || "").trim());
+});
+
+cariStatementDesignActivateBtn?.addEventListener("click", () => {
+  const design = getActiveCariStatementDesign();
+  if (!design) return;
+  activeCariStatementDesignId = design.id;
+  saveCariStatementDesignStore();
+  renderCariStatementDesignList();
+  refreshCariStatementPreview();
+});
+
+cariStatementDesignDuplicateBtn?.addEventListener("click", duplicateActiveCariStatementDesign);
+cariStatementDesignDeleteBtn?.addEventListener("click", deleteActiveCariStatementDesign);
 
 primaryActionBtn?.addEventListener("click", () => {
   const targetMap = {
@@ -594,13 +634,13 @@ cariStatementLogoFile?.addEventListener("change", () => {
   const file = cariStatementLogoFile.files?.[0];
   if (!file) {
     setFormFieldValue(cariStatementOutputForm, "logoDataUrl", "");
-    refreshCariStatementPreview();
+    handleCariStatementDesignFormChange();
     return;
   }
   const reader = new FileReader();
   reader.onload = () => {
     setFormFieldValue(cariStatementOutputForm, "logoDataUrl", String(reader.result || ""));
-    refreshCariStatementPreview();
+    handleCariStatementDesignFormChange();
   };
   reader.readAsDataURL(file);
 });
@@ -830,6 +870,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   setDefaultDates();
   syncOfferDefaults();
   initializeOfferLines(createDefaultOfferRows());
+  ensureCariStatementDesignStore();
   await ensureAutoLogin();
   await applyAuthState();
   if (getSession()) {
@@ -2274,37 +2315,188 @@ function renderCariStatementDetail(movements, orders, statementRows) {
   cariStatementDetailPanel.hidden = false;
 }
 
+function createDefaultCariStatementDesign(overrides = {}) {
+  return {
+    id: overrides.id || `cari-extre-${Date.now()}`,
+    name: overrides.name || "Ornek Cari Extre",
+    config: {
+      documentTitle: "CARI HESAP EKSTRESI",
+      companyDisplayName: "SILVA AHSAP",
+      companyCode: "CR02829",
+      statementStatusLabel: "BORCLU",
+      logoUrl: "",
+      logoDataUrl: "",
+      pageSize: "A4",
+      pageOrientation: "portrait",
+      pageMarginMm: "14",
+      fontFamily: "Arial, sans-serif",
+      baseFontSize: "10",
+      titleFontSize: "20",
+      metaFontSize: "10",
+      accentColor: "#1f2937",
+      headerBgColor: "#f3f4f6",
+      headerTextColor: "#374151",
+      cardBgColor: "#ffffff",
+      borderColor: "#cfd6df",
+      tableStyle: "clean",
+      tableDensity: "compact",
+      taxOffice: "",
+      taxNumber: "",
+      signatureName: "",
+      signatureTitle: "",
+      currencyCode: "TRY",
+      dateRangeText: "",
+      footerText: "SILVA AHSAP",
+      footerContact: "0543 632 89 71 | silvaahsap@gmail.com",
+      pageNumberText: "1 / 1",
+      introText: "",
+      extraNote: "",
+      customCss: "",
+      ...overrides.config,
+    },
+  };
+}
+
+function loadCariStatementDesigns() {
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(CARI_STATEMENT_DESIGNS_STORAGE_KEY) || "[]");
+    return Array.isArray(parsed) ? parsed.map((item, index) => createDefaultCariStatementDesign({
+      id: item?.id || `cari-extre-${Date.now()}-${index}`,
+      name: item?.name || `Tasarim ${index + 1}`,
+      config: item?.config || {},
+    })) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCariStatementDesignStore() {
+  window.localStorage.setItem(CARI_STATEMENT_DESIGNS_STORAGE_KEY, JSON.stringify(cariStatementDesigns));
+  window.localStorage.setItem(CARI_STATEMENT_ACTIVE_DESIGN_STORAGE_KEY, activeCariStatementDesignId || "");
+}
+
+function getActiveCariStatementDesign() {
+  return cariStatementDesigns.find((item) => item.id === activeCariStatementDesignId) || cariStatementDesigns[0] || null;
+}
+
+function renderCariStatementDesignList() {
+  if (!cariStatementDesignList) return;
+  cariStatementDesignList.innerHTML = cariStatementDesigns.map((design) => `
+    <article class="settings-form-card ${design.id === activeCariStatementDesignId ? "is-active" : ""}" data-design-id="${design.id}">
+      <strong>${escapeHtml(design.name)}</strong>
+      <span>Cari Extre Form tasarimi</span>
+    </article>
+  `).join("");
+}
+
+function applyCariStatementDesignToForm(design) {
+  if (!cariStatementOutputForm || !design) return;
+  Object.entries(design.config || {}).forEach(([name, value]) => setFormFieldValue(cariStatementOutputForm, name, value));
+  if (cariStatementDesignName) cariStatementDesignName.value = design.name || "";
+  if (cariStatementLogoFile) cariStatementLogoFile.value = "";
+}
+
+function readCariStatementDesignConfigFromForm() {
+  return cariStatementOutputForm ? formToObject(cariStatementOutputForm) : {};
+}
+
+function updateActiveCariStatementDesignFromForm() {
+  const design = getActiveCariStatementDesign();
+  if (!design || !cariStatementOutputForm) return;
+  design.name = String(cariStatementDesignName?.value || design.name || "").trim() || "Yeni Form Tasarimi";
+  design.config = {
+    ...design.config,
+    ...readCariStatementDesignConfigFromForm(),
+  };
+  activeCariStatementDesignId = design.id;
+  saveCariStatementDesignStore();
+  renderCariStatementDesignList();
+}
+
+function selectCariStatementDesign(designId) {
+  const design = cariStatementDesigns.find((item) => item.id === designId);
+  if (!design) return;
+  activeCariStatementDesignId = design.id;
+  applyCariStatementDesignToForm(design);
+  const selectedCari = (cache.cari || []).find((item) => item.id === selectedStatementCariId);
+  if (selectedCari) {
+    setFormFieldValue(cariStatementOutputForm, "taxOffice", selectedCari.taxOffice || design.config.taxOffice || "");
+    setFormFieldValue(cariStatementOutputForm, "taxNumber", selectedCari.taxNumber || design.config.taxNumber || "");
+    setFormFieldValue(cariStatementOutputForm, "extraNote", (selectedCari.notes || "").trim() || design.config.extraNote || "");
+  }
+  saveCariStatementDesignStore();
+  renderCariStatementDesignList();
+  refreshCariStatementPreview();
+}
+
+function ensureCariStatementDesignStore() {
+  cariStatementDesigns = loadCariStatementDesigns();
+  if (!cariStatementDesigns.length) {
+    cariStatementDesigns = [createDefaultCariStatementDesign()];
+  }
+  const storedActiveId = window.localStorage.getItem(CARI_STATEMENT_ACTIVE_DESIGN_STORAGE_KEY) || "";
+  activeCariStatementDesignId = cariStatementDesigns.some((item) => item.id === storedActiveId) ? storedActiveId : cariStatementDesigns[0].id;
+  const activeDesign = getActiveCariStatementDesign();
+  if (activeDesign) {
+    applyCariStatementDesignToForm(activeDesign);
+  }
+  saveCariStatementDesignStore();
+  renderCariStatementDesignList();
+  refreshCariStatementPreview();
+}
+
+function createCariStatementDesign(name = "", sourceConfig = null) {
+  const newDesign = createDefaultCariStatementDesign({
+    id: `cari-extre-${Date.now()}`,
+    name: name || "Yeni Form Tasarimi",
+    config: sourceConfig ? { ...sourceConfig } : {},
+  });
+  cariStatementDesigns.unshift(newDesign);
+  activeCariStatementDesignId = newDesign.id;
+  applyCariStatementDesignToForm(newDesign);
+  saveCariStatementDesignStore();
+  renderCariStatementDesignList();
+  refreshCariStatementPreview();
+}
+
+function duplicateActiveCariStatementDesign() {
+  const design = getActiveCariStatementDesign();
+  if (!design) return;
+  createCariStatementDesign(`${design.name} Kopya`, design.config);
+}
+
+function deleteActiveCariStatementDesign() {
+  if (cariStatementDesigns.length <= 1) {
+    window.alert("En az bir form tasarimi kalmalidir.");
+    return;
+  }
+  const design = getActiveCariStatementDesign();
+  if (!design) return;
+  if (!window.confirm(`"${design.name}" tasarimini silmek istiyor musunuz?`)) return;
+  cariStatementDesigns = cariStatementDesigns.filter((item) => item.id !== design.id);
+  activeCariStatementDesignId = cariStatementDesigns[0]?.id || "";
+  const nextDesign = getActiveCariStatementDesign();
+  if (nextDesign) {
+    applyCariStatementDesignToForm(nextDesign);
+  }
+  saveCariStatementDesignStore();
+  renderCariStatementDesignList();
+  refreshCariStatementPreview();
+}
+
+function handleCariStatementDesignFormChange() {
+  updateActiveCariStatementDesignFromForm();
+  refreshCariStatementPreview();
+}
+
 function syncCariStatementOutputForm(cari) {
   if (!cariStatementOutputForm || !cari) return;
-  const shouldInit = cariStatementOutputForm.dataset.initialized !== "1";
-  if (shouldInit) {
-    setFormFieldValue(cariStatementOutputForm, "documentTitle", "Cari Muhasebe Dokumu");
-    setFormFieldValue(cariStatementOutputForm, "logoUrl", "");
-    setFormFieldValue(cariStatementOutputForm, "logoDataUrl", "");
-    if (cariStatementLogoFile) cariStatementLogoFile.value = "";
-    setFormFieldValue(cariStatementOutputForm, "pageSize", "A4");
-    setFormFieldValue(cariStatementOutputForm, "pageOrientation", "portrait");
-    setFormFieldValue(cariStatementOutputForm, "pageMarginMm", "14");
-    setFormFieldValue(cariStatementOutputForm, "fontFamily", "Arial, sans-serif");
-    setFormFieldValue(cariStatementOutputForm, "baseFontSize", "12");
-    setFormFieldValue(cariStatementOutputForm, "titleFontSize", "22");
-    setFormFieldValue(cariStatementOutputForm, "metaFontSize", "12");
-    setFormFieldValue(cariStatementOutputForm, "accentColor", "#0f766e");
-    setFormFieldValue(cariStatementOutputForm, "headerBgColor", "#eceff4");
-    setFormFieldValue(cariStatementOutputForm, "headerTextColor", "#394657");
-    setFormFieldValue(cariStatementOutputForm, "cardBgColor", "#ffffff");
-    setFormFieldValue(cariStatementOutputForm, "borderColor", "#d6dbe4");
-    setFormFieldValue(cariStatementOutputForm, "tableStyle", "classic");
-    setFormFieldValue(cariStatementOutputForm, "tableDensity", "compact");
-    setFormFieldValue(cariStatementOutputForm, "signatureName", "Yetkili Imza");
-    setFormFieldValue(cariStatementOutputForm, "signatureTitle", "Silva Ahsap Yetkilisi");
-    setFormFieldValue(cariStatementOutputForm, "introText", "Cariye ait tum muhasebe kayitlari, bakiye ozeti ve hareket dokumu");
-    setFormFieldValue(cariStatementOutputForm, "customCss", "");
-    cariStatementOutputForm.dataset.initialized = "1";
-  }
+  if (!cariStatementDesigns.length) ensureCariStatementDesignStore();
   setFormFieldValue(cariStatementOutputForm, "taxOffice", cari.taxOffice || "");
   setFormFieldValue(cariStatementOutputForm, "taxNumber", cari.taxNumber || "");
   setFormFieldValue(cariStatementOutputForm, "extraNote", (cari.notes || "").trim());
+  const inferredStatus = calcCariBalance(cari.id, cache.movements || [], cache.orders || []) >= 0 ? "BORCLU" : "ALACAKLI";
+  setFormFieldValue(cariStatementOutputForm, "statementStatusLabel", inferredStatus);
   refreshCariStatementPreview();
 }
 
@@ -2387,57 +2579,116 @@ function refreshCariStatementPreview() {
   cariStatementPreviewFrame.srcdoc = buildCariStatementPrintHtml(snapshot, outputConfig);
 }
 
+function formatStatementTimestamp(date = new Date()) {
+  return date.toLocaleString("tr-TR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).replace(",", "");
+}
+
+function inferStatementDateRange(movements = []) {
+  if (!movements.length) return formatDate(new Date().toISOString().slice(0, 10));
+  const sorted = [...movements].sort((left, right) => new Date(left.date || 0) - new Date(right.date || 0) || (left.id || 0) - (right.id || 0));
+  return `${formatDate(sorted[0].date)} - ${formatDate(sorted[sorted.length - 1].date)}`;
+}
+
+function buildStatementMovementRows(movements = [], openingBalance = 0) {
+  const sorted = [...movements].sort((left, right) => new Date(left.date || 0) - new Date(right.date || 0) || (left.id || 0) - (right.id || 0));
+  let runningBalance = Number(openingBalance || 0);
+  return sorted.map((item) => {
+    const amount = Number(item.amount || 0);
+    const isCredit = isCreditMovement(item.movementType);
+    runningBalance += isCredit ? -amount : amount;
+    return {
+      date: formatDate(item.date),
+      movementType: item.movementType || "-",
+      movementNo: item.receiptNo || item.documentNo || `CD${String(item.id || "").padStart(5, "0")}`,
+      description: item.note || "-",
+      debt: isCredit ? 0 : amount,
+      credit: isCredit ? amount : 0,
+      balance: runningBalance,
+    };
+  });
+}
+
 function buildCariStatementPrintHtml(snapshot, outputConfig = {}) {
   const { cari, movements, orderTotal, creditTotal, debtTotal, balance } = snapshot;
-  const noteText = String(outputConfig.extraNote || "").trim() || (cari.notes || "").trim() || "-";
-  const documentTitle = String(outputConfig.documentTitle || "").trim() || "Cari Muhasebe Dokumu";
-  const introText = String(outputConfig.introText || "").trim() || "Cariye ait tum muhasebe kayitlari, bakiye ozeti ve hareket dokumu";
+  const noteText = String(outputConfig.extraNote || "").trim() || (cari.notes || "").trim() || "";
+  const documentTitle = String(outputConfig.documentTitle || "").trim() || "CARI HESAP EKSTRESI";
+  const introText = String(outputConfig.introText || "").trim();
+  const companyDisplayName = String(outputConfig.companyDisplayName || "").trim() || "SILVA AHSAP";
+  const companyCode = String(outputConfig.companyCode || "").trim() || `CR${String(cari.id || "").padStart(5, "0")}`;
+  const statementStatusLabel = String(outputConfig.statementStatusLabel || "").trim() || (balance >= 0 ? "BORCLU" : "ALACAKLI");
   const logoUrl = String(outputConfig.logoDataUrl || "").trim() || String(outputConfig.logoUrl || "").trim();
   const taxOffice = String(outputConfig.taxOffice || "").trim() || "-";
   const taxNumber = String(outputConfig.taxNumber || "").trim() || "-";
-  const signatureName = String(outputConfig.signatureName || "").trim() || "Yetkili Imza";
-  const signatureTitle = String(outputConfig.signatureTitle || "").trim() || "Silva Ahsap Yetkilisi";
+  const signatureName = String(outputConfig.signatureName || "").trim();
+  const signatureTitle = String(outputConfig.signatureTitle || "").trim();
+  const currencyCode = String(outputConfig.currencyCode || "").trim() || "TRY";
+  const dateRangeText = String(outputConfig.dateRangeText || "").trim() || inferStatementDateRange(movements);
+  const footerText = String(outputConfig.footerText || "").trim() || companyDisplayName;
+  const footerContact = String(outputConfig.footerContact || "").trim() || "silvaahsap@gmail.com";
+  const pageNumberText = String(outputConfig.pageNumberText || "").trim() || "1 / 1";
   const pageSize = String(outputConfig.pageSize || "A4").trim() || "A4";
   const pageOrientation = String(outputConfig.pageOrientation || "portrait").trim() || "portrait";
   const pageMarginMm = Math.max(5, Math.min(30, Number(outputConfig.pageMarginMm || 14) || 14));
   const fontFamily = String(outputConfig.fontFamily || "Arial, sans-serif").trim() || "Arial, sans-serif";
-  const baseFontSize = Math.max(9, Math.min(16, Number(outputConfig.baseFontSize || 12) || 12));
+  const baseFontSize = Math.max(8, Math.min(16, Number(outputConfig.baseFontSize || 10) || 10));
   const titleFontSize = Math.max(16, Math.min(34, Number(outputConfig.titleFontSize || 22) || 22));
   const metaFontSize = Math.max(10, Math.min(18, Number(outputConfig.metaFontSize || 12) || 12));
-  const accentColor = String(outputConfig.accentColor || "#0f766e").trim() || "#0f766e";
-  const headerBgColor = String(outputConfig.headerBgColor || "#eceff4").trim() || "#eceff4";
-  const headerTextColor = String(outputConfig.headerTextColor || "#394657").trim() || "#394657";
+  const accentColor = String(outputConfig.accentColor || "#1f2937").trim() || "#1f2937";
+  const headerBgColor = String(outputConfig.headerBgColor || "#f3f4f6").trim() || "#f3f4f6";
+  const headerTextColor = String(outputConfig.headerTextColor || "#374151").trim() || "#374151";
   const cardBgColor = String(outputConfig.cardBgColor || "#ffffff").trim() || "#ffffff";
-  const borderColor = String(outputConfig.borderColor || "#d6dbe4").trim() || "#d6dbe4";
+  const borderColor = String(outputConfig.borderColor || "#cfd6df").trim() || "#cfd6df";
   const tableStyle = String(outputConfig.tableStyle || "classic").trim() || "classic";
   const tableDensity = String(outputConfig.tableDensity || "compact").trim() || "compact";
   const customCss = String(outputConfig.customCss || "");
   const logoMarkup = logoUrl ? `<img src="${escapeHtml(logoUrl)}" alt="Firma Logosu" class="logo">` : "";
   const densityMap = {
-    compact: { cellPad: 7, cardPad: 10, notePad: 10 },
-    comfortable: { cellPad: 10, cardPad: 12, notePad: 12 },
-    spacious: { cellPad: 13, cardPad: 14, notePad: 14 },
+    compact: { cellPadY: 4, cellPadX: 6 },
+    comfortable: { cellPadY: 6, cellPadX: 8 },
+    spacious: { cellPadY: 8, cellPadX: 10 },
   };
   const tablePaletteMap = {
-    classic: { bodyBg: "#ffffff", stripeBg: "#f8fafc" },
+    classic: { bodyBg: "#ffffff", stripeBg: "#fafafa" },
     clean: { bodyBg: "#ffffff", stripeBg: "#ffffff" },
-    soft: { bodyBg: "#fffef8", stripeBg: "#f9fbff" },
+    soft: { bodyBg: "#fffef8", stripeBg: "#fdfcf7" },
   };
   const density = densityMap[tableDensity] || densityMap.compact;
   const palette = tablePaletteMap[tableStyle] || tablePaletteMap.classic;
-  const rowsMarkup = movements.length ? movements.map((item, index) => `
+  const statementRows = buildStatementMovementRows(movements, Number(orderTotal || 0));
+  const rowsMarkup = statementRows.length ? statementRows.map((item, index) => `
     <tr class="${index % 2 === 1 ? "is-striped" : ""}">
-      <td>${String(index + 1).padStart(3, "0")}</td>
-      <td>${escapeHtml(formatDate(item.date))}</td>
-      <td>${escapeHtml(item.movementType || "-")}</td>
-      <td>${escapeHtml(item.note || "-")}</td>
-      <td class="amount ${isCreditMovement(item.movementType) ? "is-credit" : "is-debt"}">${escapeHtml(formatCurrency(item.amount))}</td>
+      <td>${escapeHtml(item.date)}</td>
+      <td>${escapeHtml(item.movementType)}</td>
+      <td>${escapeHtml(item.movementNo)}</td>
+      <td>${escapeHtml(item.description)}</td>
+      <td class="amount">${item.debt ? escapeHtml(formatCurrency(item.debt)) : "0,00"}</td>
+      <td class="amount">${item.credit ? escapeHtml(formatCurrency(item.credit)) : "0,00"}</td>
+      <td class="amount">${escapeHtml(formatCurrency(item.balance))}</td>
     </tr>
   `).join("") : `
     <tr>
-      <td colspan="5" class="empty">Bu cariye ait muhasebe kaydi bulunamadi.</td>
+      <td colspan="7" class="empty">Bu cariye ait muhasebe kaydi bulunamadi.</td>
     </tr>
   `;
+  const timestampText = formatStatementTimestamp(new Date());
+  const totalDebt = Number(orderTotal || 0) + Number(debtTotal || 0);
+  const totalCredit = Number(creditTotal || 0);
+  const introMarkup = introText ? `<div class="intro">${escapeHtml(introText)}</div>` : "";
+  const noteMarkup = noteText ? `<div class="note-block"><strong>Not :</strong> ${escapeHtml(noteText)}</div>` : "";
+  const signatureMarkup = signatureName || signatureTitle ? `
+    <div class="signature-block">
+      <div class="signature-line"></div>
+      <strong>${escapeHtml(signatureName || "-")}</strong>
+      <span>${escapeHtml(signatureTitle || "")}</span>
+    </div>
+  ` : "";
   return `
     <!doctype html>
     <html lang="tr">
@@ -2447,89 +2698,144 @@ function buildCariStatementPrintHtml(snapshot, outputConfig = {}) {
         <style>
           @page { size: ${escapeHtml(pageSize)} ${escapeHtml(pageOrientation)}; margin: ${pageMarginMm}mm; }
           * { box-sizing: border-box; }
-          body { font-family: ${escapeHtml(fontFamily)}; color: #1f2937; margin: 0; font-size: ${baseFontSize}px; }
-          .sheet { padding: 8mm; }
-          .head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
-          .brand { display: flex; gap: 14px; align-items: flex-start; }
-          .logo { width: 64px; height: 64px; object-fit: contain; border: 1px solid ${borderColor}; padding: 6px; background: #fff; }
-          .title h1 { margin: 0 0 4px; font-size: ${titleFontSize}px; color: ${accentColor}; }
-          .title p { margin: 0; color: #5b6472; font-size: ${metaFontSize}px; }
-          .doc { border: 1px solid ${borderColor}; padding: ${density.cardPad}px 12px; min-width: 180px; background: ${cardBgColor}; }
-          .doc span { display: block; font-size: ${Math.max(10, baseFontSize - 1)}px; color: #6b7280; }
-          .doc strong { display: block; margin-top: 4px; font-size: ${baseFontSize + 2}px; }
-          .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; margin-bottom: 14px; }
-          .card { border: 1px solid ${borderColor}; padding: ${density.cardPad}px 12px; background: ${cardBgColor}; }
-          .card span { display: block; font-size: ${Math.max(10, baseFontSize - 1)}px; color: #6b7280; margin-bottom: 4px; }
-          .card strong { font-size: ${baseFontSize + 2}px; }
-          .note { border: 1px solid ${borderColor}; padding: ${density.notePad}px 12px; margin-bottom: 14px; background: ${cardBgColor}; }
-          .note span { display: block; font-size: ${Math.max(10, baseFontSize - 1)}px; color: #6b7280; margin-bottom: 6px; }
-          .note p { margin: 0; white-space: pre-wrap; font-size: ${baseFontSize + 1}px; line-height: 1.45; }
-          .signature { display: flex; justify-content: flex-end; margin-top: 22px; }
-          .signature-box { min-width: 220px; text-align: center; }
-          .signature-line { border-top: 1px solid #9ca3af; margin-top: 40px; padding-top: 8px; font-size: ${baseFontSize}px; }
-          table { width: 100%; border-collapse: collapse; }
-          th, td { border: 1px solid ${borderColor}; padding: ${density.cellPad}px 8px; font-size: ${baseFontSize}px; text-align: left; vertical-align: top; }
-          th { background: ${headerBgColor}; color: ${headerTextColor}; font-size: ${Math.max(10, baseFontSize - 1)}px; }
+          body { font-family: ${escapeHtml(fontFamily)}; color: #111827; margin: 0; font-size: ${baseFontSize}px; background: #fff; }
+          .sheet { min-height: 100vh; padding: 2mm 0 6mm; position: relative; }
+          .topline { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+          .company-block { display: flex; gap: 10px; align-items: flex-start; }
+          .company-name { font-size: ${metaFontSize + 1}px; font-weight: 700; letter-spacing: 0.02em; color: ${accentColor}; }
+          .logo { width: 36px; height: 36px; object-fit: contain; }
+          .timestamp { font-size: ${Math.max(9, metaFontSize - 1)}px; color: #4b5563; white-space: nowrap; }
+          .headline { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 6px; }
+          .headline h1 { margin: 0; margin-left: auto; font-size: ${titleFontSize}px; color: ${accentColor}; font-weight: 700; letter-spacing: 0.01em; }
+          .status { min-width: 150px; text-align: right; font-size: ${metaFontSize}px; font-weight: 700; }
+          .status span { font-weight: 400; margin-right: 5px; }
+          .divider { border-top: 1px solid ${borderColor}; margin: 8px 0 10px; }
+          .meta-grid { display: grid; gap: 4px; margin-bottom: 12px; }
+          .meta-row { display: grid; grid-template-columns: 94px 12px minmax(0, 1fr) 94px 12px minmax(0, 1fr); gap: 0; align-items: start; }
+          .meta-label { font-weight: 700; color: #374151; }
+          .meta-sep { text-align: center; }
+          .meta-value { color: #111827; }
+          .intro { margin: 0 0 10px; color: #4b5563; font-size: ${metaFontSize}px; }
+          table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+          col.date { width: 78px; }
+          col.type { width: 108px; }
+          col.no { width: 94px; }
+          col.desc { width: auto; }
+          col.money { width: 78px; }
+          th, td { border: 1px solid ${borderColor}; padding: ${density.cellPadY}px ${density.cellPadX}px; font-size: ${baseFontSize}px; text-align: left; vertical-align: top; }
+          th { background: ${headerBgColor}; color: ${headerTextColor}; font-size: ${Math.max(9, baseFontSize - 0.3)}px; font-weight: 700; }
           tbody tr { background: ${palette.bodyBg}; }
           tbody tr.is-striped { background: ${palette.stripeBg}; }
-          td.amount, th.amount { text-align: right; white-space: nowrap; }
-          .is-credit { color: ${accentColor}; font-weight: 700; }
-          .is-debt { color: #b91c1c; font-weight: 700; }
-          .empty { text-align: center; color: #6b7280; }
+          td.amount, th.amount { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+          .empty { text-align: center; color: #6b7280; padding: 14px 8px; }
+          .summary-line { display: flex; justify-content: space-between; gap: 14px; margin-top: 10px; font-size: ${metaFontSize}px; }
+          .summary-line strong { font-weight: 700; }
+          .totals { display: flex; justify-content: flex-end; gap: 18px; margin-top: 8px; font-size: ${metaFontSize}px; }
+          .totals strong { font-weight: 700; }
+          .note-block { margin-top: 12px; font-size: ${metaFontSize}px; color: #374151; white-space: pre-wrap; }
+          .signature-wrap { display: flex; justify-content: flex-end; margin-top: 28px; }
+          .signature-block { min-width: 180px; text-align: center; }
+          .signature-line { border-top: 1px solid #9ca3af; margin-bottom: 6px; }
+          .signature-block strong, .signature-block span { display: block; }
+          .footer { position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; font-size: ${Math.max(8, metaFontSize - 1)}px; color: #4b5563; }
+          .footer-center { text-align: center; }
+          .footer-page { text-align: right; }
           ${customCss}
         </style>
       </head>
       <body>
         <div class="sheet">
-          <div class="head">
-            <div class="brand">
+          <div class="topline">
+            <div class="company-block">
               ${logoMarkup}
-              <div class="title">
-                <h1>${escapeHtml(documentTitle)}</h1>
-                <p>${escapeHtml(introText)}</p>
-              </div>
+              <div class="company-name">${escapeHtml(companyDisplayName)}</div>
             </div>
-            <div class="doc">
-              <span>Cikti Tarihi</span>
-              <strong>${escapeHtml(formatDate(new Date().toISOString().slice(0, 10)))}</strong>
+            <div class="timestamp">${escapeHtml(timestampText)}</div>
+          </div>
+          <div class="headline">
+            <div></div>
+            <h1>${escapeHtml(documentTitle)}</h1>
+            <div class="status"><span>DURUMU :</span> ${escapeHtml(statementStatusLabel)}</div>
+          </div>
+          <div class="divider"></div>
+          <div class="meta-grid">
+            <div class="meta-row">
+              <div class="meta-label">Firma Kodu</div>
+              <div class="meta-sep">:</div>
+              <div class="meta-value">${escapeHtml(companyCode)}</div>
+              <div class="meta-label">Vergi Dairesi</div>
+              <div class="meta-sep">:</div>
+              <div class="meta-value">${escapeHtml(taxOffice)}</div>
+            </div>
+            <div class="meta-row">
+              <div class="meta-label">Cari Unvan</div>
+              <div class="meta-sep">:</div>
+              <div class="meta-value">${escapeHtml(cari.companyName || cari.fullName || "-")}</div>
+              <div class="meta-label">Vergi Numarasi</div>
+              <div class="meta-sep">:</div>
+              <div class="meta-value">${escapeHtml(taxNumber)}</div>
+            </div>
+            <div class="meta-row">
+              <div class="meta-label">Para Birimi</div>
+              <div class="meta-sep">:</div>
+              <div class="meta-value">${escapeHtml(currencyCode)}</div>
+              <div class="meta-label">Iskonto</div>
+              <div class="meta-sep">:</div>
+              <div class="meta-value">%${escapeHtml(String(Number(cari.discountRate || 0)))}</div>
+            </div>
+            <div class="meta-row">
+              <div class="meta-label">Tarihler</div>
+              <div class="meta-sep">:</div>
+              <div class="meta-value">${escapeHtml(dateRangeText)}</div>
+              <div class="meta-label">Yetkili</div>
+              <div class="meta-sep">:</div>
+              <div class="meta-value">${escapeHtml(cari.fullName || "-")}</div>
             </div>
           </div>
-          <div class="grid">
-            <div class="card"><span>Cari / Firma</span><strong>${escapeHtml(cari.companyName || cari.fullName || "-")}</strong></div>
-            <div class="card"><span>Yetkili</span><strong>${escapeHtml(cari.fullName || "-")}</strong></div>
-            <div class="card"><span>Telefon</span><strong>${escapeHtml(cari.phone || "-")}</strong></div>
-            <div class="card"><span>Cari Tipi</span><strong>${escapeHtml(cari.type || "-")}</strong></div>
-            <div class="card"><span>Vergi Dairesi</span><strong>${escapeHtml(taxOffice)}</strong></div>
-            <div class="card"><span>Vergi Numarasi</span><strong>${escapeHtml(taxNumber)}</strong></div>
-            <div class="card"><span>Iskonto Orani</span><strong>%${escapeHtml(String(Number(cari.discountRate || 0)))}</strong></div>
-            <div class="card"><span>Siparis Toplami</span><strong>${escapeHtml(formatCurrency(orderTotal))}</strong></div>
-            <div class="card"><span>Alacak Toplami</span><strong class="is-credit">${escapeHtml(formatCurrency(creditTotal))}</strong></div>
-            <div class="card"><span>Borc Toplami</span><strong class="is-debt">${escapeHtml(formatCurrency(debtTotal))}</strong></div>
-            <div class="card"><span>Guncel Bakiye</span><strong class="${balance >= 0 ? "is-debt" : "is-credit"}">${escapeHtml(formatCurrency(balance))}</strong></div>
-          </div>
-          <div class="note">
-            <span>Musteri ile Ilgili Notlar</span>
-            <p>${escapeHtml(noteText)}</p>
-          </div>
+          ${introMarkup}
           <table>
+            <colgroup>
+              <col class="date">
+              <col class="type">
+              <col class="no">
+              <col class="desc">
+              <col class="money">
+              <col class="money">
+              <col class="money">
+            </colgroup>
             <thead>
               <tr>
-                <th>No</th>
                 <th>Tarih</th>
-                <th>Kayit Turu</th>
+                <th>Islem Turu</th>
+                <th>Islem No</th>
                 <th>Aciklama</th>
-                <th class="amount">Tutar</th>
+                <th class="amount">Borc</th>
+                <th class="amount">Alacak</th>
+                <th class="amount">Bakiye</th>
               </tr>
             </thead>
             <tbody>${rowsMarkup}</tbody>
           </table>
-          <div class="signature">
-            <div class="signature-box">
-              <div class="signature-line">
-                <strong>${escapeHtml(signatureName)}</strong><br>
-                <span>${escapeHtml(signatureTitle)}</span>
-              </div>
+          <div class="summary-line">
+            <div><strong>Kayit Sayisi :</strong> ${statementRows.length}</div>
+            <div><strong>Genel Bakiye :</strong> ${escapeHtml(formatCurrency(balance))}</div>
+          </div>
+          <div class="totals">
+            <div><strong>Borc :</strong> ${escapeHtml(formatCurrency(totalDebt))}</div>
+            <div><strong>Alacak :</strong> ${escapeHtml(formatCurrency(totalCredit))}</div>
+            <div><strong>Bakiye :</strong> ${escapeHtml(formatCurrency(balance))}</div>
+          </div>
+          ${noteMarkup}
+          <div class="signature-wrap">
+            ${signatureMarkup}
+          </div>
+          <div class="footer">
+            <div></div>
+            <div class="footer-center">
+              <div>${escapeHtml(footerText)}</div>
+              <div>${escapeHtml(footerContact)}</div>
             </div>
+            <div class="footer-page">${escapeHtml(pageNumberText)}</div>
           </div>
         </div>
       </body>
