@@ -1,0 +1,22 @@
+# Planlanan API Rotalari
+
+- `POST /api/auth/login`
+- `GET /api/users/me`
+- `GET /api/cari`
+- `POST /api/cari`
+- `GET /api/cari/:id/statement`
+- `GET /api/offers`
+- `POST /api/offers`
+- `POST /api/offers/:id/approve`
+- `GET /api/orders`
+- `PATCH /api/orders/:id/status`
+- `GET /api/products`
+- `POST /api/products`
+- `GET /api/stocks`
+- `POST /api/stocks`
+- `GET /api/finance`
+- `POST /api/finance`
+- `GET /api/personnel`
+- `POST /api/personnel`
+- `GET /api/movements`
+- `POST /api/movements`

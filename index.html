@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KapakPro Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="auth-locked">
+  <section class="auth-screen" id="authScreen">
+    <div class="auth-card">
+      <div class="auth-brand">
+        <div class="logo-box">S</div>
+        <div>
+          <strong>Silva Ahsap</strong>
+          <span>Kapak Imalat Teklif Siparis Programi</span>
+        </div>
+      </div>
+      <div class="auth-info">
+        <p class="auth-help">Panel otomatik olarak demo yonetici hesabi ile aciliyor.</p>
+        <p class="auth-help">Backend aciksa giris kendiliginden tamamlanir.</p>
+      </div>
+      <p class="auth-error" id="authError"></p>
+    </div>
+  </section>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-top">
+        <div class="logo-row">
+          <div class="logo-box">K</div>
+          <span class="logo-text">KapakPro</span>
+        </div>
+        <p class="workspace-label">ADMIN - SILVA AHSAP</p>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-link active nav-link-root" data-view="dashboard">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 10.5 12 3l9 7.5"></path>
+              <path d="M5 9.5V21h14V9.5"></path>
+            </svg>
+          </span>
+          <span class="nav-label">Panel (Ana Sayfa)</span>
+        </button>
+        <div class="nav-group-static" data-nav-group-wrap="cari">
+          <button class="nav-link nav-group-toggle" type="button" data-nav-group="cari">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21a8 8 0 1 0-16 0"></path>
+                <circle cx="12" cy="8" r="4"></circle>
+              </svg>
+            </span>
+            <span class="nav-label">Cari</span>
+          </button>
+          <div class="nav-submenu-static">
+            <button class="nav-link nav-sublink" data-view="cari" data-section-target="cariFormSection">
+              <span class="nav-label">Cari Ekle</span>
+            </button>
+            <button class="nav-link nav-sublink" data-view="cari" data-section-target="cariListSection">
+              <span class="nav-label">Cari Listesi</span>
+            </button>
+          </div>
+        </div>
+        <div class="nav-group-static" data-nav-group-wrap="offers">
+          <button class="nav-link nav-group-toggle" type="button" data-nav-group="offers">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 3h8l5 5v13H3V3h5z"></path>
+                <path d="M15 3v5h5"></path>
+                <path d="M8 13h8"></path>
+                <path d="M8 17h5"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Teklifler</span>
+          </button>
+          <div class="nav-submenu-static">
+            <button class="nav-link nav-sublink" data-view="offers" data-section-target="offerFormSection">
+              <span class="nav-label">Yeni Teklif Ekle</span>
+            </button>
+            <button class="nav-link nav-sublink" data-view="offers" data-section-target="offersListSection">
+              <span class="nav-label">Teklif Listesi</span>
+            </button>
+          </div>
+        </div>
+        <div class="nav-group-static" data-nav-group-wrap="orders">
+          <button class="nav-link nav-group-toggle" type="button" data-nav-group="orders">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 7h12"></path>
+                <path d="M6 12h12"></path>
+                <path d="M6 17h12"></path>
+                <path d="M4 7h.01"></path>
+                <path d="M4 12h.01"></path>
+                <path d="M4 17h.01"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Siparisler</span>
+          </button>
+          <div class="nav-submenu-static">
+            <button class="nav-link nav-sublink" data-view="offers" data-section-target="offerFormSection">
+              <span class="nav-label">Yeni Siparis</span>
+            </button>
+            <button class="nav-link nav-sublink" data-view="orders" data-section-target="ordersListSection">
+              <span class="nav-label">Gecmis Siparisler</span>
+            </button>
+          </div>
+        </div>
+        <div class="nav-group-static" data-nav-group-wrap="products">
+          <button class="nav-link nav-group-toggle" type="button" data-nav-group="products">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 7h16"></path>
+                <path d="M4 12h16"></path>
+                <path d="M4 17h16"></path>
+                <path d="M8 7v10"></path>
+                <path d="M16 7v10"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Urunler</span>
+          </button>
+          <div class="nav-submenu-static">
+            <button class="nav-link nav-sublink" data-view="products" data-section-target="productFormSection">
+              <span class="nav-label">Yeni Urun Ekle</span>
+            </button>
+            <button class="nav-link nav-sublink" data-view="products" data-section-target="productsListSection">
+              <span class="nav-label">Tum Urun / Kapaklar</span>
+            </button>
+          </div>
+        </div>
+        <div class="nav-group-static" data-nav-group-wrap="categories">
+          <button class="nav-link nav-group-toggle" type="button" data-nav-group="categories">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 7h7"></path>
+                <path d="M13 7h7"></path>
+                <path d="M4 12h7"></path>
+                <path d="M13 12h7"></path>
+                <path d="M4 17h7"></path>
+                <path d="M13 17h7"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Kategoriler</span>
+          </button>
+          <div class="nav-submenu-static">
+            <button class="nav-link nav-sublink" data-view="categories" data-section-target="categoryAddSection">
+              <span class="nav-label">Kategori Ekle</span>
+            </button>
+            <button class="nav-link nav-sublink" data-view="categories" data-section-target="categoryListSection">
+              <span class="nav-label">Tum Kategoriler</span>
+            </button>
+          </div>
+        </div>
+        <button class="nav-link" data-view="stocks">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7 12 3l9 4-9 4-9-4Z"></path>
+              <path d="M3 7v10l9 4 9-4V7"></path>
+              <path d="M12 11v10"></path>
+            </svg>
+          </span>
+          <span class="nav-label">Stoklar</span>
+        </button>
+        <div class="nav-group-static" data-nav-group-wrap="finance">
+          <button class="nav-link nav-group-toggle" type="button" data-nav-group="finance">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v18"></path>
+                <path d="M16 7c0-1.7-1.8-3-4-3s-4 1.3-4 3 1.8 3 4 3 4 1.3 4 3-1.8 3-4 3-4-1.3-4-3"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Muhasebe</span>
+          </button>
+          <div class="nav-submenu-static">
+            <button class="nav-link nav-sublink" data-view="finance" data-section-target="movementFormSection">
+              <span class="nav-label">Cari Hareket Ekle</span>
+            </button>
+            <button class="nav-link nav-sublink" data-view="finance" data-section-target="cariStatementSection">
+              <span class="nav-label">Cari Takip Ekrani</span>
+            </button>
+          </div>
+        </div>
+        <button class="nav-link" data-view="reports">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 19V9"></path>
+              <path d="M12 19V5"></path>
+              <path d="M19 19v-7"></path>
+            </svg>
+          </span>
+          <span class="nav-label">Raporlar</span>
+        </button>
+        <button class="nav-link" data-view="personnel">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 20a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4"></path>
+              <circle cx="12" cy="8" r="4"></circle>
+            </svg>
+          </span>
+          <span class="nav-label">Personel</span>
+        </button>
+        <button class="nav-link" data-view="users">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="10" cy="7" r="4"></circle>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </span>
+          <span class="nav-label">Kullanicilar</span>
+        </button>
+        <button class="nav-link" data-view="sms">
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 5h16v12H7l-3 3z"></path>
+              <path d="m7 9 5 3 5-3"></path>
+            </svg>
+          </span>
+          <span class="nav-label">Sms</span>
+        </button>
+        <div class="nav-group-static" data-nav-group-wrap="settings">
+          <button class="nav-link nav-group-toggle" type="button" data-nav-group="settings">
+            <span class="nav-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 0 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1A1.7 1.7 0 0 0 10 3.2V3a2 2 0 0 1 4 0v.2a1.7 1.7 0 0 0 1 1.5h.1a1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.2a1.7 1.7 0 0 0-1.4 1z"></path>
+              </svg>
+            </span>
+            <span class="nav-label">Ayarlar</span>
+          </button>
+          <div class="nav-submenu-static">
+            <div class="nav-group-static" data-nav-group-wrap="settings-form-designs">
+              <button class="nav-link nav-group-toggle nav-sublink" type="button" data-nav-group="settings-form-designs">
+                <span class="nav-label">Form Tasarimlari</span>
+              </button>
+              <div class="nav-submenu-static">
+                <button class="nav-link nav-sublink" data-view="settings" data-section-target="formDesignSection">
+                  <span class="nav-label">Cari Extre</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="profile-card">
+          <div class="avatar">M</div>
+          <div>
+            <strong>Mustafa A. Yildirim</strong>
+            <span>silvaahsap@gmail.com</span>
+          </div>
+        </div>
+        <button class="logout-btn" id="resetDemoBtn">Demo Veriyi Sifirla</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="main-header">
+        <div>
+          <h1 id="pageTitle">Hos Geldiniz, Mustafa A. Yildirim</h1>
+          <p id="pageDescription">Isletmenizin guncel durum ozeti ve istatistikleri.</p>
+        </div>
+        <div class="header-actions">
+          <span class="session-user" id="sessionUser"></span>
+          <span class="session-role" id="sessionRole"></span>
+          <button class="ghost-action" id="logoutBtn" type="button">Cikis</button>
+          <button class="menu-toggle" id="menuToggle" type="button" aria-label="Menu">☰</button>
+          <button class="primary-btn" id="primaryActionBtn">+ Yeni Siparis</button>
+        </div>
+      </header>
+
+      <section class="view active" id="view-dashboard">
+        <section class="summary-grid">
+          <article class="summary-card">
+            <div>
+              <span>Aktif Siparisler</span>
+              <strong id="metricActiveOrders">0</strong>
+            </div>
+            <div class="summary-icon blue">O</div>
+          </article>
+          <article class="summary-card">
+            <div>
+              <span>Uretim Asamasinda</span>
+              <strong class="text-gold" id="metricProductionOrders">0</strong>
+            </div>
+            <div class="summary-icon gold">U</div>
+          </article>
+          <article class="summary-card">
+            <div>
+              <span>Tamamlanan (Toplam)</span>
+              <strong class="text-green" id="metricCompletedOrders">0</strong>
+            </div>
+            <div class="summary-icon green">T</div>
+          </article>
+          <article class="summary-card">
+            <div>
+              <span>Tahmini Ciro</span>
+              <strong id="metricRevenue">0 TL</strong>
+            </div>
+            <div class="summary-icon pink">+</div>
+          </article>
+        </section>
+
+        <section class="content-grid">
+          <article class="panel chart-panel">
+            <h2>Siparis Durum Dagilimi</h2>
+            <div class="chart-card-bars" id="statusChart"></div>
+          </article>
+
+          <article class="panel quick-panel">
+            <h2>Hizli Erisim</h2>
+            <div class="quick-links">
+              <button class="quick-link" data-action="offers">
+                <div class="quick-icon blue">T</div>
+                <div>
+                  <strong>Teklif Olustur</strong>
+                  <span>Yeni teklif kaydi ac</span>
+                </div>
+              </button>
+              <button class="quick-link" data-action="orders">
+                <div class="quick-icon purple">S</div>
+                <div>
+                  <strong>Siparis Takibi</strong>
+                  <span>Termin bazli takip et</span>
+                </div>
+              </button>
+              <button class="quick-link" data-action="finance">
+                <div class="quick-icon green">M</div>
+                <div>
+                  <strong>Maliyet Analizi</strong>
+                  <span>Karlilik ve giderleri izle</span>
+                </div>
+              </button>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel table-panel" id="ordersListSection">
+          <div class="panel-header-row">
+            <h2>Son Siparisler</h2>
+            <button class="inline-link" data-view-link="orders">Tumunu Gor</button>
+          </div>
+          <div class="orders-table" id="recentOrdersTable"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-cari">
+        <section class="panel cari-form-panel cari-subview-panel" id="cariFormSection">
+          <div class="cari-panel-head">
+            <div>
+              <h2>Yeni Cari Kaydi</h2>
+              <p>Cari bilgilerini sade form uzerinden ekleyin.</p>
+            </div>
+            <button class="ghost-action" id="clearCariSelectionBtn" type="button">Yeni Kayit</button>
+          </div>
+          <form id="cariForm" class="cari-form-grid">
+            <input id="cariEditId" type="hidden">
+            <label><span>Cari Isim Soyisim</span><input name="fullName" type="text" required></label>
+            <label><span>Telefon</span><input name="phone" type="text" required></label>
+            <label><span>Firma Ismi</span><input name="companyName" type="text" required></label>
+            <label><span>Cari Tipi</span>
+              <select name="type">
+                <option value="Musteri">Musteri</option>
+                <option value="Tedarikci">Tedarikci</option>
+                <option value="Musteri/Tedarikci">Musteri / Tedarikci</option>
+              </select>
+            </label>
+            <label><span>Vergi Dairesi</span><input name="taxOffice" type="text"></label>
+            <label><span>Vergi Numarasi</span><input name="taxNumber" type="text"></label>
+            <label><span>Iskonto Orani (%)</span><input name="discountRate" type="text" inputmode="decimal" value="0"></label>
+            <label><span>Risk Limiti</span><input name="riskLimit" type="text" inputmode="decimal" data-money="1" value="0"></label>
+            <label class="cari-form-note"><span>Musteri ile Ilgili Notlar</span><textarea name="notes" rows="4" placeholder="Musteri, tahsilat, sevkiyat veya ozel notlar..."></textarea></label>
+            <button class="primary-btn form-submit" id="cariSubmitBtn" type="submit">Cariyi Kaydet</button>
+          </form>
+        </section>
+
+        <section id="cariListSection" class="cari-list-page cari-subview-panel" hidden>
+          <section class="panel cari-toolbar-panel">
+            <div class="cari-panel-head">
+              <div>
+                <h2>Cari Listesi</h2>
+                <p>ERP mantiginda filtreleyin, secin ve cari hareketlerini ayni ekranda yonetin.</p>
+              </div>
+            </div>
+            <div class="cari-filter-bar">
+              <input id="cariSearch" class="table-search" type="search" placeholder="Firma, kisi veya telefon ara">
+              <select id="cariTypeFilter">
+                <option value="">Tum Kayitlar</option>
+                <option value="Musteri">Musteri</option>
+                <option value="Tedarikci">Tedarikci</option>
+                <option value="Musteri/Tedarikci">Musteri/Tedarikci</option>
+              </select>
+              <select id="cariBalanceFilter">
+                <option value="">Tum Durumlar</option>
+                <option value="debt">Borclu</option>
+                <option value="credit">Alacakli</option>
+                <option value="risk">Limit Asimi</option>
+              </select>
+              <select id="cariSort">
+                <option value="name-asc" selected>Firma A-Z</option>
+                <option value="name-desc">Firma Z-A</option>
+                <option value="balance-desc">Bakiye Yuksekten</option>
+                <option value="balance-asc">Bakiye Dusukten</option>
+                <option value="movement-desc">Son Hareket En Yeni</option>
+              </select>
+            </div>
+            <div class="cari-overview-grid">
+              <div class="cari-sticky-bar" id="cariStickyBar">
+                <div>
+                  <strong id="cariStickyName">Cari secilmedi</strong>
+                  <span id="cariStickyMeta">Listeden bir cari secin.</span>
+                </div>
+                <b id="cariStickyBalance">0 TL</b>
+              </div>
+              <div class="cari-stats-grid">
+                <article class="cari-stat-card">
+                  <span>Toplam Cari</span>
+                  <strong id="cariStatTotal">0</strong>
+                </article>
+                <article class="cari-stat-card">
+                  <span>Borclu Cari</span>
+                  <strong id="cariStatDebt">0</strong>
+                </article>
+                <article class="cari-stat-card">
+                  <span>Limit Asimi</span>
+                  <strong id="cariStatRisk">0</strong>
+                </article>
+                <article class="cari-stat-card">
+                  <span>Borclu Toplam</span>
+                  <strong id="cariStatDebtAmount">0 TL</strong>
+                </article>
+                <article class="cari-stat-card">
+                  <span>Alacakli Toplam</span>
+                  <strong id="cariStatCreditAmount">0 TL</strong>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <section class="cari-workspace-grid">
+            <section class="panel cari-records-shell">
+              <div class="panel-header-row compact">
+                <h2>Cari Kayitlari</h2>
+                <span class="panel-hint">Filtreye gore listelenen kayitlar</span>
+              </div>
+              <div class="cari-table-shell">
+                <div class="cari-table-head">
+                  <span>No</span>
+                  <span>Cari Adi</span>
+                  <span>Borc Tutari</span>
+                  <span>Alacak Tutari</span>
+                  <span>Bakiye</span>
+                  <span>Durum</span>
+                  <span>Detay</span>
+                </div>
+                <div class="cari-table-body" id="cariList"></div>
+              </div>
+            </section>
+
+            <section class="cari-insight-column">
+              <section class="panel cari-detail-shell">
+                <div class="cari-panel-head">
+                  <div>
+                    <h2>Cari Detayi</h2>
+                    <p>Secilen carinin temel bilgileri ve bakiye durumu.</p>
+                  </div>
+                </div>
+                <div class="cari-detail-panel" id="cariDetailPanel">
+                  <div class="cari-detail-head">
+                    <h3>Cari Ozeti</h3>
+                    <span id="cariDetailBadge" class="cari-status-badge">Secim Yok</span>
+                  </div>
+                  <div class="cari-detail-grid">
+                    <div><small>Firma</small><strong id="cariDetailCompany">-</strong></div>
+                    <div><small>Kisi</small><strong id="cariDetailName">-</strong></div>
+                    <div><small>Telefon</small><strong id="cariDetailPhone">-</strong></div>
+                    <div><small>Son Hareket</small><strong id="cariDetailLastMovement">-</strong></div>
+                    <div><small>Bakiye</small><strong id="cariDetailBalance">0 TL</strong></div>
+                    <div><small>Risk Limiti</small><strong id="cariDetailLimit">0 TL</strong></div>
+                    <div><small>Iskonto Orani</small><strong id="cariDetailDiscount">0%</strong></div>
+                    <div class="cari-detail-note"><small>Musteri ile Ilgili Notlar</small><strong id="cariDetailNotes">-</strong></div>
+                  </div>
+                </div>
+              </section>
+
+            </section>
+          </section>
+
+        </section>
+      </section>
+
+      <section class="view" id="view-offers">
+        <section class="panel form-panel" id="offerFormSection">
+          <div class="panel-header-row compact">
+            <h2>Kapak Teklif / Siparis Formu</h2>
+          </div>
+          <div class="offer-builder-layout">
+            <aside class="offer-products-panel">
+              <div class="offer-products-head">
+                <h3>Urunler</h3>
+                <p>Kapak ve urunleri listeden secip teklif kalemine aktarabilirsiniz.</p>
+              </div>
+              <label class="offer-products-filter">
+                <input id="offerOnlyCovers" type="checkbox">
+                <span>Sadece kapaklari goster</span>
+              </label>
+              <input id="offerProductSearch" class="table-search offer-product-search" type="search" placeholder="Urun veya kategori ara">
+              <div id="offerProductsList" class="offer-products-list"></div>
+            </aside>
+
+            <form id="offerForm" class="offer-form-layout">
+              <section class="offer-top-grid">
+                <label><span>Form Tipi</span>
+                  <select name="formType">
+                    <option value="Teklif Formu">Teklif Formu</option>
+                    <option value="Siparis Formu">Siparis Formu</option>
+                  </select>
+                </label>
+                <label><span>Teklif / Siparis No</span><input name="offerNoDisplay" id="offerNoDisplay" type="text" readonly></label>
+                <label><span>Cari / Firma</span><select name="cariId" id="offerCariSelect" required></select></label>
+                <label><span>Siparis Tarihi</span><input name="orderDate" type="date" required></label>
+                <label><span>Termin Suresi (Gun)</span><input name="termDays" type="number" min="0" step="1" required></label>
+                <label><span>Teslim Tarihi</span><input name="deliveryDate" type="date" required></label>
+                <label><span>Kargo / Sevkiyat</span><input name="shipment" type="text" placeholder="Ambar, sevkiyat notu"></label>
+                <label><span>Iskonto Orani (%)</span><input name="discountRate" id="offerDiscountRate" type="number" min="0" max="100" step="0.01" value="0"></label>
+                <label><span>KDV Orani (%)</span><input name="vatRate" type="number" min="0" max="100" step="0.01" value="20"></label>
+              </section>
+
+              <section class="offer-lines-panel">
+                <div class="offer-lines-head">
+                  <div>
+                    <h3>Kapak Siparis Kalemi</h3>
+                    <p>Soldan urun secin, olcu ve adet girin, sonra kalemi alt listeye ekleyin.</p>
+                  </div>
+                  <button class="primary-btn" id="addOfferLineBtn" type="button">Ekle</button>
+                </div>
+                <div class="offer-line-entry offer-lines-grid-head">
+                  <span>Boy</span>
+                  <span>En</span>
+                  <span>Adet</span>
+                  <span>Malzeme Listesi</span>
+                  <span>Kapak Cinsi</span>
+                  <span>Renk Kodu</span>
+                  <span>Birim Fiyat</span>
+                  <span>Aciklama</span>
+                </div>
+                <div class="offer-line-entry">
+                  <input id="offerLineHeight" type="number" min="0" step="0.01" placeholder="Boy">
+                  <input id="offerLineWidth" type="number" min="0" step="0.01" placeholder="En">
+                  <input id="offerLineQuantity" type="number" min="1" step="1" value="1" placeholder="Adet">
+                  <select id="offerLineMaterialGroup"></select>
+                  <select id="offerLineCoverType"></select>
+                  <input id="offerLineColor" type="text" placeholder="Renk kodu">
+                  <input id="offerLineUnitPrice" type="text" inputmode="decimal" data-money="1" placeholder="Birim fiyat">
+                  <input id="offerLineNote" type="text" placeholder="Aciklama">
+                </div>
+
+                <div class="offer-lines-list-head">
+                  <h4>Eklenen Olculer</h4>
+                  <span id="offerLineCountLabel">0 kalem</span>
+                </div>
+                <div id="offerLinesContainer" class="offer-lines-stack"></div>
+              </section>
+
+              <section class="offer-summary-grid">
+                <article class="offer-summary-card">
+                  <span>Toplam Kapak Adeti</span>
+                  <strong id="offerSummaryQuantity">0</strong>
+                </article>
+                <article class="offer-summary-card">
+                  <span>Toplam M2</span>
+                  <strong id="offerSummaryM2">0</strong>
+                </article>
+                <article class="offer-summary-card">
+                  <span>Mal Hizmet Toplam</span>
+                  <strong id="offerSummaryGross">0 TL</strong>
+                </article>
+                <article class="offer-summary-card">
+                  <span>Vergiler Dahil Toplam</span>
+                  <strong id="offerSummaryGrand">0 TL</strong>
+                </article>
+              </section>
+
+              <section class="offer-bottom-grid">
+                <label class="offer-notes-field"><span>Siparis Aciklama / Sozlesme</span><textarea name="contractText" rows="5" placeholder="Siparis aciklamasi, teslim notlari ve teklif kosullari"></textarea></label>
+                <button class="primary-btn form-submit" type="submit">Teklifi Kaydet</button>
+              </section>
+            </form>
+          </div>
+        </section>
+        <section class="panel table-panel" id="offersListSection">
+          <div class="panel-header-row">
+            <h2>Teklif Listesi</h2>
+          </div>
+          <div class="offers-table" id="offersTable"></div>
+        </section>
+        <section class="panel print-panel">
+          <div class="panel-header-row">
+            <h2>Teklif Cikti Islemleri</h2>
+          </div>
+          <div class="print-actions">
+            <select id="offerPrintSelect"></select>
+            <button class="ghost-action" id="printOfferBtn" type="button">Yazdir</button>
+            <button class="primary-btn" id="pdfOfferBtn" type="button">PDF Ciktisi</button>
+          </div>
+        </section>
+      </section>
+
+      <section class="view" id="view-orders">
+        <section class="panel table-panel">
+          <div class="panel-header-row">
+            <h2>Siparis Takip Listesi</h2>
+            <input class="table-search" id="orderSearch" type="search" placeholder="Takip no veya cari ara">
+          </div>
+          <div class="orders-table" id="ordersTable"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-categories">
+        <section class="categories-layout">
+          <section class="panel products-side-panel categories-standalone-panel" id="categoryAddSection">
+            <div class="panel-header-row compact">
+              <div>
+                <h2>Kategori Yonetimi</h2>
+                <p>Kategorileri ayri ekrandan ekleyin, duzenleyin ve takip edin.</p>
+              </div>
+            </div>
+            <form id="categoryManagerForm" class="products-category-form">
+              <label>
+                <span>Kategori Adi</span>
+                <input id="categoryManagerInput" name="categoryName" type="text" placeholder="Lake Kapak, Ham Kapak" required>
+              </label>
+              <button class="primary-btn" type="submit">Kategori Ekle</button>
+            </form>
+            <div class="panel-header-row compact products-subhead">
+              <h2>Kategori Listesi</h2>
+            </div>
+            <div class="card-list products-category-list" id="categoryManagerList"></div>
+          </section>
+
+          <section class="panel categories-detail-panel" id="categoryListSection">
+            <div class="panel-header-row compact">
+              <div>
+                <h2>Urun Cinsi</h2>
+                <p>Secilen kategoriye bagli urun cinsleri.</p>
+              </div>
+            </div>
+            <div class="category-detail-summary">
+              <strong id="categoryTypeSelectedName">Kategori secilmedi</strong>
+              <span id="categoryTypeSelectedMeta">Urun cinsi eklemek icin once soldan bir kategori secin.</span>
+            </div>
+            <form id="categoryTypeForm" class="products-category-form category-type-form">
+              <input id="categoryTypeEditId" type="hidden">
+              <div class="category-type-inline">
+                <label>
+                  <span>Urun Cinsi</span>
+                  <input id="categoryTypeInput" name="productTypeName" type="text" placeholder="Lake Kapak 18 mm, Camli Kapak" required>
+                </label>
+                <label class="category-type-unit">
+                  <span>Birim</span>
+                  <select id="categoryTypeUnit" name="productTypeUnit">
+                    <option value="M2">M2</option>
+                    <option value="Adet">Adet</option>
+                    <option value="Boy Adet">Boy Adet</option>
+                  </select>
+                </label>
+              </div>
+              <div class="inline-form-actions">
+                <button class="ghost-action compact-action" id="categoryTypeResetBtn" type="button">Yeni Cins</button>
+                <button class="primary-btn" id="categoryTypeSubmitBtn" type="submit">Cinsi Kaydet</button>
+              </div>
+            </form>
+            <div class="panel-header-row compact products-subhead">
+              <h2>Secilen Kategorideki Urun Cinsleri</h2>
+            </div>
+            <div class="card-list category-type-list" id="categoryTypeList"></div>
+          </section>
+        </section>
+      </section>
+
+      <section class="view" id="view-products">
+        <section class="products-layout">
+          <section class="panel form-panel products-form-panel products-subview-panel" id="productFormSection">
+            <div class="panel-header-row compact">
+              <div>
+                <h2>Yeni Urun Ekle</h2>
+                <p>Urunu kategori, maliyet ve gorsel bilgileriyle kaydedin.</p>
+              </div>
+            </div>
+            <form id="productForm" class="products-form-grid">
+              <input id="productEditId" type="hidden">
+              <label><span>Urun / Kapak Adi</span><input name="name" type="text" required></label>
+              <label><span>Kategori</span>
+                <select name="category" id="productCategorySelect" required></select>
+              </label>
+              <label><span>Urun Cinsi</span>
+                <select name="type" id="productTypeSelect"></select>
+              </label>
+              <label><span>Maliyet Tipi</span>
+                <select name="costType">
+                  <option value="M2">M2</option>
+                  <option value="Adet">Adet</option>
+                </select>
+              </label>
+              <label><span>Maliyet</span><input name="costAmount" type="text" inputmode="decimal" data-money="1" required></label>
+              <label><span>Gorsel Dosyasi</span><input id="productImageFile" type="file" accept="image/*"></label>
+              <label class="products-form-wide"><span>Gorsel URL / Dosya Yolu</span><input name="imageUrl" type="text" placeholder="https://... veya yerel gorsel yolu"></label>
+              <div class="products-image-preview" id="productImagePreview">Gorsel secildiginde burada gorunecek.</div>
+              <label class="products-form-wide"><span>Maliyet Notu</span><input name="costNotes" type="text" placeholder="Maliyet detayi"></label>
+              <div class="inline-form-actions products-form-actions">
+                <button class="ghost-action" id="productResetBtn" type="button">Yeni Urun</button>
+                <button class="primary-btn form-submit" id="productSubmitBtn" type="submit">Urunu Kaydet</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel list-panel products-list-panel products-subview-panel" id="productsListSection" hidden>
+            <div class="products-list-hero">
+              <div>
+                <h2>Tum Urun / Kapaklar</h2>
+                <p>Urunleri kategoriye gore filtreleyin, fiyatlarini izleyin ve satira tiklayarak hizlica duzenleyin.</p>
+              </div>
+              <div class="products-list-tools">
+                <input id="productsSearch" class="table-search products-search" type="search" placeholder="Urun veya kategori ara">
+                <span class="products-list-tip">Ipucu: Bir satira tiklayarak duzenleme ekranina gecin.</span>
+              </div>
+            </div>
+            <div class="products-list-layout">
+              <aside class="products-filter-panel">
+                <div class="products-selection-summary" id="productsSelectionSummary"></div>
+                <div class="panel-header-row compact products-filter-head">
+                  <h2>Kategori / Urun Cinsi</h2>
+                </div>
+                <div class="products-hierarchy-tree" id="productsHierarchyTree"></div>
+                <div class="products-bulk-panel">
+                  <div class="panel-header-row compact products-filter-head">
+                    <h2>Toplu Fiyat</h2>
+                  </div>
+                  <form id="productBulkUpdateForm" class="products-bulk-form">
+                    <label>
+                      <span>Kategori</span>
+                      <select id="productBulkCategory" name="category"></select>
+                    </label>
+                    <label>
+                      <span>Islem</span>
+                      <select name="mode">
+                        <option value="percent">Yuzde Degisim</option>
+                        <option value="fixed">Tutar Ekle / Cikar</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Deger</span>
+                      <input name="value" type="text" inputmode="decimal" data-money="1" placeholder="100 veya 10">
+                    </label>
+                    <button class="primary-btn" type="submit">Toplu Guncelle</button>
+                  </form>
+                </div>
+              </aside>
+              <section class="products-list-shell">
+                <div class="products-list-shell-head">
+                  <div>
+                    <h3>Liste Ekrani</h3>
+                    <p>Filtrelenen urunler, fiyat bilgileri ve hizli islem butonlari.</p>
+                  </div>
+                </div>
+                <div class="card-list products-card-list" id="productsList"></div>
+              </section>
+            </div>
+          </section>
+        </section>
+        <div class="product-image-modal" id="productImageModal" hidden>
+          <div class="product-image-modal-backdrop" data-close-product-image></div>
+          <div class="product-image-modal-dialog">
+            <button class="ghost-action product-image-close" id="productImageModalClose" type="button">Kapat</button>
+            <img id="productImageModalImg" src="" alt="Urun gorseli buyuk onizleme">
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="view-stocks">
+        <section class="panel form-panel">
+          <div class="panel-header-row compact">
+            <h2>Hammadde/Stok Ekle</h2>
+          </div>
+          <form id="stockForm" class="form-grid three-col">
+            <label><span>Stok Adi</span><input name="name" type="text" required></label>
+            <label><span>Tur</span><input name="type" type="text" placeholder="MDF, boya, kulp"></label>
+            <label><span>Miktar</span><input name="quantity" type="number" min="0" step="0.01" required></label>
+            <label><span>Birim</span><input name="unit" type="text" placeholder="adet, kg, m2"></label>
+            <label><span>Birim Fiyat</span><input name="unitPrice" type="text" inputmode="decimal" data-money="1" required></label>
+            <label><span>Tedarikci</span><input name="supplier" type="text"></label>
+            <button class="primary-btn form-submit" type="submit">Stogu Kaydet</button>
+          </form>
+        </section>
+        <section class="panel list-panel">
+          <div class="panel-header-row">
+            <h2>Stok Listesi</h2>
+          </div>
+          <div class="card-list" id="stocksList"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-personnel">
+        <section class="panel form-panel" id="personnelFormSection">
+          <div class="panel-header-row compact">
+            <h2>Yeni Personel Ekle</h2>
+          </div>
+          <form id="personnelForm" class="form-grid three-col">
+            <label><span>Ad Soyad</span><input name="name" type="text" placeholder="Ayse Demir" required></label>
+            <label><span>Pozisyon</span><input name="role" type="text" placeholder="Grafik Tasarimci" required></label>
+            <label><span>Durum</span>
+              <select name="status" required>
+                <option value="Aktif">Aktif</option>
+                <option value="Izinli">Izinli</option>
+                <option value="Pasif">Pasif</option>
+              </select>
+            </label>
+            <label><span>Telefon</span><input name="phone" type="text" placeholder="0555 111 11 11" required></label>
+            <label><span>Ozluk Dosya Durumu</span><input name="fileStatus" type="text" placeholder="Tamam, eksik evrak"></label>
+            <label><span>Maas</span><input name="salary" type="text" inputmode="decimal" data-money="1"></label>
+            <label><span>Mesai Saati</span><input name="overtimeHours" type="number" min="0" step="0.5"></label>
+            <button class="primary-btn form-submit" type="submit">Personeli Kaydet</button>
+          </form>
+        </section>
+
+        <section class="panel list-panel">
+          <div class="panel-header-row">
+            <h2>Personel Listesi</h2>
+          </div>
+          <div class="card-list" id="personnelList"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-finance">
+        <section class="cari-operations-grid">
+          <section class="panel form-panel" id="movementFormSection">
+            <div class="panel-header-row compact">
+              <h2>Borc / Alacak Dekont Girisi</h2>
+            </div>
+            <form id="movementForm" class="form-grid three-col">
+              <input id="movementEditId" type="hidden">
+              <label><span>Cari</span><select name="cariId" id="movementCariSelect" required></select></label>
+              <label><span>Hareket Turu</span>
+                <select name="movementType">
+                  <option value="Borc Dekontu">Borc Dekontu</option>
+                  <option value="Alacak Dekontu">Alacak Dekontu</option>
+                </select>
+              </label>
+              <label><span>Tutar</span><input name="amount" type="text" inputmode="decimal" data-money="1" required></label>
+              <label><span>Tarih</span><input name="date" type="date" required></label>
+              <label><span>Aciklama</span><input name="note" type="text" placeholder="Aciklama"></label>
+              <div class="inline-form-actions">
+                <button class="ghost-action" id="movementResetBtn" type="button">Yeni Dekont</button>
+                <button class="primary-btn form-submit" id="movementSubmitBtn" type="submit">Hareketi Kaydet</button>
+                <button class="receipt-action-btn" id="movementReceiptBtn" type="button">Makbuz / WhatsApp</button>
+              </div>
+            </form>
+            <div class="receipt-builder-panel" id="movementReceiptPanel" hidden>
+              <div class="panel-header-row compact">
+                <h2>Makbuz Formu</h2>
+              </div>
+              <form id="movementReceiptForm" class="form-grid two-col">
+                <label><span>Belge Basligi</span><input name="receiptTitle" type="text" value="Cari Dekont Makbuzu"></label>
+                <label><span>Belge No</span><input name="receiptNo" type="text"></label>
+                <label class="receipt-wide"><span>Firma Logo URL</span><input name="logoUrl" type="text" placeholder="https://... veya logo dosya yolu"></label>
+                <label><span>Firma</span><input name="companyName" type="text"></label>
+                <label><span>Yetkili Kisi</span><input name="contactName" type="text"></label>
+                <label><span>Telefon</span><input name="phone" type="text"></label>
+                <label><span>Dekont Turu</span><input name="movementType" type="text"></label>
+                <label><span>Tutar</span><input name="amount" type="text"></label>
+                <label><span>Tarih</span><input name="date" type="text"></label>
+                <label><span>Gonderim Telefonu</span><input name="whatsappPhone" type="text" placeholder="90555..."></label>
+                <label class="receipt-wide"><span>Aciklama</span><textarea name="description" rows="3" placeholder="Makbuz aciklamasi"></textarea></label>
+                <label class="receipt-wide"><span>Ek Not</span><textarea name="receiptNote" rows="4" placeholder="Teslim notu, aciklama, odeme bilgisi"></textarea></label>
+                <label><span>Imza Yetkilisi</span><input name="signatureName" type="text" value="Yetkili Imza"></label>
+                <label><span>Imza Unvani</span><input name="signatureTitle" type="text" value="Silva Ahsap Yetkilisi"></label>
+                <div class="inline-form-actions receipt-actions">
+                  <button class="ghost-action" id="movementReceiptCloseBtn" type="button">Kapat</button>
+                  <button class="primary-btn receipt-print-btn" id="movementReceiptPrintBtn" type="button">Yazdir / PDF</button>
+                  <button class="receipt-copy-btn" id="movementReceiptCopyBtn" type="button">Mesaji Kopyala</button>
+                  <button class="receipt-whatsapp-btn" id="movementReceiptWhatsappBtn" type="button">WhatsApp Web Ac</button>
+                </div>
+              </form>
+            </div>
+          </section>
+          <section class="panel list-panel" id="cariStatementSection" hidden>
+            <div class="panel-header-row">
+              <h2>Cari Takip Ekrani</h2>
+            </div>
+            <div class="cari-statement-toolbar">
+              <label>
+                <span>Arama</span>
+                <input id="cariStatementSearch" type="search" placeholder="Cari, firma veya tip ara">
+              </label>
+              <label>
+                <span>Filtre</span>
+                <select id="cariStatementBalanceFilter">
+                  <option value="all">Tum Bakiyeler</option>
+                  <option value="debt">Borclular</option>
+                  <option value="credit">Alacaklilar</option>
+                  <option value="zero">Bakiye Sifir</option>
+                </select>
+              </label>
+              <label>
+                <span>Siralama</span>
+                <select id="cariStatementSort">
+                  <option value="name_asc" selected>Cari Adi (A-Z)</option>
+                  <option value="name_desc">Cari Adi (Z-A)</option>
+                  <option value="balance_desc">Bakiye (Azalan)</option>
+                  <option value="balance_asc">Bakiye (Artan)</option>
+                  <option value="credit_desc">Alacak (Azalan)</option>
+                  <option value="debt_desc">Borc (Azalan)</option>
+                  <option value="order_desc">Siparis (Azalan)</option>
+                </select>
+              </label>
+            </div>
+            <div id="cariStatementList"></div>
+            <section class="cari-statement-detail-panel" id="cariStatementDetailPanel" hidden>
+              <div class="panel-header-row compact">
+                <div>
+                  <h2 id="cariStatementDetailTitle">Muhasebe Kayit Detayi</h2>
+                  <p id="cariStatementDetailMeta">Secilen carinin tum borc ve alacak hareketleri.</p>
+                </div>
+                <button class="ghost-action" id="cariStatementDetailCloseBtn" type="button">Kapat</button>
+              </div>
+              <div id="cariStatementDetailContent"></div>
+              <div class="cari-statement-output-panel">
+                <div>
+                  <strong>Detayli Cikti</strong>
+                  <p>Secilen carinin tum muhasebe kayitlarini ozet ve hareket dokumu ile yazdirin.</p>
+                </div>
+                <button class="primary-btn" id="cariStatementPrintBtn" type="button">Detayli Yazdir / PDF</button>
+              </div>
+            </section>
+          </section>
+        </section>
+      </section>
+
+      <section class="view" id="view-reports">
+        <section class="summary-grid finance-grid">
+          <article class="summary-card">
+            <div><span>Aylik Siparis</span><strong id="reportMonthlyOrders">0</strong></div>
+            <div class="summary-icon blue">R</div>
+          </article>
+          <article class="summary-card">
+            <div><span>Aylik Ciro</span><strong id="reportMonthlyRevenue">0 TL</strong></div>
+            <div class="summary-icon green">C</div>
+          </article>
+          <article class="summary-card">
+            <div><span>Aktif Cari</span><strong id="reportActiveCari">0</strong></div>
+            <div class="summary-icon gold">A</div>
+          </article>
+          <article class="summary-card">
+            <div><span>Toplam Personel</span><strong id="reportPersonnelCount">0</strong></div>
+            <div class="summary-icon pink">P</div>
+          </article>
+        </section>
+
+        <section class="content-grid reports-grid">
+          <article class="panel reports-panel">
+            <div class="reports-panel-head">
+              <div>
+                <h2>Siparis Trendi</h2>
+                <p>Son alti ayin siparis yogunlugu ve cirosu icin temel gosterge.</p>
+              </div>
+              <div class="report-chip-row" id="reportFilterChips">
+                <button class="report-chip active" type="button">30 Gun</button>
+                <button class="report-chip" type="button">90 Gun</button>
+                <button class="report-chip" type="button">Yil</button>
+              </div>
+            </div>
+            <div class="report-bars" id="reportsTrendBars"></div>
+          </article>
+
+          <article class="panel reports-panel">
+            <div class="reports-panel-head">
+              <div>
+                <h2>Hazir Rapor Kartlari</h2>
+                <p>Tek tikla detaylandirilabilecek alanlar icin baslangic kutulari.</p>
+              </div>
+            </div>
+            <div class="report-cards" id="reportCardsList">
+              <article class="report-mini-card">
+                <strong>Satis Raporu</strong>
+                <span>Durum yukleniyor...</span>
+              </article>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel list-panel">
+          <div class="panel-header-row">
+            <h2>Raporlar Ozeti</h2>
+          </div>
+          <div class="card-list" id="reportsSummaryList"></div>
+        </section>
+
+        <section class="panel list-panel">
+          <div class="panel-header-row">
+            <h2>Takip Listesi</h2>
+          </div>
+          <div class="card-list" id="reportsActionList"></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-users">
+        <section class="panel settings-panel">
+          <h2>Kullanici Yonetimi</h2>
+          <p>Bu alan hazirlandi. Alt menuler ve yetki ekranlari bir sonraki adimda eklenecek.</p>
+        </section>
+      </section>
+
+      <section class="view" id="view-sms">
+        <section class="panel settings-panel">
+          <h2>Sms Modulu</h2>
+          <p>Bu alan hazirlandi. Alt menuler ve SMS surecleri bir sonraki adimda eklenecek.</p>
+        </section>
+      </section>
+
+      <section class="view" id="view-settings">
+        <section id="formDesignSection" class="panel settings-panel">
+          <div class="panel-header-row compact">
+            <div>
+              <h2>Form Tasarimi</h2>
+              <p>Form tasarimlarini bu bolumde yonetin ve duzenleyin.</p>
+            </div>
+          </div>
+          <div class="settings-form-toolbar">
+            <label class="settings-form-name">
+              <span>Tasarim Ismi</span>
+              <input id="cariStatementDesignName" type="text" placeholder="Ornek: Klasik Cari Extre">
+            </label>
+            <div class="settings-form-actions">
+              <button class="ghost-action" id="cariStatementDesignCreateBtn" type="button">Yeni Form Tasarimi</button>
+              <button class="ghost-action" id="cariStatementDesignActivateBtn" type="button">Aktif Tasarimi Sec</button>
+              <button class="ghost-action" id="cariStatementDesignDuplicateBtn" type="button">Kopyala</button>
+              <button class="ghost-action danger-btn" id="cariStatementDesignDeleteBtn" type="button">Sil</button>
+              <button class="primary-btn settings-save-btn" id="cariStatementDesignSaveBtn" type="button">Degisiklikleri Kaydet</button>
+            </div>
+          </div>
+          <div class="settings-form-list" id="cariStatementDesignList"></div>
+          <div class="settings-form-subtitle">
+            <strong>Cari Extre Form</strong>
+            <span>Asagidaki ayarlar secili tasarima uygulanir ve yazdirma ciktilarinda kullanilir.</span>
+          </div>
+        </section>
+        <section class="settings-extre-layout" id="cariExtreFormSection">
+          <section class="panel settings-panel">
+            <div class="panel-header-row compact">
+              <div>
+                <h2>Cari Extre Form</h2>
+                <p>Cari muhasebe dokumunun tasarimini ve cikti alanlarini buradan duzenleyin.</p>
+              </div>
+            </div>
+            <form class="form-grid two-col cari-statement-output-form" id="cariStatementOutputForm">
+              <label><span>Belge Basligi</span><input name="documentTitle" type="text" value="Cari Hesap Ekstresi"></label>
+              <label><span>Firma Ust Baslik</span><input name="companyDisplayName" type="text" value="SILVA AHSAP"></label>
+              <label><span>Firma Kodu</span><input name="companyCode" type="text" value="CR02829"></label>
+              <label><span>Durum Metni</span><input name="statementStatusLabel" type="text" value="BORCLU"></label>
+              <label><span>Firma Logo URL</span><input name="logoUrl" type="text" placeholder="https://... veya logo dosya yolu"></label>
+              <label><span>Bilgisayardan Logo Yukle</span><input id="cariStatementLogoFile" type="file" accept="image/*"></label>
+              <input name="logoDataUrl" type="hidden">
+              <label><span>Sayfa Boyutu</span>
+                <select name="pageSize">
+                  <option value="A4">A4</option>
+                  <option value="A5">A5</option>
+                  <option value="Letter">Letter</option>
+                </select>
+              </label>
+              <label><span>Sayfa Yonu</span>
+                <select name="pageOrientation">
+                  <option value="portrait">Dikey</option>
+                  <option value="landscape">Yatay</option>
+                </select>
+              </label>
+              <label><span>Sayfa Kenar Boslugu (mm)</span><input name="pageMarginMm" type="number" min="5" max="30" step="1" value="14"></label>
+              <label><span>Yazi Tipi</span>
+                <select name="fontFamily">
+                  <option value="Arial, sans-serif">Arial</option>
+                  <option value="'Segoe UI', Arial, sans-serif">Segoe UI</option>
+                  <option value="'Tahoma', Arial, sans-serif">Tahoma</option>
+                  <option value="'Trebuchet MS', Arial, sans-serif">Trebuchet MS</option>
+                  <option value="'Times New Roman', serif">Times New Roman</option>
+                </select>
+              </label>
+              <label><span>Govde Yazi Boyutu</span><input name="baseFontSize" type="number" min="9" max="16" step="1" value="12"></label>
+              <label><span>Baslik Boyutu</span><input name="titleFontSize" type="number" min="16" max="34" step="1" value="22"></label>
+              <label><span>Alt Baslik Boyutu</span><input name="metaFontSize" type="number" min="10" max="18" step="1" value="12"></label>
+              <label><span>Vurgu Rengi</span><input name="accentColor" type="color" value="#0f766e"></label>
+              <label><span>Baslik Serif Rengi</span><input name="headerBgColor" type="color" value="#eceff4"></label>
+              <label><span>Baslik Yazi Rengi</span><input name="headerTextColor" type="color" value="#394657"></label>
+              <label><span>Kart Arka Plani</span><input name="cardBgColor" type="color" value="#ffffff"></label>
+              <label><span>Kenarlik Rengi</span><input name="borderColor" type="color" value="#d6dbe4"></label>
+              <label><span>Tablo Stili</span>
+                <select name="tableStyle">
+                  <option value="classic">Klasik</option>
+                  <option value="clean">Temiz</option>
+                  <option value="soft">Yumusak</option>
+                </select>
+              </label>
+              <label><span>Satir Yogunlugu</span>
+                <select name="tableDensity">
+                  <option value="compact">Sik</option>
+                  <option value="comfortable">Rahat</option>
+                  <option value="spacious">Genis</option>
+                </select>
+              </label>
+              <label><span>Vergi Dairesi</span><input name="taxOffice" type="text"></label>
+              <label><span>Vergi Numarasi</span><input name="taxNumber" type="text"></label>
+              <label><span>Imza Yetkilisi</span><input name="signatureName" type="text" value="Yetkili Imza"></label>
+              <label><span>Imza Unvani</span><input name="signatureTitle" type="text" value="Silva Ahsap Yetkilisi"></label>
+              <label><span>Para Birimi</span><input name="currencyCode" type="text" value="TRY"></label>
+              <label><span>Tarih Araligi Metni</span><input name="dateRangeText" type="text" placeholder="01.01.2026 - 31.12.2026"></label>
+              <label><span>Alt Bilgi Satiri</span><input name="footerText" type="text" value="SILVA AHSAP"></label>
+              <label><span>Alt Bilgi Iletisim</span><input name="footerContact" type="text" value="0543 632 89 71 | silvaahsap@gmail.com"></label>
+              <label><span>Sayfa Numarasi</span><input name="pageNumberText" type="text" value="1 / 1"></label>
+              <label class="receipt-wide"><span>Ust Aciklama</span><textarea name="introText" rows="3" placeholder="Cikti basliginin altinda gorunecek aciklama"></textarea></label>
+              <label class="receipt-wide"><span>Ek Not</span><textarea name="extraNote" rows="4" placeholder="Ciktiya eklenecek ek not"></textarea></label>
+              <label class="receipt-wide"><span>Ozel Stil (CSS)</span><textarea name="customCss" rows="6" placeholder=".title h1 { letter-spacing: 0.5px; }&#10;table { border-radius: 8px; overflow: hidden; }"></textarea></label>
+            </form>
+          </section>
+          <section class="panel settings-panel">
+            <div class="panel-header-row compact">
+              <div>
+                <h2>Canli Onizleme</h2>
+                <p>Yazdirmadan once tasarimin nasil gorunecegini izleyin.</p>
+              </div>
+            </div>
+            <iframe id="cariStatementPreviewFrame" class="cari-statement-preview-frame" title="Cari Extre Canli Onizleme"></iframe>
+          </section>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="api-client.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
