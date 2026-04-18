@@ -156,13 +156,37 @@ if errorlevel 1 (
 )
 
 echo.
-echo Uzak depodaki son degisiklikler aliniyor...
-git pull --rebase origin "%BRANCH%" >> "%LOG_FILE%" 2>&1
+echo Uzak depodaki son degisiklikler kontrol ediliyor...
+git fetch origin "%BRANCH%" >> "%LOG_FILE%" 2>&1
 if errorlevel 1 (
   popd
-  echo [HATA] git pull --rebase basarisiz. Muhtemel cakisma var. Ayrinti: %LOG_FILE%
+  echo [HATA] Uzak depo bilgileri alinamadi. Ayrinti: %LOG_FILE%
   pause
   exit /b 1
+)
+
+git rev-parse --verify "origin/%BRANCH%" >nul 2>&1
+if not errorlevel 1 (
+  git merge-base HEAD "origin/%BRANCH%" >nul 2>&1
+  if errorlevel 1 (
+    popd
+    echo [HATA] Yerel proje ile GitHub'daki "%BRANCH%" branci arasinda ortak gecmis yok.
+    echo [HATA] Guvenlik icin otomatik rebase durduruldu. Ayrinti: %LOG_FILE%
+    echo.
+    echo Cozum secenekleri:
+    echo 1. GitHub'daki mevcut projeyi korumak istiyorsaniz once depoyu clone ederek onun ustunde calisin.
+    echo 2. GitHub'daki mevcut icerigi bu yerel projeyle degistirmek istiyorsaniz force push gerekir.
+    pause
+    exit /b 1
+  )
+
+  git pull --rebase origin "%BRANCH%" >> "%LOG_FILE%" 2>&1
+  if errorlevel 1 (
+    popd
+    echo [HATA] git pull --rebase basarisiz. Muhtemel cakisma var. Ayrinti: %LOG_FILE%
+    pause
+    exit /b 1
+  )
 )
 
 echo GitHub'a push yapiliyor... [%BRANCH%]
