@@ -234,12 +234,16 @@
             <span class="nav-label">Ayarlar</span>
           </button>
           <div class="nav-submenu-static">
-            <button class="nav-link nav-sublink" data-view="settings" data-section-target="settingsInfoSection">
-              <span class="nav-label">Panel Bilgisi</span>
-            </button>
-            <button class="nav-link nav-sublink" data-view="settings" data-section-target="formDesignSection">
-              <span class="nav-label">Form Tasarimi</span>
-            </button>
+            <div class="nav-group-static" data-nav-group-wrap="settings-form-designs">
+              <button class="nav-link nav-group-toggle nav-sublink" type="button" data-nav-group="settings-form-designs">
+                <span class="nav-label">Form Tasarimlari</span>
+              </button>
+              <div class="nav-submenu-static">
+                <button class="nav-link nav-sublink" data-view="settings" data-section-target="formDesignSection">
+                  <span class="nav-label">Cari Extre</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </nav>
@@ -682,7 +686,7 @@
 
       <section class="view" id="view-products">
         <section class="products-layout">
-          <section class="panel form-panel products-form-panel" id="productFormSection">
+          <section class="panel form-panel products-form-panel products-subview-panel" id="productFormSection">
             <div class="panel-header-row compact">
               <div>
                 <h2>Yeni Urun Ekle</h2>
@@ -694,6 +698,9 @@
               <label><span>Urun / Kapak Adi</span><input name="name" type="text" required></label>
               <label><span>Kategori</span>
                 <select name="category" id="productCategorySelect" required></select>
+              </label>
+              <label><span>Urun Cinsi</span>
+                <select name="type" id="productTypeSelect"></select>
               </label>
               <label><span>Maliyet Tipi</span>
                 <select name="costType">
@@ -713,13 +720,16 @@
             </form>
           </section>
 
-          <section class="panel list-panel products-list-panel" id="productsListSection">
-            <div class="panel-header-row compact">
+          <section class="panel list-panel products-list-panel products-subview-panel" id="productsListSection" hidden>
+            <div class="products-list-hero">
               <div>
-                <h2>Urun Listesi</h2>
-                <p>Eklenen tum kapak ve urunler bu alanda listelenir.</p>
+                <h2>Tum Urun / Kapaklar</h2>
+                <p>Urunleri kategoriye gore filtreleyin, fiyatlarini izleyin ve satira tiklayarak hizlica duzenleyin.</p>
               </div>
-              <input id="productsSearch" class="table-search products-search" type="search" placeholder="Urun veya kategori ara">
+              <div class="products-list-tools">
+                <input id="productsSearch" class="table-search products-search" type="search" placeholder="Urun veya kategori ara">
+                <span class="products-list-tip">Ipucu: Bir satira tiklayarak duzenleme ekranina gecin.</span>
+              </div>
             </div>
             <div class="products-list-layout">
               <aside class="products-filter-panel">
@@ -752,7 +762,15 @@
                   </form>
                 </div>
               </aside>
-              <div class="card-list products-card-list" id="productsList"></div>
+              <section class="products-list-shell">
+                <div class="products-list-shell-head">
+                  <div>
+                    <h3>Liste Ekrani</h3>
+                    <p>Filtrelenen urunler, fiyat bilgileri ve hizli islem butonlari.</p>
+                  </div>
+                </div>
+                <div class="card-list products-card-list" id="productsList"></div>
+              </section>
             </div>
           </section>
         </section>
@@ -1006,16 +1024,6 @@
       </section>
 
       <section class="view" id="view-settings">
-        <section class="panel settings-panel" id="settingsInfoSection">
-          <h2>Panel Bilgisi</h2>
-          <p>Bu surum gercek veriyle calisir ve verileri tarayicinin IndexedDB veritabaninda saklar.</p>
-          <ul class="settings-list">
-            <li>Cari, teklif, siparis, urun, stok, muhasebe ve personel kayitlari eklenebilir.</li>
-            <li>Teklifler onaylandiginda siparise donusturulebilir.</li>
-            <li>Dashboard kartlari ve durum dagilimi otomatik guncellenir.</li>
-            <li>Veriler tarayiciyi kapatsaniz bile ayni cihazda kalir.</li>
-          </ul>
-        </section>
         <section id="formDesignSection" class="panel settings-panel">
           <div class="panel-header-row compact">
             <div>
@@ -1033,6 +1041,7 @@
               <button class="ghost-action" id="cariStatementDesignActivateBtn" type="button">Aktif Tasarimi Sec</button>
               <button class="ghost-action" id="cariStatementDesignDuplicateBtn" type="button">Kopyala</button>
               <button class="ghost-action danger-btn" id="cariStatementDesignDeleteBtn" type="button">Sil</button>
+              <button class="primary-btn settings-save-btn" id="cariStatementDesignSaveBtn" type="button">Degisiklikleri Kaydet</button>
             </div>
           </div>
           <div class="settings-form-list" id="cariStatementDesignList"></div>

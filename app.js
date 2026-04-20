@@ -52,11 +52,14 @@ const categoryTypeSubmitBtn = document.getElementById("categoryTypeSubmitBtn");
 const categoryTypeSelectedName = document.getElementById("categoryTypeSelectedName");
 const categoryTypeSelectedMeta = document.getElementById("categoryTypeSelectedMeta");
 const productCategorySelect = document.getElementById("productCategorySelect");
+const productTypeSelect = document.getElementById("productTypeSelect");
 const productEditId = document.getElementById("productEditId");
 const productImageFile = document.getElementById("productImageFile");
 const productImagePreview = document.getElementById("productImagePreview");
 const productResetBtn = document.getElementById("productResetBtn");
 const productSubmitBtn = document.getElementById("productSubmitBtn");
+const productFormSection = document.getElementById("productFormSection");
+const productsListSection = document.getElementById("productsListSection");
 const productsSearch = document.getElementById("productsSearch");
 const productsSelectionSummary = document.getElementById("productsSelectionSummary");
 const productFilterList = document.getElementById("productFilterList");
@@ -97,6 +100,7 @@ const cariStatementDesignCreateBtn = document.getElementById("cariStatementDesig
 const cariStatementDesignActivateBtn = document.getElementById("cariStatementDesignActivateBtn");
 const cariStatementDesignDuplicateBtn = document.getElementById("cariStatementDesignDuplicateBtn");
 const cariStatementDesignDeleteBtn = document.getElementById("cariStatementDesignDeleteBtn");
+const cariStatementDesignSaveBtn = document.getElementById("cariStatementDesignSaveBtn");
 const movementEditId = document.getElementById("movementEditId");
 const movementResetBtn = document.getElementById("movementResetBtn");
 const movementSubmitBtn = document.getElementById("movementSubmitBtn");
@@ -175,6 +179,7 @@ let selectedExpandedProductCategory = "";
 let selectedCategoryManager = "";
 let currentCariSubview = "list";
 let currentFinanceSubview = "movement";
+let currentProductsSubview = "form";
 let selectedStatementCariId = null;
 let productSortState = {
   key: "name",
@@ -185,6 +190,7 @@ const CARI_STATEMENT_DESIGNS_STORAGE_KEY = "silva-cari-statement-designs";
 const CARI_STATEMENT_ACTIVE_DESIGN_STORAGE_KEY = "silva-cari-statement-active-design-id";
 let cariStatementDesigns = [];
 let activeCariStatementDesignId = "";
+let hasPendingCariStatementDesignChanges = false;
 
 function setActiveNavLink(activeLink) {
   navLinks.forEach((link) => link.classList.toggle("active", link === activeLink));
@@ -216,6 +222,11 @@ navLinks.forEach((link) => link.addEventListener("click", () => {
     currentFinanceSubview = targetId === "cariStatementSection" ? "statement" : "movement";
     applyFinanceSubview(currentFinanceSubview);
   }
+  if (link.dataset.view === "products") {
+    const targetId = link.dataset.sectionTarget || "";
+    currentProductsSubview = targetId === "productsListSection" ? "list" : "form";
+    applyProductsSubview(currentProductsSubview);
+  }
   const targetId = link.dataset.sectionTarget;
   if (targetId) {
     window.requestAnimationFrame(() => {
@@ -240,11 +251,8 @@ cariStatementDesignList?.addEventListener("click", (event) => {
 });
 
 cariStatementDesignName?.addEventListener("input", () => {
-  const design = getActiveCariStatementDesign();
-  if (!design) return;
-  design.name = String(cariStatementDesignName.value || "").trim() || "Yeni Form Tasarimi";
-  saveCariStatementDesignStore();
-  renderCariStatementDesignList();
+  markCariStatementDesignAsDirty();
+  refreshCariStatementPreview();
 });
 
 cariStatementDesignCreateBtn?.addEventListener("click", () => {
@@ -262,6 +270,7 @@ cariStatementDesignActivateBtn?.addEventListener("click", () => {
 
 cariStatementDesignDuplicateBtn?.addEventListener("click", duplicateActiveCariStatementDesign);
 cariStatementDesignDeleteBtn?.addEventListener("click", deleteActiveCariStatementDesign);
+cariStatementDesignSaveBtn?.addEventListener("click", saveActiveCariStatementDesignChanges);
 
 primaryActionBtn?.addEventListener("click", () => {
   const targetMap = {
@@ -288,6 +297,10 @@ primaryActionBtn?.addEventListener("click", () => {
   if (viewName === "finance") {
     currentFinanceSubview = "movement";
     applyFinanceSubview(currentFinanceSubview);
+  }
+  if (viewName === "products") {
+    currentProductsSubview = "form";
+    applyProductsSubview(currentProductsSubview);
   }
   form?.scrollIntoView({ behavior: "smooth", block: "start" });
   form?.querySelector("input, select")?.focus();
@@ -440,6 +453,7 @@ forms.product?.addEventListener("submit", async (event) => {
   }
   const payload = {
     name: data.name,
+    type: data.type || data.name,
     category: data.category,
     costType: data.costType || "M2",
     costAmount: parseMoneyInput(data.costAmount),
@@ -473,6 +487,7 @@ function buildProductApiPayload(payload = {}) {
   const unit = payload.unit || payload.productTypeUnit || "M2";
   return {
     name: payload.name || "",
+    type: payload.type || payload.name || "",
     category: payload.category || "Kategorisiz",
     purchase_price: Number(payload.purchasePrice ?? payload.purchase_price ?? costAmount) || 0,
     sale_price: Number(payload.salePrice ?? payload.sale_price ?? costAmount) || 0,
@@ -805,7 +820,10 @@ categoryTypeList?.addEventListener("click", async (event) => {
     await refreshUI();
   }
 });
-productCategorySelect?.addEventListener("change", () => renderProductCategories(cache.products || []));
+productCategorySelect?.addEventListener("change", () => {
+  syncProductTypeSelect(cache.products || [], productCategorySelect.value);
+  renderProductCategories(cache.products || []);
+});
 productFilterList?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-product-filter]");
   if (!button) return;
@@ -893,6 +911,9 @@ function setActiveView(viewName) {
   if (viewName === "finance") {
     applyFinanceSubview(currentFinanceSubview);
   }
+  if (viewName === "products") {
+    applyProductsSubview(currentProductsSubview);
+  }
   sidebar?.classList.remove("open");
 }
 
@@ -906,6 +927,15 @@ function applyFinanceSubview(mode) {
   const showMovement = mode === "movement";
   if (movementFormSection) movementFormSection.hidden = !showMovement;
   if (cariStatementSection) cariStatementSection.hidden = showMovement;
+}
+
+function applyProductsSubview(mode) {
+  const showList = mode === "list";
+  if (showList) {
+    productSortState = { key: "name", dir: "asc" };
+  }
+  if (productFormSection) productFormSection.hidden = showList;
+  if (productsListSection) productsListSection.hidden = !showList;
 }
 
 function setDefaultDates() {
@@ -2400,6 +2430,22 @@ function readCariStatementDesignConfigFromForm() {
   return cariStatementOutputForm ? formToObject(cariStatementOutputForm) : {};
 }
 
+function setCariStatementSaveButtonState() {
+  if (!cariStatementDesignSaveBtn) return;
+  cariStatementDesignSaveBtn.disabled = !hasPendingCariStatementDesignChanges;
+  cariStatementDesignSaveBtn.textContent = hasPendingCariStatementDesignChanges ? "Degisiklikleri Kaydet" : "Kaydedildi";
+}
+
+function markCariStatementDesignAsDirty() {
+  hasPendingCariStatementDesignChanges = true;
+  setCariStatementSaveButtonState();
+}
+
+function clearCariStatementDesignDirtyState() {
+  hasPendingCariStatementDesignChanges = false;
+  setCariStatementSaveButtonState();
+}
+
 function updateActiveCariStatementDesignFromForm() {
   const design = getActiveCariStatementDesign();
   if (!design || !cariStatementOutputForm) return;
@@ -2411,6 +2457,12 @@ function updateActiveCariStatementDesignFromForm() {
   activeCariStatementDesignId = design.id;
   saveCariStatementDesignStore();
   renderCariStatementDesignList();
+  clearCariStatementDesignDirtyState();
+}
+
+function saveActiveCariStatementDesignChanges() {
+  updateActiveCariStatementDesignFromForm();
+  refreshCariStatementPreview();
 }
 
 function selectCariStatementDesign(designId) {
@@ -2426,6 +2478,7 @@ function selectCariStatementDesign(designId) {
   }
   saveCariStatementDesignStore();
   renderCariStatementDesignList();
+  clearCariStatementDesignDirtyState();
   refreshCariStatementPreview();
 }
 
@@ -2442,6 +2495,7 @@ function ensureCariStatementDesignStore() {
   }
   saveCariStatementDesignStore();
   renderCariStatementDesignList();
+  clearCariStatementDesignDirtyState();
   refreshCariStatementPreview();
 }
 
@@ -2456,6 +2510,7 @@ function createCariStatementDesign(name = "", sourceConfig = null) {
   applyCariStatementDesignToForm(newDesign);
   saveCariStatementDesignStore();
   renderCariStatementDesignList();
+  clearCariStatementDesignDirtyState();
   refreshCariStatementPreview();
 }
 
@@ -2481,11 +2536,12 @@ function deleteActiveCariStatementDesign() {
   }
   saveCariStatementDesignStore();
   renderCariStatementDesignList();
+  clearCariStatementDesignDirtyState();
   refreshCariStatementPreview();
 }
 
 function handleCariStatementDesignFormChange() {
-  updateActiveCariStatementDesignFromForm();
+  markCariStatementDesignAsDirty();
   refreshCariStatementPreview();
 }
 
@@ -2925,6 +2981,30 @@ function syncProductCategorySelect(records, selectedValue = "") {
   }
 }
 
+function getProductTypesByCategory(records, category) {
+  if (!category) return [];
+  return [...new Set((records || [])
+    .filter((item) => item.category === category)
+    .map((item) => item.type || item.name)
+    .filter(Boolean))]
+    .sort((left, right) => left.localeCompare(right, "tr"));
+}
+
+function syncProductTypeSelect(records, selectedCategory = "", selectedType = "") {
+  if (!productTypeSelect) return;
+  const category = selectedCategory || productCategorySelect?.value || "";
+  const types = getProductTypesByCategory(records, category);
+  const hasTypes = types.length > 0;
+  productTypeSelect.innerHTML = [
+    `<option value="">${hasTypes ? "Urun Cinsi Secin" : "Bu kategori icin urun cinsi yok"}</option>`,
+    ...types.map((typeName) => `<option value="${escapeHtml(typeName)}">${escapeHtml(typeName)}</option>`),
+  ].join("");
+  productTypeSelect.disabled = !hasTypes;
+  if (selectedType && types.includes(selectedType)) {
+    productTypeSelect.value = selectedType;
+  }
+}
+
 function renderProductCategories(records) {
   const categories = collectProductCategories(records);
   const selectedValue = productCategorySelect?.value || "";
@@ -2932,6 +3012,7 @@ function renderProductCategories(records) {
     selectedCategoryManager = categories[0] || "";
   }
   syncProductCategorySelect(records, selectedValue);
+  syncProductTypeSelect(records, productCategorySelect?.value || "", productTypeSelect?.value || "");
   const productsMarkup = categories.length ? categories.map((category) => `
     <article class="product-category-item ${category === selectedValue ? "active" : ""}">
       <button class="product-category-pick" type="button" data-category-pick="${escapeHtml(category)}">
@@ -3292,6 +3373,7 @@ function resetProductFormEditor() {
   if (productCategorySelect) {
     syncProductCategorySelect(cache.products || []);
   }
+  syncProductTypeSelect(cache.products || []);
   renderProductCategories(cache.products || []);
   if (productImageFile) productImageFile.value = "";
   renderProductImagePreview("");
@@ -3300,6 +3382,9 @@ function resetProductFormEditor() {
 
 function fillProductForm(product) {
   if (!forms.product || !product) return;
+  setActiveView("products");
+  currentProductsSubview = "form";
+  applyProductsSubview(currentProductsSubview);
   const nameInput = forms.product.querySelector("[name='name']");
   const costTypeInput = forms.product.querySelector("[name='costType']");
   const costAmountInput = forms.product.querySelector("[name='costAmount']");
@@ -3309,6 +3394,7 @@ function fillProductForm(product) {
   if (productCategorySelect) {
     syncProductCategorySelect(cache.products || [], product.category || "");
   }
+  syncProductTypeSelect(cache.products || [], product.category || "", product.type || product.name || "");
   renderProductCategories(cache.products || []);
   if (costTypeInput) costTypeInput.value = getProductDisplayBasis(product);
   if (costAmountInput) costAmountInput.value = formatMoneyInputValue(getProductDisplayPrice(product));
@@ -3360,31 +3446,25 @@ function renderProducts(records) {
     `;
   }
   target.innerHTML = sorted.length ? `
-    <div class="products-table">
-      <div class="products-table-head">
-        <span>Gorsel</span>
-        <button type="button" data-product-sort="name">Urun ${getProductSortLabel("name")}</button>
-        <button type="button" data-product-sort="category">Kategori ${getProductSortLabel("category")}</button>
-        <button type="button" data-product-sort="unit">Birim ${getProductSortLabel("unit")}</button>
-        <button type="button" data-product-sort="costType">Fiyat Tipi ${getProductSortLabel("costType")}</button>
-        <button type="button" data-product-sort="costAmount">Fiyat ${getProductSortLabel("costAmount")}</button>
-        <button type="button" data-product-sort="costNotes">Not ${getProductSortLabel("costNotes")}</button>
-        <span class="products-export-cell"><button class="ghost-action compact-action" type="button" id="productsExportBtn">Excel'e Aktar</button></span>
+    <div class="products-grid-toolbar">
+      <span class="products-grid-order">Varsayilan siralama: A'dan Z'ye</span>
+      <button class="ghost-action compact-action" type="button" id="productsExportBtn">Excel'e Aktar</button>
+    </div>
+    <div class="products-table products-table-compact">
+      <div class="products-table-head products-table-head-simple">
+        <span>Urun Cinsi</span>
+        <span>Grubu</span>
+        <span>Birim</span>
+        <span>Fiyat</span>
+        <span>Islem</span>
       </div>
       ${sorted.map((item) => `
-        <div class="products-table-row" data-product-edit="${item.id}">
-          <span class="products-cell visual">
-            ${item.imageUrl
-              ? `<button class="product-image-open" type="button" data-product-image-open="${escapeHtml(item.imageUrl)}"><img class="product-thumb" src="${escapeHtml(resolveProductImageUrl(item.imageUrl))}" alt="${escapeHtml(item.name)}"></button>`
-              : `<div class="product-thumb placeholder">${escapeHtml((item.name || "?").slice(0, 1).toUpperCase())}</div>`}
-          </span>
+        <div class="products-table-row products-table-row-simple ${productEditId?.value === String(item.id) ? "is-active" : ""}" data-product-edit="${item.id}">
           <span class="products-cell"><strong>${escapeHtml(item.name)}</strong></span>
           <span class="products-cell">${escapeHtml(item.category || "-")}</span>
           <span class="products-cell">${escapeHtml(item.unit || "-")}</span>
-          <span class="products-cell">${escapeHtml(getProductDisplayBasis(item))}</span>
-          <span class="products-cell">${formatCurrency(getProductDisplayPrice(item))}</span>
-          <span class="products-cell note">${escapeHtml(item.costNotes || "-")}</span>
-          <span class="products-cell actions">
+          <span class="products-cell cell-price">${formatCurrency(getProductDisplayPrice(item))}</span>
+          <span class="products-cell cell-actions">
             <button class="ghost-action compact-action" type="button">Duzenle</button>
             <button class="ghost-action delete-btn compact-action" data-store="${STORES.products}" data-id="${item.id}">Sil</button>
           </span>
@@ -3835,6 +3915,7 @@ function normalizeProducts(rows) {
   return (rows || []).map((row) => ({
     id: row.id,
     name: row.name,
+    type: row.type || row.name,
     category: row.category,
     purchasePrice: Number(row.purchase_price || 0),
     salePrice: Number(row.sale_price || 0),

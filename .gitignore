@@ -19,6 +19,7 @@ server/backend/data/
 logs/
 *.log
 server/backend/logs/
+.git_eski/
 
 # Build outputs
 dist/
@@ -40,3 +41,5 @@ tmp/
 temp/
 *.tmp
 *.bak
+tmp_excel_inspect/
+tools/*.rar
