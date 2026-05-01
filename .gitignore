@@ -42,4 +42,12 @@ temp/
 *.tmp
 *.bak
 tmp_excel_inspect/
+.tmp.drive*/
+*.zip
+*.rar
+test*.txt
+TEST*.txt
+test *.txt
+teklif-formu-ornek.png
+server/backend/uploads/
 tools/*.rar
