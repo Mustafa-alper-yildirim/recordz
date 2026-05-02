@@ -12,6 +12,19 @@ const STORES = {
   movements: "movements",
 };
 const api = window.silvaApi;
+const runtime = window.erpRuntime || {
+  sortRecordsByCreatedAt(records) {
+    return Array.isArray(records) ? [...records] : [];
+  },
+  async loadStoreEntries(entries, loader) {
+    const settledEntries = await Promise.all(entries.map(async ([key, storeName]) => [key, await loader(storeName)]));
+    return Object.fromEntries(settledEntries);
+  },
+  runRenderQueue(steps) {
+    steps.forEach(([, render]) => render());
+  },
+  registerGlobalDiagnostics() {},
+};
 
 const menuToggle = document.getElementById("menuToggle");
 const sidebar = document.getElementById("sidebar");
@@ -1863,16 +1876,22 @@ productBulkUpdateForm?.addEventListener("submit", async (event) => {
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
-  setDefaultDates();
-  syncOfferDefaults();
-  initializeOfferLines(createDefaultOfferRows());
-  ensureCariStatementDesignStore();
-  ensureOfferFormDesignStore();
-  initializeUiStyleSettings();
-  await ensureAutoLogin();
-  await applyAuthState();
-  if (getSession()) {
-    await refreshUI();
+  try {
+    setDefaultDates();
+    syncOfferDefaults();
+    initializeOfferLines(createDefaultOfferRows());
+    ensureCariStatementDesignStore();
+    ensureOfferFormDesignStore();
+    initializeUiStyleSettings();
+    runtime.registerGlobalDiagnostics(reportRuntimeProblem);
+    await ensureAutoLogin();
+    await applyAuthState();
+    if (getSession()) {
+      await refreshUI();
+    }
+  } catch (error) {
+    reportRuntimeProblem("bootstrap", error);
+    authError.textContent = `Program baslatilamadi: ${error?.message || "Bilinmeyen hata"}`;
   }
 });
 
@@ -3102,7 +3121,8 @@ async function getAllRecords(storeName) {
       default:
         return [];
     }
-  } catch {
+  } catch (error) {
+    console.error(`[data-load] ${storeName} yuklenemedi`, error);
     return [];
   }
 }
@@ -3246,38 +3266,61 @@ async function seedInitialData() {
 }
 
 async function loadAllStores() {
-  const entries = await Promise.all(Object.entries(STORES).map(async ([key, storeName]) => [key, await getAllRecords(storeName)]));
-  return Object.fromEntries(entries);
+  return runtime.loadStoreEntries(
+    Object.entries(STORES),
+    getAllRecords,
+    (key, storeName, error) => {
+      console.error(`[store-load] ${key}/${storeName} okunamadi`, error);
+    },
+  );
+}
+
+function sortCacheCollections(data = {}) {
+  Object.keys(data).forEach((key) => {
+    data[key] = runtime.sortRecordsByCreatedAt(data[key]);
+  });
 }
 
 async function refreshUI() {
   cache = await loadAllStores();
-  Object.keys(cache).forEach((key) => cache[key].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
+  sortCacheCollections(cache);
   await ensureDemoFlow();
-  Object.keys(cache).forEach((key) => cache[key].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
-  renderDashboard(cache);
-  renderCrm(cache.crm || []);
-  renderCari(cache.cari, cache.movements, cache.orders);
-  renderCariSelect(cache.cari);
-  renderMovementCariSelect(cache.cari);
-  renderMovements(cache.movements, cache.cari);
-  renderOffers(cache.offers);
-  renderOfferDashboardShell(cache.offers);
-  renderOfferPrintSelect(cache.offers);
+  sortCacheCollections(cache);
+  runtime.runRenderQueue([
+    ["dashboard", () => renderDashboard(cache)],
+    ["crm", () => renderCrm(cache.crm || [])],
+    ["cari", () => renderCari(cache.cari, cache.movements, cache.orders)],
+    ["cari-select", () => renderCariSelect(cache.cari)],
+    ["movement-cari-select", () => renderMovementCariSelect(cache.cari)],
+    ["movements", () => renderMovements(cache.movements, cache.cari)],
+    ["offers", () => renderOffers(cache.offers)],
+    ["offers-shell", () => renderOfferDashboardShell(cache.offers)],
+    ["offer-print-select", () => renderOfferPrintSelect(cache.offers)],
+  ], reportRuntimeProblem);
   expandedOfferProductCategories = [];
-  renderOfferProductsPicker(cache.products);
-  renderQuickOrderProductsPicker(cache.products);
-  renderOrdersTable(cache.orders);
-  renderWorkOrdersTable(cache.workOrders || []);
-  syncPanjurTemplateModule();
-  renderProducts(cache.products);
-  renderStocks(cache.stocks);
-  renderFinance(cache.finance, cache.products, cache.orders);
-  renderReports(cache);
-  renderPersonnel(cache.personnel);
-  renderCariStatements(cache.cari, cache.movements, cache.orders);
-  bindActions();
-  initializeCariFormFromStoredState();
+  runtime.runRenderQueue([
+    ["offer-products-picker", () => renderOfferProductsPicker(cache.products)],
+    ["quick-order-products-picker", () => renderQuickOrderProductsPicker(cache.products)],
+    ["orders", () => renderOrdersTable(cache.orders)],
+    ["work-orders", () => renderWorkOrdersTable(cache.workOrders || [])],
+    ["panjur-bridge", () => syncPanjurTemplateModule()],
+    ["products", () => renderProducts(cache.products)],
+    ["stocks", () => renderStocks(cache.stocks)],
+    ["finance", () => renderFinance(cache.finance, cache.products, cache.orders)],
+    ["reports", () => renderReports(cache)],
+    ["personnel", () => renderPersonnel(cache.personnel)],
+    ["cari-statements", () => renderCariStatements(cache.cari, cache.movements, cache.orders)],
+    ["actions", () => bindActions()],
+    ["cari-form-state", () => initializeCariFormFromStoredState()],
+  ], reportRuntimeProblem);
+}
+
+function reportRuntimeProblem(scope, error) {
+  const message = error?.message || String(error || "Bilinmeyen hata");
+  console.error(`[ui-runtime] ${scope}`, error);
+  if (authError && !getSession()) {
+    authError.textContent = `Arayuz hatasi: ${message}`;
+  }
 }
 
 async function ensureDemoFlow() {
@@ -6914,7 +6957,7 @@ function getOfferFlowDescription(key) {
   }[key] || "";
 }
 
-function normalizeOfferStatusLabel(status = "") {
+function normalizeOfferStatusLabelLegacy(status = "") {
   const value = String(status || "").trim();
   if (value === "Onaylandi") return "Onaylandı";
   if (value === "Iptal") return "İptal";
@@ -6936,11 +6979,11 @@ function getOfferStatusClass(status = "") {
   return `status-${normalized || "taslak"}`;
 }
 
-function canConvertOfferToOrder(status = "") {
+function canConvertOfferToOrderLegacy(status = "") {
   return ORDER_CONVERTIBLE_OFFER_STATUSES.includes(normalizeOfferStatusLabel(status));
 }
 
-function createOfferStatusPill(status = "") {
+function createOfferStatusPillLegacy(status = "") {
   const label = normalizeOfferStatusLabel(status);
   return `<b class="status-pill ${getOfferStatusClass(label)}">${escapeHtml(label)}</b>`;
 }
