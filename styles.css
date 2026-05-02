@@ -1203,10 +1203,10 @@ body.sidebar-collapsed .nav-group-static {
 .cari-table-row {
   display: grid;
   box-sizing: border-box;
-  grid-template-columns: 76px minmax(152px, 1.18fr) 98px 88px 102px 96px 94px 206px;
+  grid-template-columns: 86px minmax(150px, 1.12fr) 102px 112px 92px 104px 98px 102px 214px;
   gap: 0;
   align-items: center;
-  min-width: 912px;
+  min-width: 1010px;
 }
 
 .cari-table-head {
@@ -1364,6 +1364,12 @@ body.sidebar-collapsed .nav-group-static {
   font-size: 9.5px;
 }
 
+.cari-cell.cell-type {
+  font-size: 10px;
+  color: #4d6277;
+  white-space: nowrap;
+}
+
 .cari-table-row.is-selected .cari-cell:not(.cell-money),
 .cari-table-row.is-selected .cari-cell.cell-name small,
 .cari-table-row.is-selected .cari-cell.cell-code small,
@@ -1428,17 +1434,31 @@ body.sidebar-collapsed .nav-group-static {
   white-space: nowrap;
 }
 
-.cari-row-status.is-debt {
-  background: #fff1ef;
-  color: #c24c33;
+.cari-status-stack {
+  display: grid;
+  gap: 2px;
+  justify-items: flex-start;
 }
 
-.cari-row-status.is-credit {
-  background: #ebf8f1;
-  color: #1a8d63;
+.cari-status-stack small {
+  color: #718397;
+  font-size: 8px;
+  line-height: 1.2;
+}
+
+.cari-row-status.is-active {
+  background: #ecf8f2;
+  color: #1b8d63;
+}
+
+.cari-row-status.is-passive {
+  background: #eef2f6;
+  color: #6b7b8d;
 }
 
 .cari-row-status.is-risk {
+  background: #fff1ef;
+  color: #c24c33;
   box-shadow: inset 0 0 0 1px rgba(209, 67, 67, 0.22);
 }
 
@@ -1490,6 +1510,11 @@ body.sidebar-collapsed .nav-group-static {
   background: #d14343;
   color: #ffffff;
   box-shadow: 0 6px 14px rgba(209, 67, 67, 0.24);
+}
+
+.cari-table-row.is-selected .cari-status-stack small,
+.cari-table-row.is-selected.is-risk .cari-status-stack small {
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .cari-sticky-bar {
@@ -1578,6 +1603,18 @@ body.sidebar-collapsed .nav-group-static {
   gap: 10px;
 }
 
+.cari-detail-head-main {
+  min-width: 0;
+}
+
+.cari-detail-head-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .cari-detail-head h3 {
   margin: 0;
   font-size: 14px;
@@ -1651,6 +1688,29 @@ body.sidebar-collapsed .nav-group-static {
   min-height: 148px;
 }
 
+.cari-detail-stack {
+  display: grid;
+  gap: 7px;
+}
+
+.cari-detail-subhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.cari-detail-subhead strong {
+  color: #203246;
+  font-size: 11px;
+}
+
+.cari-detail-subhead span {
+  color: #708396;
+  font-size: 9px;
+}
+
 .cari-detail-list {
   display: grid;
   gap: 7px;
@@ -1689,6 +1749,35 @@ body.sidebar-collapsed .nav-group-static {
 .cari-detail-notes-panel p {
   margin: 6px 0 0;
   line-height: 1.45;
+}
+
+.cari-detail-address-grid,
+.cari-detail-finance-grid {
+  display: grid;
+  gap: 7px;
+}
+
+.cari-detail-address-card,
+.cari-detail-finance-card {
+  padding: 10px;
+  border: 1px solid #e5edf4;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.cari-detail-address-card strong,
+.cari-detail-finance-card strong {
+  display: block;
+  color: #203246;
+  font-size: 10.5px;
+}
+
+.cari-detail-address-card p,
+.cari-detail-finance-card p {
+  margin: 6px 0 0;
+  color: #708396;
+  font-size: 9.5px;
+  line-height: 1.5;
 }
 
 .is-credit-text {
@@ -3601,6 +3690,43 @@ input[data-money="1"] {
   color: #b24a4a;
   font-size: 12px;
   line-height: 1.55;
+}
+
+.cari-advanced-fields {
+  margin-top: 8px;
+  border: 1px dashed #d4dfeb;
+  border-radius: 16px;
+  background: #f9fbfd;
+  padding: 12px 13px 13px;
+}
+
+.cari-advanced-fields summary {
+  cursor: pointer;
+  color: #47607b;
+  font-size: 12px;
+  font-weight: 800;
+  list-style: none;
+}
+
+.cari-advanced-fields summary::-webkit-details-marker {
+  display: none;
+}
+
+.cari-advanced-fields summary::before {
+  content: "+";
+  display: inline-flex;
+  width: 16px;
+  justify-content: center;
+  margin-right: 6px;
+  color: #1f5fd1;
+}
+
+.cari-advanced-fields[open] summary::before {
+  content: "-";
+}
+
+.cari-advanced-fields > .cari-form-grid {
+  margin-top: 12px;
 }
 
 .cari-address-list {
@@ -6965,7 +7091,7 @@ input[data-money="1"] {
 
 .quick-order-line-grid {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) 110px 140px auto;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
   align-items: end;
 }
@@ -6986,6 +7112,10 @@ input[data-money="1"] {
   padding: 0 10px;
   background: #fff;
   color: #1f3349;
+}
+
+.quick-order-line-grid button {
+  min-height: 36px;
 }
 
 .quick-order-items-table {
@@ -8352,7 +8482,7 @@ input[data-money="1"] {
 
   .cari-table-head,
   .cari-table-row {
-    min-width: 780px;
+    min-width: 920px;
   }
 
   .reports-panel-head,

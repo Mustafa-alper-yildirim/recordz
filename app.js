@@ -1,16 +1,25 @@
-const STORES = {
-  cari: "cari",
-  crm: "crm",
-  offers: "offers",
-  orders: "orders",
-  workOrders: "workOrders",
-  panjurJobs: "panjurJobs",
-  products: "products",
-  stocks: "stocks",
-  finance: "finance",
-  personnel: "personnel",
-  movements: "movements",
-};
+const {
+  CRM_STATUSES,
+  OFFER_STATUSES,
+  ORDER_CONVERTIBLE_OFFER_STATUSES,
+  ORDER_STATUSES,
+  PRODUCT_CALCULATION_LABELS,
+  PRODUCT_CALCULATION_TYPES,
+  STORES,
+  viewMeta,
+} = window.erpConstants;
+const {
+  escapeHtml,
+  formToObject,
+  formatCompactCurrency,
+  formatCurrency,
+  formatCurrencyByCode,
+  formatDate,
+  formatDateTime,
+  parseDecimalInput,
+  parseMoneyInput,
+  shortenText,
+} = window.erpHelpers;
 const api = window.silvaApi;
 const runtime = window.erpRuntime || {
   sortRecordsByCreatedAt(records) {
@@ -25,6 +34,7 @@ const runtime = window.erpRuntime || {
   },
   registerGlobalDiagnostics() {},
 };
+const appState = window.erpState.createAppState();
 
 const menuToggle = document.getElementById("menuToggle");
 const sidebar = document.getElementById("sidebar");
@@ -60,6 +70,10 @@ const quickOrderItemLength = document.getElementById("quickOrderItemLength");
 const quickOrderItemQty = document.getElementById("quickOrderItemQty");
 const quickOrderItemColor = document.getElementById("quickOrderItemColor");
 const quickOrderItemMaterial = document.getElementById("quickOrderItemMaterial");
+const quickOrderVariantMaterial = document.getElementById("quickOrderVariantMaterial");
+const quickOrderVariantCoating = document.getElementById("quickOrderVariantCoating");
+const quickOrderVariantThickness = document.getElementById("quickOrderVariantThickness");
+const quickOrderVariantWoodType = document.getElementById("quickOrderVariantWoodType");
 const quickOrderItemNote = document.getElementById("quickOrderItemNote");
 const quickOrderItemPrice = document.getElementById("quickOrderItemPrice");
 const quickOrderDiscountRate = document.getElementById("quickOrderDiscountRate");
@@ -292,6 +306,7 @@ const cariDetailBalance = document.getElementById("cariDetailBalance");
 const cariDetailLimit = document.getElementById("cariDetailLimit");
 const cariDetailTaxNumber = document.getElementById("cariDetailTaxNumber");
 const cariDetailDiscount = document.getElementById("cariDetailDiscount");
+const cariDetailOfferBtn = document.getElementById("cariDetailOfferBtn");
 const cariDetailTabContent = document.getElementById("cariDetailTabContent");
 const cariDetailTabs = [...document.querySelectorAll("[data-cari-detail-tab]")];
 const roleControlledViews = {
@@ -308,31 +323,6 @@ const forms = {
   personnel: document.getElementById("personnelForm"),
   movement: document.getElementById("movementForm"),
 };
-const OFFER_STATUSES = {
-  draft: { label: "Taslak", color: "#65758b", next: ["sent", "cancelled"] },
-  sent: { label: "Gonderildi", color: "#2f6fed", next: ["pending", "revised", "approved", "rejected", "expired", "cancelled"] },
-  pending: { label: "Beklemede", color: "#bb8500", next: ["revised", "approved", "rejected", "expired", "cancelled"] },
-  revised: { label: "Revize", color: "#9356da", next: ["sent", "cancelled"] },
-  approved: { label: "Onaylandi", color: "#20a966", next: ["converted", "cancelled"] },
-  rejected: { label: "Reddedildi", color: "#c23b3b", next: [] },
-  expired: { label: "Suresi Gecti", color: "#cf6c24", next: ["revised", "cancelled"] },
-  converted: { label: "Siparise Donustu", color: "#16836f", next: [] },
-  cancelled: { label: "Iptal", color: "#65758b", next: [] },
-};
-const CRM_STATUSES = {
-  new: { label: "Yeni", color: "#64748b" },
-  called: { label: "Arandi", color: "#2563eb" },
-  meeting: { label: "Gorusuldu", color: "#7c3aed" },
-  measurement_waiting: { label: "Olcu Bekleniyor", color: "#d97706" },
-  quote_required: { label: "Teklif Hazirlanacak", color: "#ea580c" },
-  quote_sent: { label: "Teklif Gonderildi", color: "#0d9488" },
-  follow_up: { label: "Takipte", color: "#0891b2" },
-  won: { label: "Kazanildi", color: "#16a34a" },
-  lost: { label: "Kaybedildi", color: "#dc2626" },
-};
-const ORDER_CONVERTIBLE_OFFER_STATUSES = ["approved"];
-const ORDER_STATUSES = ["Yeni", "Onaylandi", "Olcu Alindi", "Uretim Planlandi", "Uretimde", "Kalite Kontrol", "Sevkiyata Hazir", "Sevk Edildi", "Teslim Edildi", "Tamamlandi", "Iptal"];
-
 const offerLineInputs = {
   height: document.getElementById("offerLineHeight"),
   width: document.getElementById("offerLineWidth"),
@@ -349,26 +339,7 @@ const offerLineInputs = {
   note: document.getElementById("offerLineNote"),
 };
 
-const viewMeta = {
-  dashboard: ["Silva Ahsap Kapak Imalat Programi", "Teklif, siparis, maliyet ve personel surecini tek panelden yonetin.", "+ Yeni Teklif"],
-  crm: ["CRM", "Potansiyel musteri, gorusme ve satis firsati takibini yonetin.", "+ Potansiyel"],
-  cari: ["Cari Yonetimi", "Musteri ve tedarikci kayitlarini, limitleri ve iskontolari yonetin.", "+ Yeni Cari"],
-  offers: ["Teklif Yonetimi", "Kapak cinsi, olcu, termin ve sozlesme detayi ile teklif olusturun.", "+ Yeni Teklif"],
-  orders: ["Siparis Takibi", "Onayli tekliflerden veya teklifsiz hizli kayittan olusan operasyon siparislerini izleyin.", "+ Teklifsiz Hizli Siparis"],
-  "work-orders": ["Uretim Emirleri", "Kesim, CNC, kenar bant ve sevkiyat asamalarini is emri bazli takip edin.", "Siparislere Don"],
-  panjur: ["Panjur Kapak Sablonu", "Siparis bagli panjur kapak olculerini, serenleri ve kesim listelerini parametrik yonetin.", "+ Panjur Kaydi"],
-  categories: ["Kategori Yonetimi", "Kapak ve urun kategorilerini ayri ekranda ekleyin ve duzenleyin.", "+ Yeni Kategori"],
-  products: ["Urun ve Kapak Fiyatlari", "Alis, satis ve m2 fiyatlarini detayli yonetin.", "+ Yeni Urun"],
-  stocks: ["Stok ve Hammadde", "Hammadde ve stok kalemlerini miktar ve birim fiyatlariyla izleyin.", "+ Yeni Stok"],
-  finance: ["Cari Hareket ve Takip", "Cari borc ve alacak dekontlarini girin, cari durumunu tablo halinde izleyin.", "+ Yeni Dekont"],
-  reports: ["Raporlar", "Siparis, ciro, cari ve personel raporlarini bu ekranda izleyin.", "+ Rapor Olustur"],
-  personnel: ["Personel Takibi", "Ozluk, maas ve mesai bilgilerini kayit altina alin.", "+ Yeni Personel"],
-  users: ["Kullanici Yonetimi", "Kullanici, rol ve yetki ekranlari burada yer alacak.", "+ Yeni Kullanici"],
-  sms: ["Sms Modulu", "Sms sablonlari ve gonderim surecleri burada yonetilecek.", "+ Yeni Sms"],
-  settings: ["Ayarlar", "Programin kullanim notlari ve demo sifirlama islemleri.", "Panele Don"],
-};
-
-let currentView = "dashboard";
+let currentView = appState.currentView;
 let cache = {};
 let selectedCariId = null;
 let currentCariFormTab = "general";
@@ -377,13 +348,13 @@ let selectedMovementId = null;
 let selectedProductCategoryFilter = "";
 let selectedExpandedProductCategory = "";
 let selectedCategoryManager = "";
-let currentCariSubview = "list";
-let currentFinanceSubview = "movement";
-let currentProductsSubview = "form";
-let currentCategoriesSubview = "add";
-let currentOffersSubview = "form";
-let currentOrdersSubview = "list";
-let currentSettingsSubview = "cari-statement";
+let currentCariSubview = appState.currentCariSubview;
+let currentFinanceSubview = appState.currentFinanceSubview;
+let currentProductsSubview = appState.currentProductsSubview;
+let currentCategoriesSubview = appState.currentCategoriesSubview;
+let currentOffersSubview = appState.currentOffersSubview;
+let currentOrdersSubview = appState.currentOrdersSubview;
+let currentSettingsSubview = appState.currentSettingsSubview;
 const UI_STYLE_STORAGE_KEY = "ui-style-config-v1";
 const UI_STYLE_PRESETS = [
   { id: "ocean", name: "Okyanus", fontFamily: "Inter, sans-serif", primaryColor: "#0969da", sidebarBg: "#061a33", pageBg: "#f4f7fb", cardBg: "#ffffff", radius: "16" },
@@ -408,14 +379,6 @@ let productSortState = {
   dir: "asc",
 };
 const PRODUCT_CATEGORY_STORAGE_KEY = "silva-product-categories";
-const PRODUCT_CALCULATION_TYPES = ["sqm", "piece", "linear_meter", "fixed", "labor"];
-const PRODUCT_CALCULATION_LABELS = {
-  sqm: "m2",
-  piece: "Adet",
-  linear_meter: "Metretul",
-  fixed: "Sabit",
-  labor: "Iscilik",
-};
 const CARI_STATEMENT_DESIGNS_STORAGE_KEY = "silva-cari-statement-designs";
 const CARI_STATEMENT_ACTIVE_DESIGN_STORAGE_KEY = "silva-cari-statement-active-design-id";
 const CARI_FORM_DRAFT_STORAGE_KEY = "silva-cari-form-draft";
@@ -446,6 +409,71 @@ function setActiveNavLink(activeLink) {
   navLinks.forEach((link) => link.classList.toggle("active", link === activeLink));
 }
 
+const cariModule = window.erpCariModule.createCariModule({
+  formSection: cariFormSection,
+  listSection: cariListSection,
+});
+const financeModule = window.erpFinanceModule.createFinanceModule({
+  movementFormSection,
+  cariStatementSection,
+});
+const productsModule = window.erpProductsModule.createProductsModule({
+  categoryAddSection,
+  categoryListSection,
+  productFormSection,
+  productsListSection,
+  resetProductSort: () => {
+    productSortState = { key: "name", dir: "asc" };
+  },
+});
+const offersModule = window.erpOffersModule.createOffersModule({
+  formSection: offerFormSection,
+  listSection: offersListSection,
+  getProducts: () => cache.products || [],
+  renderProductsPicker: (products) => renderOfferProductsPicker(products),
+  setExpandedCategories: (value) => {
+    expandedOfferProductCategories = value;
+  },
+});
+const ordersModule = window.erpOrdersModule.createOrdersModule({
+  quickOrderSection,
+});
+const crmModule = window.erpCrmModule.createCrmModule({
+  renderCrm: (rows) => renderCrm(rows),
+  getCrmRecords: () => cache.crm || [],
+});
+const stockModule = window.erpStockModule.createStockModule();
+const router = window.erpRouter.createRouter({
+  navLinks,
+  pageTitle,
+  pageDescription,
+  primaryActionBtn,
+  sidebar,
+  viewMeta,
+  views,
+  getState: () => appState,
+  onViewActivated: (viewName) => {
+    currentView = viewName;
+    if (viewName === "cari") cariModule.applyCariSubview(currentCariSubview);
+    if (viewName === "crm") crmModule.activateCrmView();
+    if (viewName === "finance") financeModule.applyFinanceSubview(currentFinanceSubview);
+    if (viewName === "products") productsModule.applyProductsSubview(currentProductsSubview);
+    if (viewName === "categories") productsModule.applyCategoriesSubview(currentCategoriesSubview);
+    if (viewName === "offers") offersModule.applyOffersSubview(currentOffersSubview);
+    if (viewName === "orders") ordersModule.applyOrdersSubview(currentOrdersSubview);
+    if (viewName === "settings") applySettingsSubview(currentSettingsSubview);
+    if (viewName === "panjur") syncPanjurTemplateModule();
+  },
+});
+const routerSetActiveView = router.setActiveView;
+const panjurScreenModule = window.erpPanjurScreenModule.createPanjurModule({
+  api,
+  getOrders: () => cache.orders || [],
+  getPanjurJobs: () => cache.panjurJobs || [],
+  refreshUI: () => refreshUI(),
+  setActiveView: (viewName) => setActiveView(viewName),
+});
+
 initializeMoneyInputs();
 
 if (menuToggle && sidebar) {
@@ -468,17 +496,17 @@ navLinks.forEach((link) => link.addEventListener("click", () => {
   if (link.dataset.view === "cari") {
     const targetId = link.dataset.sectionTarget || "";
     currentCariSubview = targetId === "cariFormSection" ? "form" : "list";
-    applyCariSubview(currentCariSubview);
+    cariModule.applyCariSubview(currentCariSubview);
   }
   if (link.dataset.view === "finance") {
     const targetId = link.dataset.sectionTarget || "";
     currentFinanceSubview = targetId === "cariStatementSection" ? "statement" : "movement";
-    applyFinanceSubview(currentFinanceSubview);
+    financeModule.applyFinanceSubview(currentFinanceSubview);
   }
   if (link.dataset.view === "products") {
     const targetId = link.dataset.sectionTarget || "";
     currentProductsSubview = targetId === "productsListSection" ? "list" : "form";
-    applyProductsSubview(currentProductsSubview);
+    productsModule.applyProductsSubview(currentProductsSubview);
   }
   if (link.dataset.view === "crm") {
     document.getElementById(link.dataset.sectionTarget || "crmListSection")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -486,17 +514,17 @@ navLinks.forEach((link) => link.addEventListener("click", () => {
   if (link.dataset.view === "categories") {
     const targetId = link.dataset.sectionTarget || "";
     currentCategoriesSubview = targetId === "categoryListSection" ? "list" : "add";
-    applyCategoriesSubview(currentCategoriesSubview);
+    productsModule.applyCategoriesSubview(currentCategoriesSubview);
   }
   if (link.dataset.view === "offers") {
     const targetId = link.dataset.sectionTarget || "";
     currentOffersSubview = targetId === "offersListSection" ? "list" : "form";
-    applyOffersSubview(currentOffersSubview);
+    offersModule.applyOffersSubview(currentOffersSubview);
   }
   if (link.dataset.view === "orders") {
     const targetId = link.dataset.sectionTarget || "";
     currentOrdersSubview = targetId === "quickOrderSection" ? "quick" : "list";
-    applyOrdersSubview(currentOrdersSubview);
+    ordersModule.applyOrdersSubview(currentOrdersSubview);
   }
   if (link.dataset.view === "settings") {
     currentSettingsSubview = link.dataset.settingsSubview || "cari-statement";
@@ -723,6 +751,87 @@ crmLeadForm?.addEventListener("submit", async (event) => {
   }
 });
 
+function getSelectedQuickOrderProductRecord() {
+  if (!selectedQuickOrderProduct?.productId) return null;
+  return (cache.products || []).find((item) => Number(item.id) === Number(selectedQuickOrderProduct.productId)) || null;
+}
+
+function getQuickOrderVariantSelectionState() {
+  return {
+    materialType: String(quickOrderVariantMaterial?.value || "").trim(),
+    coatingType: String(quickOrderVariantCoating?.value || "").trim(),
+    thicknessMm: String(quickOrderVariantThickness?.value || "").trim(),
+    color: String(quickOrderItemColor?.value || "").trim(),
+    woodType: String(quickOrderVariantWoodType?.value || "").trim(),
+  };
+}
+
+function syncQuickOrderVariantDatalist(id, values = []) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  target.innerHTML = [...new Set((values || []).map((value) => String(value || "").trim()).filter(Boolean))]
+    .map((value) => `<option value="${escapeHtml(value)}"></option>`)
+    .join("");
+}
+
+function buildQuickOrderVariantSummary(variant = {}) {
+  return [
+    variant.materialType || variant.material_type || "",
+    variant.coatingType || variant.coating_type || "",
+    variant.thicknessMm || variant.thickness_mm || variant.thickness ? `${variant.thicknessMm || variant.thickness_mm || variant.thickness} mm` : "",
+    variant.color || "",
+    variant.woodType || variant.wood_type || "",
+  ].map((item) => String(item || "").trim()).filter(Boolean).join(" / ");
+}
+
+function fillQuickOrderVariantInputs(variant = null, keepUserEntries = false) {
+  if (!keepUserEntries || !quickOrderVariantMaterial?.value) {
+    if (quickOrderVariantMaterial) quickOrderVariantMaterial.value = variant?.materialType || variant?.material_type || "";
+  }
+  if (!keepUserEntries || !quickOrderVariantCoating?.value) {
+    if (quickOrderVariantCoating) quickOrderVariantCoating.value = variant?.coatingType || variant?.coating_type || "";
+  }
+  if (!keepUserEntries || !quickOrderVariantThickness?.value) {
+    if (quickOrderVariantThickness) quickOrderVariantThickness.value = variant?.thicknessMm || variant?.thickness_mm || variant?.thickness || "";
+  }
+  if (!keepUserEntries || !quickOrderVariantWoodType?.value) {
+    if (quickOrderVariantWoodType) quickOrderVariantWoodType.value = variant?.woodType || variant?.wood_type || "";
+  }
+  if (!keepUserEntries || !quickOrderItemColor?.value) {
+    if (quickOrderItemColor) quickOrderItemColor.value = variant?.color || "";
+  }
+}
+
+function syncQuickOrderVariantFields(forceDefault = false) {
+  const product = getSelectedQuickOrderProductRecord();
+  const hasVariants = Boolean(product?.hasVariants && Array.isArray(product?.variants) && product.variants.length);
+  quickOrderForm?.querySelectorAll("[data-quick-order-variant-field]").forEach((field) => {
+    field.hidden = !hasVariants;
+  });
+  if (!hasVariants) return;
+
+  const currentSelection = forceDefault ? {} : getQuickOrderVariantSelectionState();
+  const options = getOfferVariantOptions(product, currentSelection);
+  syncQuickOrderVariantDatalist("quickOrderVariantMaterialList", options.materialType);
+  syncQuickOrderVariantDatalist("quickOrderVariantCoatingList", options.coatingType);
+  syncQuickOrderVariantDatalist("quickOrderVariantColorList", options.color);
+  syncQuickOrderVariantDatalist("quickOrderVariantWoodTypeList", options.woodType);
+
+  const exactVariant = resolveSelectedOfferVariant(product, currentSelection);
+  const matchingVariant = exactVariant || resolveSelectedOfferVariant(product, {});
+  fillQuickOrderVariantInputs(matchingVariant, !forceDefault && Boolean(exactVariant));
+  if (matchingVariant) {
+    selectedQuickOrderProduct.variantId = matchingVariant.id || null;
+    selectedQuickOrderProduct.unitPrice = getResolvedVariantUnitPrice(product, matchingVariant);
+    if (quickOrderItemPrice && (!forceDefault || !quickOrderItemPrice.value || Number(quickOrderItemPrice.value || 0) <= 0)) {
+      quickOrderItemPrice.value = String(selectedQuickOrderProduct.unitPrice || 0);
+    }
+    if (quickOrderItemMaterial && !quickOrderItemMaterial.value) {
+      quickOrderItemMaterial.value = product?.category || matchingVariant.materialType || product?.materialType || "";
+    }
+  }
+}
+
 function renderQuickOrderItems() {
   if (!quickOrderItemsTable) return;
   const total = quickOrderLines.reduce((sum, item) => sum + Number(item.total || 0), 0);
@@ -736,11 +845,18 @@ function renderQuickOrderItems() {
   const remaining = Math.max(0, grandTotal - deposit);
   quickOrderItemsTable.innerHTML = quickOrderLines.length ? `
     <table class="mini-data-table">
-      <thead><tr><th>Kalem</th><th>Adet</th><th>Birim Fiyat</th><th>Tutar</th><th></th></tr></thead>
+      <thead><tr><th>Kalem</th><th>Hesap</th><th>Adet</th><th>Birim Fiyat</th><th>Tutar</th><th></th></tr></thead>
       <tbody>
         ${quickOrderLines.map((item, index) => `
           <tr>
-            <td><strong>${escapeHtml(item.productName)}</strong></td>
+            <td>
+              <strong>${escapeHtml(item.productName)}</strong>
+              <small>${escapeHtml(item.variantSummary || item.materialType || item.materialGroup || "-")}</small>
+            </td>
+            <td>
+              <strong>${escapeHtml(getProductCalculationLabel(item.calculationType || "piece"))}</strong>
+              <small>${escapeHtml(item.unit || "-")} / ${formatDecimal(item.calculatedQuantity || 0, 3)}</small>
+            </td>
             <td>${Number(item.quantity || 0)}</td>
             <td>${formatCurrency(item.unitPrice || 0)}</td>
             <td>${formatCurrency(item.total || 0)}</td>
@@ -754,9 +870,9 @@ function renderQuickOrderItems() {
           </tr>
         `).join("")}
       </tbody>
-      <tfoot><tr><th colspan="3">Toplam</th><th>${formatCurrency(total)}</th><th></th></tr></tfoot>
+      <tfoot><tr><th colspan="4">Toplam</th><th>${formatCurrency(total)}</th><th></th></tr></tfoot>
     </table>
-  ` : renderOrderEmptyState("Siparis kalemi eklenmedi.", "Urun / kalem, adet ve birim fiyat girerek hizli siparis kalemi ekleyin.");
+  ` : renderOrderEmptyState("Siparis kalemi eklenmedi.", "Urun / varyasyon, olcu ve adet girerek hizli siparis kalemi ekleyin.");
   if (quickOrderTotalsBox) {
     quickOrderTotalsBox.innerHTML = `
       <article><span>Toplam</span><strong>${formatCurrency(total)}</strong></article>
@@ -775,13 +891,15 @@ function updateQuickOrderCalcFields() {
     const supported = String(field.dataset.quickCalcField || "").split(/\s+/);
     field.hidden = !supported.includes(calculationType);
   });
+  syncQuickOrderVariantFields();
 }
 
 function renderQuickOrderProductsPicker(products) {
   if (!quickOrderProductsList) return;
   const searchTerm = String(quickOrderProductSearch?.value || "").trim().toLowerCase();
   const selectedCategory = quickOrderProductCategorySelect?.value || "";
-  const categories = collectProductCategories(products || []);
+  const activeProducts = (products || []).filter((item) => item.isActive !== false);
+  const categories = collectProductCategories(activeProducts);
   if (quickOrderProductCategorySelect) {
     const currentValue = quickOrderProductCategorySelect.value || "";
     quickOrderProductCategorySelect.innerHTML = `
@@ -790,11 +908,12 @@ function renderQuickOrderProductsPicker(products) {
     `;
   }
 
-  const filtered = (products || []).filter((item) => {
+  const filtered = activeProducts.filter((item) => {
     const haystack = [
       item.name,
       item.category,
       item.costNotes,
+      item.productionType,
       getProductCalculationLabel(item.calculationType),
       (item.variants || []).map((variant) => [variant.materialType, variant.coatingType, variant.color, variant.woodType, variant.thicknessMm].join(" ")).join(" "),
     ].join(" ").toLowerCase();
@@ -880,21 +999,26 @@ function handleQuickOrderProductPick(event) {
     calculationType: normalizeProductCalculationType(button.dataset.productCalculationType || "piece"),
     unitPrice: parseMoneyInput(button.dataset.productPrice || 0),
   };
-  updateQuickOrderCalcFields();
   if (quickOrderItemName) quickOrderItemName.value = selectedQuickOrderProduct.productName;
   if (quickOrderItemPrice) quickOrderItemPrice.value = String(selectedQuickOrderProduct.unitPrice || 0);
+  const product = getSelectedQuickOrderProductRecord();
+  const defaultVariant = getDefaultProductVariant(product);
+  if (quickOrderItemMaterial) quickOrderItemMaterial.value = product?.category || product?.materialType || "";
+  fillQuickOrderVariantInputs(defaultVariant, false);
+  updateQuickOrderCalcFields();
   if (quickOrderItemQty) quickOrderItemQty.focus();
   if (quickOrderSelectedProductLabel) {
-    quickOrderSelectedProductLabel.textContent = `${selectedQuickOrderProduct.category || "Kategori"} / ${selectedQuickOrderProduct.productName} secildi.`;
+    quickOrderSelectedProductLabel.textContent = `${selectedQuickOrderProduct.category || "Kategori"} / ${selectedQuickOrderProduct.productName} secildi. Hesap tipi: ${getProductCalculationLabel(selectedQuickOrderProduct.calculationType)}.`;
   }
   quickOrderProductsList.querySelectorAll(".offer-product-item").forEach((item) => item.classList.remove("active"));
   button.classList.add("active");
 }
 
 function addQuickOrderLine() {
-  const productName = String(quickOrderItemName?.value || "").trim();
+  const product = getSelectedQuickOrderProductRecord();
+  const productName = String(quickOrderItemName?.value || selectedQuickOrderProduct?.productName || "").trim();
   const quantity = Math.max(1, Math.trunc(Number(quickOrderItemQty?.value || 1)));
-  const unitPrice = Math.max(0, Number(quickOrderItemPrice?.value || 0));
+  const unitPrice = Math.max(0, Number(quickOrderItemPrice?.value || selectedQuickOrderProduct?.unitPrice || 0));
   const calculationType = selectedQuickOrderProduct?.calculationType || "piece";
   const width = Number(quickOrderItemWidth?.value || 0);
   const height = Number(quickOrderItemHeight?.value || 0);
@@ -903,13 +1027,38 @@ function addQuickOrderLine() {
     window.alert("Siparis kalemi icin urun / kalem adi yazin.");
     return;
   }
+
+  let variant = null;
+  if (product?.hasVariants) {
+    variant = resolveSelectedOfferVariant(product, getQuickOrderVariantSelectionState());
+    if (!variant) {
+      window.alert("Secilen urun icin gecerli bir varyasyon bulunamadi. Malzeme, kaplama, kalinlik ve renk secimlerini kontrol edin.");
+      quickOrderVariantMaterial?.focus();
+      return;
+    }
+  }
+
   const calculatedQuantity = getOfferCalculatedQuantity({ calculationType, width, height, length, quantity });
+  const materialType = String(quickOrderVariantMaterial?.value || variant?.materialType || product?.materialType || "").trim();
+  const coatingType = String(quickOrderVariantCoating?.value || variant?.coatingType || "").trim();
+  const thicknessMm = Number(quickOrderVariantThickness?.value || variant?.thicknessMm || 0) || null;
+  const woodType = String(quickOrderVariantWoodType?.value || variant?.woodType || "").trim();
+  const color = String(quickOrderItemColor?.value || variant?.color || "").trim();
+  const materialGroup = String(quickOrderItemMaterial?.value || selectedQuickOrderProduct?.category || product?.category || "Teklifsiz Siparis").trim();
+  const variantSummary = variant
+    ? buildQuickOrderVariantSummary(variant)
+    : buildQuickOrderVariantSummary({ materialType, coatingType, thicknessMm, woodType, color });
   quickOrderLines.push({
     productId: selectedQuickOrderProduct?.productId || null,
-    variantId: selectedQuickOrderProduct?.variantId || null,
+    variantId: variant?.id || selectedQuickOrderProduct?.variantId || null,
     productName,
-    materialGroup: quickOrderItemMaterial?.value || selectedQuickOrderProduct?.category || "",
-    color: quickOrderItemColor?.value || "",
+    materialGroup,
+    materialType,
+    coatingType,
+    thicknessMm,
+    woodType,
+    color,
+    variantSummary,
     width: calculationType === "sqm" ? width : 0,
     height: calculationType === "sqm" ? height : 0,
     widthMm: calculationType === "sqm" ? width : 0,
@@ -920,25 +1069,32 @@ function addQuickOrderLine() {
     unitPrice,
     total: calculatedQuantity * unitPrice,
     calculationType,
-    unit: selectedQuickOrderProduct?.unit || "Adet",
-    note: quickOrderItemNote?.value || quickOrderItemMaterial?.value || "",
+    unit: selectedQuickOrderProduct?.unit || getOfferCalculationUnit(calculationType),
+    note: quickOrderItemNote?.value || "",
   });
-  if (quickOrderItemName) quickOrderItemName.value = "";
+  if (quickOrderItemName) quickOrderItemName.value = selectedQuickOrderProduct?.productName || productName;
   if (quickOrderItemQty) quickOrderItemQty.value = "1";
-  if (quickOrderItemPrice) quickOrderItemPrice.value = "0";
-  [quickOrderItemWidth, quickOrderItemHeight, quickOrderItemLength, quickOrderItemColor, quickOrderItemMaterial, quickOrderItemNote].forEach((input) => {
+  if (quickOrderItemPrice) quickOrderItemPrice.value = String(unitPrice || 0);
+  [quickOrderItemWidth, quickOrderItemHeight, quickOrderItemLength, quickOrderItemNote].forEach((input) => {
     if (input) input.value = "";
   });
   renderQuickOrderItems();
   if (quickOrderSelectedProductLabel && selectedQuickOrderProduct) {
-    quickOrderSelectedProductLabel.textContent = `${selectedQuickOrderProduct.productName} kaleme eklendi. Yeni urun secin veya ayni urunden tekrar adet girin.`;
+    quickOrderSelectedProductLabel.textContent = `${selectedQuickOrderProduct.productName} kaleme eklendi. Ayni urunde devam edebilir veya yeni urun secebilirsiniz.`;
   }
 }
 
 function resetQuickOrderForm() {
   quickOrderLines = [];
+  selectedQuickOrderProduct = null;
   quickOrderForm?.reset();
   setDefaultDates();
+  [quickOrderVariantMaterial, quickOrderVariantCoating, quickOrderVariantThickness, quickOrderVariantWoodType].forEach((input) => {
+    if (input) input.value = "";
+  });
+  if (quickOrderSelectedProductLabel) quickOrderSelectedProductLabel.textContent = "Soldan kategori ve urun secin.";
+  quickOrderProductsList?.querySelectorAll(".offer-product-item").forEach((item) => item.classList.remove("active"));
+  updateQuickOrderCalcFields();
   renderQuickOrderItems();
 }
 
@@ -946,6 +1102,9 @@ quickOrderAddItemBtn?.addEventListener("click", addQuickOrderLine);
 quickOrderProductsList?.addEventListener("click", handleQuickOrderProductPick);
 quickOrderProductSearch?.addEventListener("input", () => renderQuickOrderProductsPicker(cache.products || []));
 quickOrderProductCategorySelect?.addEventListener("change", () => renderQuickOrderProductsPicker(cache.products || []));
+[quickOrderVariantMaterial, quickOrderVariantCoating, quickOrderVariantThickness, quickOrderVariantWoodType, quickOrderItemColor].forEach((input) => {
+  input?.addEventListener("input", () => syncQuickOrderVariantFields());
+});
 updateQuickOrderCalcFields();
 quickOrderResetBtn?.addEventListener("click", resetQuickOrderForm);
 quickOrderItemsTable?.addEventListener("click", (event) => {
@@ -977,7 +1136,13 @@ quickOrderItemsTable?.addEventListener("click", (event) => {
     if (quickOrderItemHeight) quickOrderItemHeight.value = String(source.height || "");
     if (quickOrderItemLength) quickOrderItemLength.value = String(source.length || "");
     if (quickOrderItemColor) quickOrderItemColor.value = String(source.color || "");
+    if (quickOrderItemMaterial) quickOrderItemMaterial.value = String(source.materialGroup || "");
+    if (quickOrderVariantMaterial) quickOrderVariantMaterial.value = String(source.materialType || "");
+    if (quickOrderVariantCoating) quickOrderVariantCoating.value = String(source.coatingType || "");
+    if (quickOrderVariantThickness) quickOrderVariantThickness.value = String(source.thicknessMm || "");
+    if (quickOrderVariantWoodType) quickOrderVariantWoodType.value = String(source.woodType || "");
     if (quickOrderItemNote) quickOrderItemNote.value = String(source.note || "");
+    if (quickOrderSelectedProductLabel) quickOrderSelectedProductLabel.textContent = `${source.productName || "Kalem"} duzenleme icin yuklendi.`;
     quickOrderLines.splice(index, 1);
     updateQuickOrderCalcFields();
     renderQuickOrderItems();
@@ -1000,8 +1165,9 @@ quickOrderForm?.addEventListener("submit", async (event) => {
     return;
   }
   const formData = new FormData(quickOrderForm);
-  const submitButton = quickOrderForm.querySelector("[type='submit']");
-  submitButton.disabled = true;
+  const submitter = event.submitter?.dataset?.quickOrderSubmit || quickOrderSubmitMode || "save";
+  const submitButtons = quickOrderForm.querySelectorAll("[data-quick-order-submit]");
+  submitButtons.forEach((button) => { button.disabled = true; });
   try {
     const result = await api.orders.createQuick({
       cariId: Number(formData.get("cariId")),
@@ -1014,13 +1180,18 @@ quickOrderForm?.addEventListener("submit", async (event) => {
       discountRate: Number(formData.get("discountRate") || 0),
       vatRate: Number(formData.get("vatRate") || 20),
       priority: formData.get("priority") || "normal",
-      approve: quickOrderSubmitMode === "approve",
+      approve: submitter === "approve",
       items: quickOrderLines.map((item) => ({
         productId: item.productId,
         variantId: item.variantId,
         productName: item.productName,
         materialGroup: item.materialGroup,
+        materialType: item.materialType,
+        coatingType: item.coatingType,
+        thicknessMm: item.thicknessMm,
+        woodType: item.woodType,
         color: item.color,
+        variantSummary: item.variantSummary,
         width: item.width,
         height: item.height,
         width_mm: item.widthMm ?? item.width,
@@ -1047,7 +1218,7 @@ quickOrderForm?.addEventListener("submit", async (event) => {
   } catch (error) {
     window.alert(`Teklifsiz hizli siparis olusturulamadi: ${error?.message || "Bilinmeyen hata"}`);
   } finally {
-    submitButton.disabled = false;
+    submitButtons.forEach((button) => { button.disabled = false; });
   }
 });
 
@@ -1616,6 +1787,10 @@ cariDetailPanel?.addEventListener("click", (event) => {
   currentCariDetailTab = tabButton.dataset.cariDetailTab || "general";
   renderCariDetail((cache.cari || []).find((item) => item.id === selectedCariId) || null, cache.movements || [], cache.orders || []);
 });
+cariDetailOfferBtn?.addEventListener("click", () => {
+  if (!selectedCariId) return;
+  openOfferFormForCari(Number(selectedCariId));
+});
 clearCariSelectionBtn?.addEventListener("click", () => clearCariSelection({ showForm: true }));
 movementResetBtn?.addEventListener("click", resetMovementForm);
 movementsFilter?.addEventListener("change", () => renderMovements(cache.movements || [], cache.cari || []));
@@ -1896,95 +2071,35 @@ window.addEventListener("DOMContentLoaded", async () => {
 });
 
 function setActiveView(viewName) {
-  currentView = viewName;
-  views.forEach((view) => view.classList.toggle("active", view.id === `view-${viewName}`));
-  const meta = viewMeta[viewName];
-  if (meta) {
-    pageTitle.textContent = meta[0];
-    pageDescription.textContent = meta[1];
-    primaryActionBtn.textContent = meta[2];
-  }
-  if (viewName === "cari") {
-    applyCariSubview(currentCariSubview);
-  }
-  if (viewName === "crm") {
-    renderCrm(cache.crm || []);
-  }
-  if (viewName === "finance") {
-    applyFinanceSubview(currentFinanceSubview);
-  }
-  if (viewName === "products") {
-    applyProductsSubview(currentProductsSubview);
-  }
-  if (viewName === "categories") {
-    applyCategoriesSubview(currentCategoriesSubview);
-  }
-  if (viewName === "offers") {
-    applyOffersSubview(currentOffersSubview);
-  }
-  if (viewName === "orders") {
-    applyOrdersSubview(currentOrdersSubview);
-  }
-  if (viewName === "settings") {
-    applySettingsSubview(currentSettingsSubview);
-  }
-  if (viewName === "panjur") {
-    syncPanjurTemplateModule();
-  }
-  sidebar?.classList.remove("open");
+  return routerSetActiveView(viewName);
 }
 
 function syncPanjurTemplateModule() {
-  if (!window.PanjurTemplateModule?.sync) return;
-  window.erpPanjurBridge = {
-    api,
-    getOrders: () => cache.orders || [],
-    getPanjurJobs: () => cache.panjurJobs || [],
-    refreshUI,
-    setActiveView,
-  };
-  window.PanjurTemplateModule.sync(window.erpPanjurBridge);
+  return panjurScreenModule.syncPanjurTemplateModule();
 }
 
 function applyCariSubview(mode) {
-  const showForm = mode === "form";
-  if (cariFormSection) cariFormSection.hidden = !showForm;
-  if (cariListSection) cariListSection.hidden = showForm;
+  return cariModule.applyCariSubview(mode);
 }
 
 function applyFinanceSubview(mode) {
-  const showMovement = mode === "movement";
-  if (movementFormSection) movementFormSection.hidden = !showMovement;
-  if (cariStatementSection) cariStatementSection.hidden = showMovement;
+  return financeModule.applyFinanceSubview(mode);
 }
 
 function applyProductsSubview(mode) {
-  const showList = mode === "list";
-  if (showList) {
-    productSortState = { key: "name", dir: "asc" };
-  }
-  if (productFormSection) productFormSection.hidden = showList;
-  if (productsListSection) productsListSection.hidden = !showList;
+  return productsModule.applyProductsSubview(mode);
 }
 
 function applyCategoriesSubview(mode) {
-  const showList = mode === "list";
-  if (categoryAddSection) categoryAddSection.hidden = showList;
-  if (categoryListSection) categoryListSection.hidden = !showList;
+  return productsModule.applyCategoriesSubview(mode);
 }
 
 function applyOffersSubview(mode) {
-  const showList = mode === "list";
-  if (offerFormSection) offerFormSection.hidden = showList;
-  if (offersListSection) offersListSection.hidden = !showList;
-  if (!showList) {
-    expandedOfferProductCategories = [];
-    renderOfferProductsPicker(cache.products || []);
-  }
+  return offersModule.applyOffersSubview(mode);
 }
 
 function applyOrdersSubview(mode) {
-  if (quickOrderSection) quickOrderSection.hidden = mode !== "quick";
+  return ordersModule.applyOrdersSubview(mode);
 }
 
 function applySettingsSubview(mode) {
@@ -2190,7 +2305,7 @@ function initializeMoneyInputs() {
   });
 }
 
-function parseMoneyInput(value) {
+function parseMoneyInputLegacy(value) {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0;
   let text = String(value || "").trim();
   if (!text) return 0;
@@ -2219,7 +2334,7 @@ function normalizeEditableMoney(value) {
   return Number.isFinite(parsed) ? String(parsed).replace(".", ",") : "";
 }
 
-function parseDecimalInput(value) {
+function parseDecimalInputLegacy(value) {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0;
   let text = String(value || "").trim();
   if (!text) return 0;
@@ -3649,7 +3764,7 @@ function renderCrmDetail(lead, bundle = {}) {
   crmDetailPanel.querySelector(".close-crm-detail-btn")?.addEventListener("click", () => renderCrmDetail(null));
 }
 
-function formatCurrencyByCode(value, currencyCode = "TRY") {
+function formatCurrencyByCodeLegacy(value, currencyCode = "TRY") {
   const safeCurrency = ["TRY", "USD", "EUR"].includes(currencyCode) ? currencyCode : "TRY";
   return Number(value || 0).toLocaleString("tr-TR", {
     style: "currency",
@@ -4654,6 +4769,7 @@ function renderCariDetail(cari, movements, orders) {
   });
 
   if (!cari) {
+    if (cariDetailOfferBtn) cariDetailOfferBtn.disabled = true;
     if (cariDetailBadge) {
       cariDetailBadge.textContent = "Secim Yok";
       cariDetailBadge.className = "cari-status-badge";
@@ -4677,14 +4793,16 @@ function renderCariDetail(cari, movements, orders) {
   const balance = calcCariBalance(cari.id, movements, orders);
   const detailData = buildCariDetailData(cari, movements, orders);
   const { lastMovement, exceeded, offers, relatedOrders, relatedMovements, summary } = detailData;
-  const badgeText = balance > 0 ? "Borclu" : balance < 0 ? "Alacakli" : "Bakiye Yok";
+  const badgeText = getCariBalanceStateLabel(balance);
+  const statusLabel = getCariAccountStatusLabel(cari, exceeded);
+  if (cariDetailOfferBtn) cariDetailOfferBtn.disabled = false;
 
   if (cariDetailBadge) {
     cariDetailBadge.textContent = badgeText;
     cariDetailBadge.className = `cari-status-badge ${balance > 0 ? "is-debt" : balance < 0 ? "is-credit" : ""} ${exceeded ? "is-risk" : ""}`.trim();
   }
   if (cariDetailCompany) cariDetailCompany.textContent = cari.companyName || cari.fullName || "Cari";
-  if (cariDetailType) cariDetailType.textContent = `${cari.type || "Cari"} | ${buildCariCode(cari.id, cari.createdAt)} | ${summary}`;
+  if (cariDetailType) cariDetailType.textContent = `${buildCariCode(cari.id, cari.createdAt)} | ${formatCariTypeLabel(cari.type)} | ${statusLabel} | ${summary}`;
   if (cariDetailName) cariDetailName.textContent = cari.fullName || "-";
   if (cariDetailPhone) cariDetailPhone.textContent = cari.phone || "-";
   if (cariDetailEmail) cariDetailEmail.textContent = cari.email || "-";
@@ -4694,6 +4812,21 @@ function renderCariDetail(cari, movements, orders) {
   if (cariDetailTaxNumber) cariDetailTaxNumber.textContent = cari.taxNumber || "-";
   if (cariDetailDiscount) cariDetailDiscount.textContent = `%${Number(cari.discountRate || 0)}`;
   if (!cariDetailTabContent) return;
+
+  if (currentCariDetailTab === "contact") {
+    cariDetailTabContent.innerHTML = renderCariDetailContactMarkup(cari);
+    return;
+  }
+
+  if (currentCariDetailTab === "address") {
+    cariDetailTabContent.innerHTML = renderCariDetailAddressMarkup(cari);
+    return;
+  }
+
+  if (currentCariDetailTab === "finance") {
+    cariDetailTabContent.innerHTML = renderCariDetailFinanceMarkup(cari, detailData);
+    return;
+  }
 
   if (currentCariDetailTab === "offers") {
     cariDetailTabContent.innerHTML = offers.length ? `
@@ -4777,7 +4910,11 @@ function renderCariDetail(cari, movements, orders) {
       </article>
       <article>
         <small>Cari Tipi</small>
-        <strong>${escapeHtml(cari.type || "-")}</strong>
+        <strong>${escapeHtml(formatCariTypeLabel(cari.type))}</strong>
+      </article>
+      <article>
+        <small>Durum</small>
+        <strong>${escapeHtml(statusLabel)}</strong>
       </article>
       <article>
         <small>Vergi Dairesi</small>
@@ -4858,7 +4995,9 @@ function renderCari(records, movements, orders) {
   target.innerHTML = sorted.length ? sorted.map((item, index) => {
     const balance = balances.get(item.id) || 0;
     const exceeded = isCariLimitExceeded(item.id, movements, orders, item.riskLimit);
-    const statusText = balance > 0 ? "Borclu" : balance < 0 ? "Alacakli" : "Bakiye Yok";
+    const statusLabel = getCariAccountStatusLabel(item, exceeded);
+    const statusNote = getCariBalanceStateLabel(balance);
+    const statusClassName = getCariStatusClassName(statusLabel);
     const companyLabel = item.companyName || item.fullName || "-";
     const contactLabel = item.fullName || item.companyName || "-";
     const companyDisplay = shortenText(companyLabel, 22);
@@ -4875,9 +5014,15 @@ function renderCari(records, movements, orders) {
         </span>
         <span class="cari-cell">${escapeHtml(item.phone || "-")}</span>
         <span class="cari-cell">${escapeHtml(item.email || "-")}</span>
+        <span class="cari-cell cell-type">${escapeHtml(formatCariTypeLabel(item.type))}</span>
         <span class="cari-cell cell-money ${balance > 0 ? "is-debt" : balance < 0 ? "is-credit" : ""}">${formatCurrency(balance)}</span>
         <span class="cari-cell cell-money">${formatCurrency(item.riskLimit || 0)}</span>
-        <span class="cari-cell cell-status"><b class="cari-row-status ${balance > 0 ? "is-debt" : balance < 0 ? "is-credit" : ""} ${exceeded ? "is-risk" : ""}">${statusText}</b></span>
+        <span class="cari-cell cell-status">
+          <span class="cari-status-stack">
+            <b class="cari-row-status ${statusClassName}">${escapeHtml(statusLabel)}</b>
+            <small>${escapeHtml(statusNote)}</small>
+          </span>
+        </span>
         <span class="cari-cell cell-actions">
           <button class="ghost-action compact-action cari-row-action cari-view-btn" type="button" data-id="${item.id}">Goruntule</button>
           <button class="ghost-action compact-action cari-row-action edit-cari-btn" type="button" data-id="${item.id}">Duzenle</button>
@@ -4925,16 +5070,116 @@ function buildCariDetailData(cari, movements, orders) {
     .filter((item) => item.cariId === cari.id)
     .sort((left, right) => new Date(right.orderDate || right.createdAt || 0) - new Date(left.orderDate || left.createdAt || 0));
   const relatedOrders = (orders || [])
-    .filter((item) => offers.some((offer) => offer.id === item.offerId))
+    .filter((item) => Number(item.cariId || 0) === Number(cari.id) || offers.some((offer) => offer.id === item.offerId))
     .sort((left, right) => new Date(right.orderDate || right.createdAt || 0) - new Date(left.orderDate || left.createdAt || 0));
   const relatedMovements = (movements || [])
     .filter((item) => item.cariId === cari.id)
     .sort((left, right) => new Date(right.date || 0) - new Date(left.date || 0) || (right.id || 0) - (left.id || 0));
+  const relatedOrderMovements = relatedOrders
+    .flatMap((item) => item.accountMovements || [])
+    .sort((left, right) => new Date(right.movementDate || 0) - new Date(left.movementDate || 0) || (right.id || 0) - (left.id || 0));
+  const relatedFinanceEntries = relatedOrders
+    .flatMap((item) => item.financeEntries || [])
+    .sort((left, right) => new Date(right.createdAt || 0) - new Date(left.createdAt || 0) || (right.id || 0) - (left.id || 0));
   const lastMovement = relatedMovements[0] || null;
   const balance = calcCariBalance(cari.id, movements, orders);
   const exceeded = isCariLimitExceeded(cari.id, movements, orders, cari.riskLimit);
+  const movementTotals = calcCariMovementTotals(cari.id, movements);
   const summary = `${offers.length} teklif | ${relatedOrders.length} siparis | ${relatedMovements.length} hareket`;
-  return { offers, relatedOrders, relatedMovements, lastMovement, balance, exceeded, summary };
+  return { offers, relatedOrders, relatedMovements, relatedOrderMovements, relatedFinanceEntries, lastMovement, balance, exceeded, movementTotals, summary };
+}
+
+function getCariAccountStatusLabel(cari, exceeded) {
+  if (cari?.accountStatus === "Pasif") return "Pasif";
+  if (cari?.accountStatus === "Riskli" || exceeded) return "Riskli";
+  return "Aktif";
+}
+
+function getCariBalanceStateLabel(balance) {
+  if (balance > 0) return "Borclu";
+  if (balance < 0) return "Alacakli";
+  return "Bakiye Yok";
+}
+
+function getCariStatusClassName(statusLabel) {
+  if (statusLabel === "Pasif") return "is-passive";
+  if (statusLabel === "Riskli") return "is-risk";
+  return "is-active";
+}
+
+function renderCariDetailContactMarkup(cari) {
+  return `
+    <div class="cari-detail-general-grid">
+      <article><small>Yetkili</small><strong>${escapeHtml(cari.fullName || "-")}</strong></article>
+      <article><small>Telefon</small><strong>${escapeHtml(cari.phone || "-")}</strong></article>
+      <article><small>E-posta</small><strong>${escapeHtml(cari.email || "-")}</strong></article>
+      <article><small>WhatsApp</small><strong>${escapeHtml(cari.whatsapp || "-")}</strong></article>
+      <article><small>Ikinci Telefon</small><strong>${escapeHtml(cari.phone2 || "-")}</strong></article>
+      <article><small>Departman</small><strong>${escapeHtml(cari.department || "-")}</strong></article>
+      <article><small>Web Sitesi</small><strong>${escapeHtml(cari.website || "-")}</strong></article>
+      <article><small>Kaynak</small><strong>${escapeHtml(cari.source || "-")}</strong></article>
+    </div>
+  `;
+}
+
+function renderCariDetailAddressMarkup(cari) {
+  const addresses = Array.isArray(cari.addresses) ? cari.addresses.filter((item) => item?.city || item?.district || item?.fullAddress) : [];
+  if (!addresses.length) {
+    return `<div class="cari-detail-empty">Bu cari icin kayitli adres bulunmuyor.</div>`;
+  }
+
+  return `
+    <div class="cari-detail-address-grid">
+      ${addresses.map((address, index) => `
+        <article class="cari-detail-address-card">
+          <strong>${escapeHtml(address.type || `${index + 1}. Adres`)}</strong>
+          <p>${escapeHtml([address.city, address.district].filter(Boolean).join(" / ") || "Il ve ilce girilmedi.")}</p>
+          <p>${escapeHtml(address.fullAddress || "Acik adres girilmedi.")}</p>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderCariDetailFinanceMarkup(cari, detailData) {
+  const { balance, exceeded, movementTotals, relatedFinanceEntries, relatedOrderMovements, relatedOrders } = detailData;
+  const limit = Number(cari.riskLimit || 0);
+  const usageRatio = limit > 0 ? Math.min(999, Math.round((Math.max(balance, 0) / limit) * 100)) : 0;
+
+  return `
+    <div class="cari-detail-stack">
+      <div class="cari-detail-general-grid">
+        <article><small>Bakiye</small><strong>${formatCurrency(balance)}</strong></article>
+        <article><small>Risk Limiti</small><strong>${formatCurrency(limit)}</strong></article>
+        <article><small>Risk Kullanimi</small><strong>${limit > 0 ? `%${usageRatio}` : "Tanimli degil"}</strong></article>
+        <article><small>Durum</small><strong>${escapeHtml(getCariAccountStatusLabel(cari, exceeded))}</strong></article>
+        <article><small>Toplam Borc Hareketi</small><strong>${formatCurrency(movementTotals.debt || 0)}</strong></article>
+        <article><small>Toplam Alacak Hareketi</small><strong>${formatCurrency(movementTotals.credit || 0)}</strong></article>
+        <article><small>Vergi Dairesi</small><strong>${escapeHtml(cari.taxOffice || "-")}</strong></article>
+        <article><small>Vergi / T.C. No</small><strong>${escapeHtml(cari.taxNumber || "-")}</strong></article>
+        <article><small>IBAN</small><strong>${escapeHtml(cari.iban || "-")}</strong></article>
+        <article><small>E-Fatura</small><strong>${escapeHtml(cari.eInvoiceStatus || "-")}</strong></article>
+      </div>
+      <article class="cari-detail-finance-card">
+        <div class="cari-detail-subhead">
+          <strong>Siparise Bagli Finans Kayitlari</strong>
+          <span>${relatedFinanceEntries.length} kayit</span>
+        </div>
+        <p>${relatedFinanceEntries.length
+          ? relatedFinanceEntries.slice(0, 5).map((entry) => `${entry.title || entry.type || "Kayit"} - ${formatCurrency(entry.amount || 0)}`).join(" | ")
+          : "Cari bazli dogrudan finance_entries baglantisi bulunmuyor. Bu alanda siparislere bagli maliyet kayitlari gosteriliyor."}</p>
+      </article>
+      <article class="cari-detail-finance-card">
+        <div class="cari-detail-subhead">
+          <strong>Siparise Bagli Cari Hareketleri</strong>
+          <span>${relatedOrderMovements.length} hareket</span>
+        </div>
+        <p>${relatedOrderMovements.length
+          ? relatedOrderMovements.slice(0, 5).map((movement) => `${movement.movementType || "-"} - ${formatCurrency(movement.amount || 0)}`).join(" | ")
+          : `${relatedOrders.length ? "Bu cariye ait siparislerde bagli hareket bulunmuyor." : "Bu cariye ait siparis kaydi bulunmuyor."}`}</p>
+      </article>
+    </div>
+  `;
 }
 
 function getCariLastMovementText(cariId, movements) {
@@ -7771,7 +8016,7 @@ function formatDecimal(value, fractionDigits = 2) {
   });
 }
 
-function formatDateTime(value) {
+function formatDateTimeLegacy(value) {
   if (!value) return "-";
   const date = new Date(value);
   return Number.isNaN(date.getTime())
@@ -7903,6 +8148,7 @@ function getOrderDetailTabs() {
   return [
     { key: "general", label: "Genel Bilgiler" },
     { key: "items", label: "Siparis Kalemleri" },
+    { key: "panjur", label: "Panjur Kapak" },
     { key: "cut-list", label: "Kesim Listesi" },
     { key: "work-order", label: "Uretim Emri" },
     { key: "stock", label: "Stok / Malzeme" },
@@ -7916,6 +8162,7 @@ function renderOrderDetailTabContent(order, tabKey = "general") {
   const renderers = {
     general: renderOrderGeneralTab,
     items: renderOrderItemsTab,
+    panjur: renderOrderPanjurTab,
     "cut-list": renderOrderCutListTab,
     "work-order": renderOrderWorkOrderTab,
     stock: renderOrderStockTab,
@@ -7982,6 +8229,57 @@ function renderOrderItemsTab(order) {
           </tbody>
         </table>
       ` : renderOrderEmptyState("Siparis kalemi bulunamadi.", "Bu siparis icin order_items tablosunda kayit yok.")}
+    </section>
+  `;
+}
+
+function renderOrderPanjurTab(order) {
+  const eligibleItems = Array.isArray(order.panjurEligibleItems) ? order.panjurEligibleItems : [];
+  const totalQuantity = eligibleItems.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+  const totalM2 = eligibleItems.reduce((sum, item) => {
+    const width = Number(item.widthMm || 0);
+    const height = Number(item.heightMm || 0);
+    const quantity = Number(item.quantity || 0);
+    return sum + ((width / 1000) * (height / 1000) * quantity);
+  }, 0);
+  return `
+    <section class="order-detail-card order-detail-card-wide">
+      <div class="order-detail-card-head">
+        <div>
+          <h3>Panjur Kapak</h3>
+          <p>Siparisteki panjur kapak kalemleri, sablon durumu ve sonraki CNC akisina gecis.</p>
+        </div>
+      </div>
+      ${eligibleItems.length || order.panjurJob ? `
+        <div class="order-detail-info-grid">
+          <article><span>Siparis No</span><strong>${escapeHtml(order.orderNo || order.trackingNo || `#${order.id}`)}</strong></article>
+          <article><span>Cari / Musteri</span><strong>${escapeHtml(order.cariName || "-")}</strong></article>
+          <article><span>Toplam Kapak</span><strong>${totalQuantity}</strong></article>
+          <article><span>Toplam m2</span><strong>${formatDecimal(totalM2, 3)}</strong></article>
+          <article><span>Sablon Durumu</span><strong>${escapeHtml(order.panjurJob ? `Hazir - ${order.panjurJob.jobNo || "#"}` : "Olusturulmadi")}</strong></article>
+          <article><span>Teslim Tarihi</span><strong>${formatDate(order.deliveryDate)}</strong></article>
+        </div>
+        ${eligibleItems.length ? `
+          <table class="mini-data-table">
+            <thead><tr><th>Urun</th><th>Varyasyon</th><th>Olcu</th><th>Adet</th><th>Renk</th></tr></thead>
+            <tbody>
+              ${eligibleItems.map((item) => `
+                <tr>
+                  <td><strong>${escapeHtml(item.productName || "-")}</strong></td>
+                  <td>${escapeHtml(item.variantSummary || [item.materialType, item.coatingType, item.thicknessMm ? `${item.thicknessMm} mm` : "", item.woodType].filter(Boolean).join(" / ") || "-")}</td>
+                  <td>${formatMmSize(item.widthMm, item.heightMm, 0)}</td>
+                  <td>${Number(item.quantity || 0)}</td>
+                  <td>${escapeHtml(item.color || "-")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        ` : ""}
+        <div class="order-detail-inline-actions">
+          <button class="ghost-action create-panjur-job-btn" type="button" data-id="${order.id}">${escapeHtml(order.panjurJob ? "Panjur Kapak Sablonunu Ac" : "Panjur Kapak Sablonu Olustur")}</button>
+          ${order.panjurJob ? `<button class="ghost-action open-order-panjur-job-btn" type="button" data-id="${order.panjurJob.id}">Sablonu Ac</button>` : ""}
+        </div>
+      ` : renderOrderEmptyState("Bu sipariste panjur kapak kalemi bulunamadi.", "Panjur Kapak sekmesi sadece panjur kategorisindeki order_items kalemleri icin aktif olur.")}
     </section>
   `;
 }
@@ -9182,6 +9480,16 @@ function bindActions() {
       }
     };
   });
+  document.querySelectorAll(".open-order-panjur-job-btn").forEach((button) => {
+    button.onclick = async () => {
+      const jobId = Number(button.dataset.id || 0);
+      if (!jobId) return;
+      setActiveView("panjur");
+      if (window.PanjurTemplateModule?.openJob) {
+        await window.PanjurTemplateModule.openJob(jobId);
+      }
+    };
+  });
   document.querySelectorAll(".work-order-status-select").forEach((select) => {
     select.onchange = async () => {
       select.disabled = true;
@@ -9437,7 +9745,7 @@ function createOrderFromOffer(offer) {
   };
 }
 
-function formToObject(form) {
+function formToObjectLegacy(form) {
   return Object.fromEntries(new FormData(form).entries());
 }
 
@@ -9726,6 +10034,7 @@ function normalizeOrders(rows) {
     return {
       id: row.id,
       offerId: row.offer_id,
+      cariId: row.cari_id || null,
       sourceType: row.source_type || (row.offer_id ? "offer" : "direct"),
       orderNo: row.order_no || row.tracking_no || "",
       trackingNo: row.tracking_no || row.order_no || "",
@@ -10056,27 +10365,27 @@ function normalizeStatus(status) {
   return status || "Yeni";
 }
 
-function formatCurrency(value) {
+function formatCurrencyLegacy(value) {
     return `${Number(value || 0).toLocaleString("tr-TR")} TL`;
   }
 
-function formatCompactCurrency(value) {
+function formatCompactCurrencyLegacy(value) {
     return `${Number(value || 0).toLocaleString("tr-TR", { maximumFractionDigits: 0 })} TL`;
   }
 
-  function formatDate(value) {
+  function formatDateLegacy(value) {
     if (!value) return "-";
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? escapeHtml(String(value)) : date.toLocaleDateString("tr-TR");
   }
 
-function shortenText(value, limit = 20) {
+function shortenTextLegacy(value, limit = 20) {
     const text = String(value || "");
     if (text.length <= limit) return text;
     return `${text.slice(0, Math.max(0, limit - 3))}...`;
   }
 
-function escapeHtml(value) {
+function escapeHtmlLegacy(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")

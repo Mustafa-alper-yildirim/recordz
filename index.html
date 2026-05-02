@@ -438,7 +438,7 @@
                   <div class="cari-form-section-head">
                     <div>
                       <h3>Genel Bilgiler</h3>
-                      <p>Zorunlu alanlari once doldurun.</p>
+                      <p>ERP akisi icin kritik alanlari once doldurun.</p>
                     </div>
                     <span class="cari-form-badge">Zorunlu alanlar</span>
                   </div>
@@ -484,28 +484,31 @@
                     </label>
                   </div>
 
-                  <div class="cari-form-grid cari-form-grid-3">
-                    <label class="cari-field">
-                      <span>Sektor</span>
-                      <input id="cariSector" type="text" placeholder="Insaat, Mobilya">
-                    </label>
+                  <details class="cari-advanced-fields">
+                    <summary>Daha fazla genel alan goster</summary>
+                    <div class="cari-form-grid cari-form-grid-3">
+                      <label class="cari-field">
+                        <span>Sektor</span>
+                        <input id="cariSector" type="text" placeholder="Insaat, Mobilya">
+                      </label>
 
-                    <label class="cari-field">
-                      <span>Kaynak</span>
-                      <select id="cariSource">
-                        <option value="Manuel Kayit">Manuel Kayit</option>
-                        <option value="Web Sitesi">Web Sitesi</option>
-                        <option value="Referans">Referans</option>
-                        <option value="Fuar / Etkinlik">Fuar / Etkinlik</option>
-                        <option value="Mevcut Musteri">Mevcut Musteri</option>
-                      </select>
-                    </label>
+                      <label class="cari-field">
+                        <span>Kaynak</span>
+                        <select id="cariSource">
+                          <option value="Manuel Kayit">Manuel Kayit</option>
+                          <option value="Web Sitesi">Web Sitesi</option>
+                          <option value="Referans">Referans</option>
+                          <option value="Fuar / Etkinlik">Fuar / Etkinlik</option>
+                          <option value="Mevcut Musteri">Mevcut Musteri</option>
+                        </select>
+                      </label>
 
-                    <label class="cari-field">
-                      <span>Etiket</span>
-                      <input id="cariTag" type="text" placeholder="VIP, Bayi, Yeni">
-                    </label>
-                  </div>
+                      <label class="cari-field">
+                        <span>Etiket</span>
+                        <input id="cariTag" type="text" placeholder="VIP, Bayi, Yeni">
+                      </label>
+                    </div>
+                  </details>
 
                   <div class="cari-inline-warning" id="cariDuplicateBox" hidden>
                     Benzer cari kaydi olabilir. Kaydetmeden once cari listesinden kontrol edilmesi onerilir.
@@ -516,20 +519,15 @@
                   <div class="cari-form-section-head">
                     <div>
                       <h3>Iletisim Bilgileri</h3>
-                      <p>Telefon ve e-posta kayitlarini tek yerde tutun.</p>
+                      <p>Telefon ve e-posta alanlarini guncel tutun.</p>
                     </div>
                     <span class="cari-form-badge">Telefon / e-posta</span>
                   </div>
 
-                  <div class="cari-form-grid cari-form-grid-3">
+                  <div class="cari-form-grid cari-form-grid-2">
                     <label class="cari-field">
                       <span>Telefon</span>
                       <input id="cariPhone" name="phone" type="text" placeholder="05xx xxx xx xx">
-                    </label>
-
-                    <label class="cari-field">
-                      <span>WhatsApp</span>
-                      <input id="cariWhatsapp" type="text" placeholder="05xx xxx xx xx">
                     </label>
 
                     <label class="cari-field" data-field="email">
@@ -539,80 +537,47 @@
                     </label>
                   </div>
 
-                  <div class="cari-form-grid cari-form-grid-3">
-                    <label class="cari-field">
-                      <span>Web Sitesi</span>
-                      <input id="cariWebsite" type="text" placeholder="https://">
-                    </label>
+                  <details class="cari-advanced-fields">
+                    <summary>Ek iletisim alanlarini goster</summary>
+                    <div class="cari-form-grid cari-form-grid-2">
+                      <label class="cari-field">
+                        <span>WhatsApp</span>
+                        <input id="cariWhatsapp" type="text" placeholder="05xx xxx xx xx">
+                      </label>
 
-                    <label class="cari-field">
-                      <span>Ikinci Telefon</span>
-                      <input id="cariPhone2" type="text" placeholder="Opsiyonel">
-                    </label>
+                      <label class="cari-field">
+                        <span>Ikinci Telefon</span>
+                        <input id="cariPhone2" type="text" placeholder="Opsiyonel">
+                      </label>
 
-                    <label class="cari-field">
-                      <span>Departman</span>
-                      <input id="cariDepartment" type="text" placeholder="Satin alma, muhasebe...">
-                    </label>
-                  </div>
+                      <label class="cari-field">
+                        <span>Web Sitesi</span>
+                        <input id="cariWebsite" type="text" placeholder="https://">
+                      </label>
+
+                      <label class="cari-field">
+                        <span>Departman</span>
+                        <input id="cariDepartment" type="text" placeholder="Satin alma, muhasebe...">
+                      </label>
+                    </div>
+                  </details>
                 </section>
 
                 <section class="cari-form-section" id="cariFormPanelFinance" data-cari-form-panel="finance" hidden>
                   <div class="cari-form-section-head">
                     <div>
                       <h3>Finans Bilgileri</h3>
-                      <p>Risk, vade ve vergi alanlarini guncel tutun.</p>
+                      <p>Risk limiti ve vergi bilgilerini aktif kullanin.</p>
                     </div>
                     <span class="cari-form-badge">Risk ve vade</span>
                   </div>
 
-                  <div class="cari-form-grid cari-form-grid-3">
+                  <div class="cari-form-grid cari-form-grid-2">
                     <label class="cari-field">
                       <span>Risk Limiti</span>
                       <input id="cariRiskLimit" name="riskLimit" type="text" inputmode="decimal" data-money="1" value="0">
                     </label>
 
-                    <label class="cari-field">
-                      <span>Vade Gunu</span>
-                      <input id="cariMaturityDay" type="number" min="0" value="30">
-                    </label>
-
-                    <label class="cari-field">
-                      <span>Para Birimi</span>
-                      <select id="cariCurrency">
-                        <option value="TRY">TL</option>
-                        <option value="USD">USD</option>
-                        <option value="EUR">EUR</option>
-                      </select>
-                    </label>
-                  </div>
-
-                  <div class="cari-form-grid cari-form-grid-3">
-                    <label class="cari-field">
-                      <span>Baslangic Bakiyesi</span>
-                      <input id="cariOpeningBalance" type="text" inputmode="decimal" data-money="1" value="0">
-                    </label>
-
-                    <label class="cari-field">
-                      <span>Bakiye Tipi</span>
-                      <select id="cariBalanceType">
-                        <option value="Borc">Borc</option>
-                        <option value="Alacak">Alacak</option>
-                        <option value="Sifir">Sifir</option>
-                      </select>
-                    </label>
-
-                    <label class="cari-field">
-                      <span>E-Fatura Durumu</span>
-                      <select id="cariEInvoiceStatus">
-                        <option value="Bilinmiyor">Bilinmiyor</option>
-                        <option value="E-Fatura">E-Fatura</option>
-                        <option value="E-Arsiv">E-Arsiv</option>
-                      </select>
-                    </label>
-                  </div>
-
-                  <div class="cari-form-grid cari-form-grid-3">
                     <label class="cari-field">
                       <span>Vergi Dairesi</span>
                       <input id="cariTaxOffice" name="taxOffice" type="text" placeholder="Orn: Konak">
@@ -624,17 +589,59 @@
                     </label>
 
                     <label class="cari-field">
-                      <span>IBAN</span>
-                      <input id="cariIban" type="text" placeholder="TR__ ____ ____ ____ ____ ____ __">
-                    </label>
-                  </div>
-
-                  <div class="cari-form-grid cari-form-grid-3">
-                    <label class="cari-field">
                       <span>Iskonto Orani (%)</span>
                       <input id="cariDiscountRate" name="discountRate" type="text" inputmode="decimal" value="0">
                     </label>
                   </div>
+
+                  <details class="cari-advanced-fields">
+                    <summary>Gelismis finans alanlarini goster</summary>
+                    <div class="cari-form-grid cari-form-grid-3">
+                      <label class="cari-field">
+                        <span>Vade Gunu</span>
+                        <input id="cariMaturityDay" type="number" min="0" value="30">
+                      </label>
+
+                      <label class="cari-field">
+                        <span>Para Birimi</span>
+                        <select id="cariCurrency">
+                          <option value="TRY">TL</option>
+                          <option value="USD">USD</option>
+                          <option value="EUR">EUR</option>
+                        </select>
+                      </label>
+
+                      <label class="cari-field">
+                        <span>E-Fatura Durumu</span>
+                        <select id="cariEInvoiceStatus">
+                          <option value="Bilinmiyor">Bilinmiyor</option>
+                          <option value="E-Fatura">E-Fatura</option>
+                          <option value="E-Arsiv">E-Arsiv</option>
+                        </select>
+                      </label>
+                    </div>
+
+                    <div class="cari-form-grid cari-form-grid-3">
+                      <label class="cari-field">
+                        <span>Baslangic Bakiyesi</span>
+                        <input id="cariOpeningBalance" type="text" inputmode="decimal" data-money="1" value="0">
+                      </label>
+
+                      <label class="cari-field">
+                        <span>Bakiye Tipi</span>
+                        <select id="cariBalanceType">
+                          <option value="Borc">Borc</option>
+                          <option value="Alacak">Alacak</option>
+                          <option value="Sifir">Sifir</option>
+                        </select>
+                      </label>
+
+                      <label class="cari-field">
+                        <span>IBAN</span>
+                        <input id="cariIban" type="text" placeholder="TR__ ____ ____ ____ ____ ____ __">
+                      </label>
+                    </div>
+                  </details>
                 </section>
 
                 <section class="cari-form-section" id="cariFormPanelAddress" data-cari-form-panel="address" hidden>
@@ -804,6 +811,7 @@
                   <span>Firma / Yetkili</span>
                   <span>Telefon</span>
                   <span>E-posta</span>
+                  <span>Cari Tipi</span>
                   <span>Bakiye</span>
                   <span>Risk Limiti</span>
                   <span>Durum</span>
@@ -823,11 +831,14 @@
                 </div>
                 <div class="cari-detail-panel" id="cariDetailPanel">
                   <div class="cari-detail-head">
-                    <div>
+                    <div class="cari-detail-head-main">
                       <h3 id="cariDetailCompany">Cari Ozeti</h3>
                       <p id="cariDetailType">Listeden bir cari secin.</p>
                     </div>
-                    <span id="cariDetailBadge" class="cari-status-badge">Secim Yok</span>
+                    <div class="cari-detail-head-actions">
+                      <button class="ghost-action" id="cariDetailOfferBtn" type="button" disabled>Teklif Olustur</button>
+                      <span id="cariDetailBadge" class="cari-status-badge">Secim Yok</span>
+                    </div>
                   </div>
                   <div class="cari-detail-summary-grid">
                     <article><small>Yetkili</small><strong id="cariDetailName">-</strong></article>
@@ -841,6 +852,9 @@
                   </div>
                   <div class="cari-detail-tabs" id="cariDetailTabs">
                     <button class="cari-detail-tab is-active" type="button" data-cari-detail-tab="general">Genel Bilgiler</button>
+                    <button class="cari-detail-tab" type="button" data-cari-detail-tab="contact">Iletisim</button>
+                    <button class="cari-detail-tab" type="button" data-cari-detail-tab="address">Adres</button>
+                    <button class="cari-detail-tab" type="button" data-cari-detail-tab="finance">Finans</button>
                     <button class="cari-detail-tab" type="button" data-cari-detail-tab="offers">Teklifler</button>
                     <button class="cari-detail-tab" type="button" data-cari-detail-tab="orders">Siparisler</button>
                     <button class="cari-detail-tab" type="button" data-cari-detail-tab="movements">Cari Hareketler</button>
@@ -1090,12 +1104,20 @@
                   <label class="quick-order-calc-field" data-quick-calc-field="sqm"><span>Boy</span><input id="quickOrderItemHeight" type="number" min="0" step="0.01"></label>
                   <label class="quick-order-calc-field" data-quick-calc-field="linear_meter"><span>Uzunluk</span><input id="quickOrderItemLength" type="number" min="0" step="0.01"></label>
                   <label><span>Adet</span><input id="quickOrderItemQty" type="number" min="1" step="1" value="1"></label>
-                  <label class="quick-order-calc-field" data-quick-calc-field="sqm"><span>Renk</span><input id="quickOrderItemColor" type="text"></label>
-                  <label class="quick-order-calc-field" data-quick-calc-field="sqm"><span>Cins</span><input id="quickOrderItemMaterial" type="text"></label>
-                  <label class="quick-order-calc-field" data-quick-calc-field="fixed labor"><span>Aciklama</span><input id="quickOrderItemNote" type="text"></label>
+                  <label class="quick-order-calc-field" data-quick-calc-field="sqm piece linear_meter"><span>Renk</span><input id="quickOrderItemColor" type="text" list="quickOrderVariantColorList"></label>
+                  <label class="quick-order-calc-field" data-quick-calc-field="sqm piece linear_meter"><span>Malzeme</span><input id="quickOrderItemMaterial" type="text" placeholder="Kategori / cins"></label>
+                  <label class="quick-order-calc-field" data-quick-calc-field="sqm piece linear_meter" data-quick-order-variant-field="materialType"><span>Varyasyon Malzeme</span><input id="quickOrderVariantMaterial" type="text" list="quickOrderVariantMaterialList" placeholder="MDF / Ahsap"></label>
+                  <label class="quick-order-calc-field" data-quick-calc-field="sqm piece linear_meter" data-quick-order-variant-field="coatingType"><span>Kaplama</span><input id="quickOrderVariantCoating" type="text" list="quickOrderVariantCoatingList" placeholder="Lake / Ham / Cilali"></label>
+                  <label class="quick-order-calc-field" data-quick-calc-field="sqm piece linear_meter" data-quick-order-variant-field="thicknessMm"><span>Kalinlik (mm)</span><input id="quickOrderVariantThickness" type="number" min="0" step="1" placeholder="18"></label>
+                  <label class="quick-order-calc-field" data-quick-calc-field="sqm piece linear_meter" data-quick-order-variant-field="woodType"><span>Agac Turu</span><input id="quickOrderVariantWoodType" type="text" list="quickOrderVariantWoodTypeList" placeholder="Limba / Cam / Ayous"></label>
+                  <label class="quick-order-calc-field" data-quick-calc-field="fixed labor sqm piece linear_meter"><span>Aciklama</span><input id="quickOrderItemNote" type="text" placeholder="Kalem aciklamasi"></label>
                   <label><span>Birim Fiyat</span><input id="quickOrderItemPrice" type="number" min="0" step="0.01" value="0"></label>
                   <button class="ghost-action is-success" id="quickOrderAddItemBtn" type="button">Kalem Ekle</button>
                 </div>
+                <datalist id="quickOrderVariantMaterialList"></datalist>
+                <datalist id="quickOrderVariantCoatingList"></datalist>
+                <datalist id="quickOrderVariantColorList"></datalist>
+                <datalist id="quickOrderVariantWoodTypeList"></datalist>
                 <div class="quick-order-items-table" id="quickOrderItemsTable"></div>
                 <div class="quick-order-total-box" id="quickOrderTotalsBox"></div>
               </section>
@@ -2168,7 +2190,19 @@
     </main>
   </div>
 
-  <script src="api-client.js"></script>
+  <script src="core/api.js"></script>
+  <script src="core/constants.js"></script>
+  <script src="core/state.js"></script>
+  <script src="core/helpers.js"></script>
+  <script src="core/router.js"></script>
+  <script src="modules/cari/index.js"></script>
+  <script src="modules/offers/index.js"></script>
+  <script src="modules/orders/index.js"></script>
+  <script src="modules/products/index.js"></script>
+  <script src="modules/stock/index.js"></script>
+  <script src="modules/finance/index.js"></script>
+  <script src="modules/crm/index.js"></script>
+  <script src="modules/panjur/index.js"></script>
   <script src="erpRuntime.js"></script>
   <script src="panjurCalculations.js"></script>
   <script src="panjurModule.js"></script>
